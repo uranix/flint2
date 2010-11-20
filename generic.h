@@ -29,10 +29,11 @@
 #include <stdio.h>
 #include <mpir.h>
 #include "flint.h"
+#include "fmpz_poly.h"
 
 typedef enum type_t
 {
-   DOUBLE, ULONG
+   DOUBLE, ULONG, FMPZ_POLY
 } type_t;
 
 typedef struct obj_t
@@ -43,6 +44,7 @@ typedef struct obj_t
    {
       double dbl;
 	  ulong ui;
+	  fmpz_poly_t f_poly;
    } val;
 } obj_t;
 
@@ -55,6 +57,8 @@ typedef struct vec_t
 } vec_t;
 
 void vecmul_d(double * r, double * a, ulong len, double c);
+
+void vecmul_fmpz_poly(fmpz_poly_t * r, fmpz_poly_t * a, ulong len, fmpz_poly_t c);
 
 void vec_scalar_mul(vec_t * r, vec_t * a, obj_t * c);
 
