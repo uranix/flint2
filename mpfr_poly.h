@@ -70,10 +70,6 @@ void mpfr_poly_set_prec(mpfr_poly_t poly, ulong prec)
    poly->prec = prec;
 }
 
-void mpfr_poly_randinit(flint_rand_t state);
-
-void mpfr_poly_randclear(flint_rand_t state);
-
 void mpfr_poly_randtest(mpfr_poly_t poly, flint_rand_t state, ulong length);
 
 static inline
