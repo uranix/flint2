@@ -34,14 +34,14 @@ void mpfr_poly_realloc(mpfr_poly_t poly, const ulong alloc)
 {
    ulong i;
    
-   if (!alloc) // alloc == 0, clear up, reinitialise
+   if (!alloc) /* alloc == 0, clear up, reinitialise */
    {
       mpfr_poly_clear(poly);
       mpfr_poly_init(poly, poly->prec);
 	  return;
    }  
    
-	if (poly->alloc) // realloc
+	if (poly->alloc) /* realloc */
 	{
 	   for (i = alloc; i < poly->alloc; i++)
 	      mpfr_clear(poly->coeffs + i);
@@ -50,7 +50,7 @@ void mpfr_poly_realloc(mpfr_poly_t poly, const ulong alloc)
 		
 	   for (i = poly->alloc; i < alloc; i++)
 			mpfr_init2(poly->coeffs + i, poly->prec);
-	} else // nothing allocated already so do it now
+	} else /* nothing allocated already so do it now */
 	   poly->coeffs = _mpfr_vec_init(alloc, poly->prec);
    
    poly->alloc = alloc;  

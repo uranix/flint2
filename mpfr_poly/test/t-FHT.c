@@ -29,20 +29,22 @@
 #include <mpfr.h>
 #include <math.h>
 #include "flint.h"
+#include "mpfr_vec.h"
 #include "mpfr_poly.h"
 #include "ulong_extras.h"
 
 int main(void)
 {
-   int result;
+   int result = 0;
    flint_rand_t state;
-   
+   ulong i, j;
+
    printf("FHT....");
    fflush(stdout);
 
    flint_randinit(state);
    
-   for (ulong i = 0; i < 1000UL; i++) 
+   for (i = 0; i < 1000UL; i++) 
    {
       mpfr_poly_t a, b;
       ulong n = n_randint(state, 10);
@@ -53,7 +55,7 @@ int main(void)
       mpfr_poly_init2(b, length, prec);
       mpfr_poly_randtest(a, state, length);
       
-	  _mpfr_vec_copy(b->coeffs, a->coeffs, length);
+	  _mpfr_vec_set(b->coeffs, a->coeffs, length);
 	  
 	  _mpfr_poly_FHT(a->coeffs, n, prec);
       _mpfr_poly_revbin(a->coeffs, n);
@@ -63,10 +65,11 @@ int main(void)
 	
 	  _mpfr_poly_scale(a->coeffs, n);
 	  
-	  for (ulong j = 0; j < length; j++)
+	  for (j = 0; j < length; j++)
 	  {
-	     mpfr_sub(a->coeffs + j, a->coeffs + j, b->coeffs + j, GMP_RNDN);
-         double d = mpfr_get_d(a->coeffs + j, GMP_RNDN);
+	     double d;
+        mpfr_sub(a->coeffs + j, a->coeffs + j, b->coeffs + j, GMP_RNDN);
+         d = mpfr_get_d(a->coeffs + j, GMP_RNDN);
 		 if (fabs(d) > 0.1)
 		 {
 			 printf("d = %f\n", d);
@@ -83,5 +86,5 @@ int main(void)
    flint_randclear(state);
       
    printf("PASS\n");
-   return 0;
+   return result;
 }

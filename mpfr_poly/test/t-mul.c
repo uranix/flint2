@@ -36,10 +36,11 @@ ulong bits_lost(mpfr_poly_t a, mpfr_poly_t b)
 {
    mpfr_t t;
    ulong i;
-   mpfr_init2(t, a->prec);
-   ulong lost = 0, bits, bits1, bits2;
+   ulong lost = 0;
+   long bits, bits1, bits2;
    double d1, d2;
-
+   mpfr_init2(t, a->prec);
+   
    for (i = 0; i < b->length; i++)
    {
       d1 = mpfr_get_d_2exp(&bits1, b->coeffs + i, GMP_RNDN);
@@ -59,15 +60,16 @@ ulong bits_lost(mpfr_poly_t a, mpfr_poly_t b)
 
 int main(void)
 {
-   int result;
+   int result = 0;
    flint_rand_t state;
-   
+   ulong i;
+
    printf("mul....");
    fflush(stdout);
 
    flint_randinit(state);
    
-   for (ulong i = 0; i < 1000UL; i++) 
+   for (i = 0; i < 1000UL; i++) 
    {
       mpfr_poly_t a, b, c, d;
       ulong len1 = n_randint(state, 200) + 1;
@@ -104,5 +106,5 @@ int main(void)
    flint_randclear(state);
       
    printf("PASS\n");
-   return 0;
+   return result;
 }

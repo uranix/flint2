@@ -38,7 +38,7 @@ typedef struct
    mp_bitcnt_t prec;
 } mpfr_poly_struct;
 
-// fmpz_poly_t allows reference-like semantics for fmpz_poly_struct
+/* fmpz_poly_t allows reference-like semantics for fmpz_poly_struct */
 typedef mpfr_poly_struct mpfr_poly_t[1];
 
 extern gmp_randstate_t mpfr_poly_randstate;
@@ -55,13 +55,13 @@ void mpfr_poly_fit_length(mpfr_poly_t poly, const ulong length);
 
 void mpfr_poly_clear(mpfr_poly_t poly);
 
-static inline
+static __inline__
 void _mpfr_poly_set_length(mpfr_poly_t poly, ulong length)
 {
    poly->length = length;
 }
 
-static inline
+static __inline__
 void mpfr_poly_set_prec(mpfr_poly_t poly, ulong prec)
 {
    ulong i;
@@ -72,7 +72,7 @@ void mpfr_poly_set_prec(mpfr_poly_t poly, ulong prec)
 
 void mpfr_poly_randtest(mpfr_poly_t poly, flint_rand_t state, ulong length);
 
-static inline
+static __inline__
 void mpfr_poly_swap(mpfr_poly_t poly1, mpfr_poly_t poly2)
 {
    ulong t;

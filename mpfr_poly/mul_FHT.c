@@ -55,11 +55,11 @@ void mpfr_poly_mul_FHT(mpfr_poly_t res, mpfr_poly_t poly1, mpfr_poly_t poly2)
 	t1 = res->coeffs;
     t2 = _mpfr_vec_init(length, prec);
 	
-	_mpfr_vec_copy(t1, poly1->coeffs, poly1->length);
+	_mpfr_vec_set(t1, poly1->coeffs, poly1->length);
 	for (i = poly1->length; i < length; i++)
 		mpfr_set_ui(t1 + i, 0, GMP_RNDN);
 
-    _mpfr_vec_copy(t2, poly2->coeffs, poly2->length);
+    _mpfr_vec_set(t2, poly2->coeffs, poly2->length);
 	for (i = poly2->length; i < length; i++)
 		mpfr_set_ui(t2 + i, 0, GMP_RNDN);
 

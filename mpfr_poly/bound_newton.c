@@ -90,8 +90,10 @@ int _mpfr_poly_bound_newton(double * inter, double * slope,
    double max_d, min_d;
    double k;
    mpfr_t t;
-   mpfr_init2(t, dprec); // don't waste time working at a higher precision
-   double * mag = (double *) malloc(sizeof(double)*len); 
+   double * mag;
+   
+   mpfr_init2(t, dprec); /* don't waste time working at a higher precision */
+   mag = (double *) malloc(sizeof(double)*len); 
 
    for (i = 0; i < len; i++) 
    {
@@ -123,45 +125,45 @@ int _mpfr_poly_bound_newton(double * inter, double * slope,
 		If in neither case (i) nor case (ii) we do nothing.
    */
    slope1 = slope2 = 0.0;
-   if (max_i > min_i) // case (i)
+   if (max_i > min_i) /* case (i) */
    {
-      if (max_i) // slope to first point
+      if (max_i) /* slope to first point */
 		  slope1 = (max_d - mag[0])/((double) max_i); 
 	  
-	  if (max_i != len - 1) // slope to last point
+	  if (max_i != len - 1) /* slope to last point */
 		  slope2 = (mag[len-1] - min_d)/((double) (len - 1 - min_i)); 
 	  
 	  for (i = 1; i < max_i; i++)
 	  {
-	     k = (max_d - mag[i])/((double) (max_i - i)); // slope from current point
+	     k = (max_d - mag[i])/((double) (max_i - i)); /* slope from current point */
          if (k < slope1) slope1 = k;
 	  }
 	  
 	  for (i = len - 1; i > min_i; i--)
 	  {
-	     k = (mag[i] - min_d)/((double) (i - min_i)); // slope to current point
+	     k = (mag[i] - min_d)/((double) (i - min_i)); /* slope to current point */
          if (k < slope2) slope2 = k;
 	  }
 
 	  if (slope1 > slope2)
 	     slope1 = slope2;
-   } else if (max_i < min_i) // case (ii)
+   } else if (max_i < min_i) /* case (ii) */
    {
-      if (min_i) // slope to first point
+      if (min_i) /* slope to first point */
 		  slope2 = (min_d - mag[0])/((double) min_i); 
 	  
-	  if (max_i != len - 1) // slope to last point
+	  if (max_i != len - 1) /* slope to last point */
 		  slope1 = (mag[len-1] - max_d)/((double) (len - 1 - max_i)); 
 	  
 	  for (i = 1; i < min_i; i++)
 	  {
-	     k = (min_d - mag[i])/((double) (min_i - i)); // slope from current point
+	     k = (min_d - mag[i])/((double) (min_i - i)); /* slope from current point */
          if (k > slope2) slope2 = k;
 	  }
 	  
 	  for (i = len - 1; i > max_i; i--)
 	  {
-	     k = (mag[i] - max_d)/((double) (i - max_i)); // slope to current point
+	     k = (mag[i] - max_d)/((double) (i - max_i)); /* slope to current point */
          if (k > slope1) slope1 = k;
 	  }
 
@@ -172,7 +174,7 @@ int _mpfr_poly_bound_newton(double * inter, double * slope,
    (*slope) = slope1;
    (*inter) = max_d - (double) max_i*slope1;
 
-   // if inter(L2) < inter(L1) - prec 
+   /* if inter(L2) < inter(L1) - prec */
    if (min_d - (double) min_i*slope2 <= *inter - prec) 
 	  return 0;
 

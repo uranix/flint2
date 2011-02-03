@@ -34,7 +34,7 @@ void mpfr_poly_fit_length(mpfr_poly_t poly, const ulong length)
    
    if (alloc <= poly->alloc) return;
 
-   // at least double number of allocated coeffs
+   /* at least double number of allocated coeffs */
    if (alloc < 2*poly->alloc) alloc = 2*poly->alloc; 
    
    mpfr_poly_realloc(poly, alloc);

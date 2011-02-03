@@ -61,11 +61,11 @@ void _mpfr_poly_filter(mpfr * poly, ulong len, double s, ulong prec, ulong filte
 void _mpfr_poly_mul_inplace(mpfr * poly1, ulong len1, 
 							mpfr * poly2, ulong len2, ulong prec, double s, ulong fb)
 {
-   if (len1*prec < MUL_INPLACE_CUTOFF || len2*prec < MUL_INPLACE_CUTOFF) // use classical
+   if (len1*prec < MUL_INPLACE_CUTOFF || len2*prec < MUL_INPLACE_CUTOFF) /* use classical */
    {
       mpfr * temp = _mpfr_vec_init(len1, prec);
       
-	  _mpfr_vec_copy(temp, poly1, len1);
+	  _mpfr_vec_set(temp, poly1, len1);
       
 	  if (len1 >= len2)
 		 _mpfr_poly_mul_classical(poly1, temp, len1, poly2, len2, prec);
@@ -75,9 +75,9 @@ void _mpfr_poly_mul_inplace(mpfr * poly1, ulong len1,
 	  _mpfr_poly_filter(poly1, len1 + len2 - 1, s, prec, fb);
 
 	  _mpfr_vec_clear(temp, len1);
-   } else // use FFT
+   } else /* use FFT */
    {
-      ulong log_len = FLINT_BIT_COUNT(len1 + len2 - 1); // ceil(log_2())
+      ulong log_len = FLINT_BIT_COUNT(len1 + len2 - 1); /* ceil(log_2()) */
 	  ulong length = (1UL<<log_len);
       ulong i;
 
@@ -170,10 +170,10 @@ void _mpfr_poly_mul_scale(mpfr * res, mpfr * poly1, ulong len1, mpfr * poly2, ul
 		log_len = FLINT_BIT_COUNT(w1 + l2 - 1);
 		length2 = (1UL<<log_len);
 
-		_mpfr_vec_copy(t1, poly1 + len1 - w1, w1);
+		_mpfr_vec_set(t1, poly1 + len1 - w1, w1);
 		_mpfr_vec_zero(t1 + w1, length2 - w1);
 	
-		_mpfr_vec_copy(t2, poly2 + i, l2);
+		_mpfr_vec_set(t2, poly2 + i, l2);
 		_mpfr_vec_zero(t2 + l2, length2 - l2);
 	
         _mpfr_poly_mul_inplace(t1, w1, t2, l2, prec, i1 + i2, fb);

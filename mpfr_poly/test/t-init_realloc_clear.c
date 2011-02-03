@@ -32,15 +32,16 @@
 
 int main(void)
 {
-   int result;
+   int result = 0;
    flint_rand_t state;
-   
+   ulong i;
+
    printf("init/init2/realloc/clear....");
    fflush(stdout);
 
    flint_randinit(state);
    
-   for (ulong i = 0; i < 10000UL; i++) 
+   for (i = 0; i < 10000UL; i++) 
    {
       mpfr_poly_t a;
 
@@ -48,7 +49,7 @@ int main(void)
       mpfr_poly_clear(a);      
    }
    
-   for (ulong i = 0; i < 10000UL; i++) 
+   for (i = 0; i < 10000UL; i++) 
    {
       mpfr_poly_t a;
 
@@ -58,13 +59,13 @@ int main(void)
       mpfr_poly_clear(a);
    }
    
-   for (ulong i = 0; i < 10000UL; i++) 
+   for (i = 0; i < 10000UL; i++) 
    {
       mpfr_poly_t a;
       ulong prec = n_randint(state, 100) + MPFR_PREC_MIN;
 
       mpfr_poly_init(a, prec);
-      mpfr_poly_randtest(a, state, n_randint(100));
+      mpfr_poly_randtest(a, state, n_randint(state, 100));
       
       mpfr_poly_clear(a);
    }
@@ -72,5 +73,5 @@ int main(void)
    flint_randclear(state);
       
    printf("PASS\n");
-   return 0;
+   return result;
 }

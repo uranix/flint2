@@ -34,15 +34,16 @@
 
 int main(void)
 {
-   int result;
+   int result = 0;
    flint_rand_t state;
-   
+   ulong i, j;
+
    printf("convolution_FHT....");
    fflush(stdout);
 
    flint_randinit(state);
    
-   for (ulong i = 0; i < 1000UL; i++) 
+   for (i = 0; i < 1000UL; i++) 
    {
       mpfr_poly_t a, b, c1, c2, d1, d2;
       ulong n = n_randint(state, 10);
@@ -60,13 +61,13 @@ int main(void)
       mpfr_poly_randtest(c1, state, length);
       mpfr_poly_randtest(d1, state, length);
       
-	  for (ulong j = 0; j < length; j++)
+	  for (j = 0; j < length; j++)
 		  mpfr_set(b->coeffs + j, a->coeffs + j, GMP_RNDN);
 
-	  for (ulong j = 0; j < length; j++)
+	  for (j = 0; j < length; j++)
 		  mpfr_set(c2->coeffs + j, c1->coeffs + j, GMP_RNDN);
 
-	  for (ulong j = 0; j < length; j++)
+	  for (j = 0; j < length; j++)
 		  mpfr_set(d2->coeffs + j, d1->coeffs + j, GMP_RNDN);
 
 	  _mpfr_poly_convolution_FHT(a->coeffs, c1->coeffs, n, prec);
@@ -74,10 +75,11 @@ int main(void)
       _mpfr_poly_convolution_FHT(b->coeffs, d2->coeffs, n, prec);
       _mpfr_poly_convolution_FHT(b->coeffs, c2->coeffs, n, prec);
       
-	  for (ulong j = 0; j < length; j++)
+	  for (j = 0; j < length; j++)
 	  {
-	     mpfr_sub(a->coeffs + j, a->coeffs + j, b->coeffs + j, GMP_RNDN);
-         double d = mpfr_get_d(a->coeffs + j, GMP_RNDN);
+	     double d;
+        mpfr_sub(a->coeffs + j, a->coeffs + j, b->coeffs + j, GMP_RNDN);
+         d = mpfr_get_d(a->coeffs + j, GMP_RNDN);
 		 if (fabs(d) > 0.1)
 		 {
 			 printf("d = %f\n", d);
@@ -98,5 +100,5 @@ int main(void)
    flint_randclear(state);
       
    printf("PASS\n");
-   return 0;
+   return result;
 }

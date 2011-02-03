@@ -35,15 +35,16 @@ void _mpfr_poly_FHT_recursive(mpfr * coeffs, ulong n, mp_bitcnt_t prec,
 void _mpfr_poly_FHT_recursive(mpfr * coeffs, ulong n, mp_bitcnt_t prec, 
 							          mpfr * costw, mpfr * sintw, ulong stride)
 {
-   ulong i;
+   ulong i, len2;
    mpfr_t temp, temp2;
    mpfr * cos, * sin;
+   
    mpfr_init2(temp, prec);
    mpfr_init2(temp2, prec);
   
    if (n == 0) return;
 
-   ulong len2 = (1UL<<(n - 1));
+   len2 = (1UL<<(n - 1));
    
    for (i = 0; i < len2; i++)
    {

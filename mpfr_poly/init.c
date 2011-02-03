@@ -41,7 +41,7 @@ void mpfr_poly_init(mpfr_poly_t poly, mp_bitcnt_t prec)
 
 void mpfr_poly_init2(mpfr_poly_t poly, const ulong alloc, mp_bitcnt_t prec)
 {
-   if (alloc) // allocate space for alloc coefficients
+   if (alloc) /* allocate space for alloc coefficients */
       poly->coeffs = _mpfr_vec_init(alloc, prec);
    else
       poly->coeffs = NULL;
