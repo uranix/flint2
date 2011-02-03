@@ -109,6 +109,9 @@ void sample(mp_bitcnt_t * min, mp_bitcnt_t * av, mp_bitcnt_t * max, ulong length
    mpfr_t scale, mult;
    mpfr_poly_t a, b, c, d, temp;
 
+   flint_rand_t state;
+   flint_randinit(state);
+
    mpfr_poly_init2(a, length + 1, prec);
    mpfr_poly_init2(b, length + 1, prec);
    mpfr_poly_init2(c, 2*length + 1, prec);
@@ -188,13 +191,13 @@ void sample(mp_bitcnt_t * min, mp_bitcnt_t * av, mp_bitcnt_t * max, ulong length
 #endif
 
 #if RANDOM
-	  mpfr_poly_randtest(a, length);
-      mpfr_poly_randtest(b, length);
+	  mpfr_poly_randtest(a, state, length);
+      mpfr_poly_randtest(b, state, length);
 	  for (ulong j = 0; j < length; j++)
 	  {	  
 #if VARY
-		  mpfr_mul_2exp(a->coeffs + j, a->coeffs + j, n_randint(prec), GMP_RNDN);
-	      mpfr_mul_2exp(b->coeffs + j, b->coeffs + j, n_randint(prec), GMP_RNDN);
+		  mpfr_mul_2exp(a->coeffs + j, a->coeffs + j, n_randint(state, prec), GMP_RNDN);
+	      mpfr_mul_2exp(b->coeffs + j, b->coeffs + j, n_randint(state, prec), GMP_RNDN);
 #endif
 #if SIGN
 		  if (j&1) mpfr_neg(a->coeffs + j, a->coeffs + j, GMP_RNDN);
@@ -237,6 +240,8 @@ void sample(mp_bitcnt_t * min, mp_bitcnt_t * av, mp_bitcnt_t * max, ulong length
    
    (*av) /= ITERS;
 
+   flint_randclear(state);
+
    mpfr_poly_clear(a);
    mpfr_poly_clear(b);
    mpfr_poly_clear(c);
@@ -253,8 +258,6 @@ int main(void)
    
    printf("p-mul_stability:\n");
    
-   mpfr_poly_randinit();
-
    length = 1;
 
    for (ulong i = 0; i <= 100; i++)
@@ -268,8 +271,6 @@ int main(void)
 #endif
 	  if (length == len_old) length++;
    }
-
-   mpfr_poly_randclear();
 
    return 0;
 }
