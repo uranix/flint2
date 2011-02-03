@@ -42,11 +42,15 @@ int main(void)
    nmod_mpoly_t q;
    nmod_mpoly_t r;
    nmod_mpoly_t copyTest;
-   mp_limb_t n = n_randtest_not_zero();
    nmod_mpoly_t a, a2, a3, a6, a12;
    nmod_mpoly_t c, c2, c3, c5, c10, c20, c30;
-   ulong i;   
+   ulong i;  
+   mp_limb_t n;
 
+   flint_rand_t state;
+   flint_randinit(state);
+   n = n_randtest_not_zero(state);
+   
    printf("mul_heap....");
    fflush(stdout);
    
@@ -267,6 +271,8 @@ int main(void)
    nmod_mpoly_clear(a12);     
 
 #endif
+
+   flint_randclear(state);
 
    printf("PASS\n");
    return 0;

@@ -33,6 +33,9 @@
 int main(void)
 {
    int i;
+   flint_rand_t state;
+   flint_randinit(state);
+
    printf("init/init2/realloc/clear....");
    fflush(stdout);
    
@@ -40,7 +43,7 @@ int main(void)
    {
       fmpz_mpoly_t a;
 
-      fmpz_mpoly_init2(a, n_randint(100), n_randint(10), n_randint(100));
+      fmpz_mpoly_init2(a, n_randint(state, 100), n_randint(state, 10), n_randint(state, 100));
       fmpz_mpoly_clear(a);      
    }
 
@@ -48,12 +51,13 @@ int main(void)
    {
       fmpz_mpoly_t a;
 
-      fmpz_mpoly_init2(a, n_randint(100), n_randint(10), n_randint(100));
-      fmpz_mpoly_realloc(a, n_randint(100));
-      fmpz_mpoly_realloc(a, n_randint(100));
+      fmpz_mpoly_init2(a, n_randint(state, 100), n_randint(state, 10), n_randint(state, 100));
+      fmpz_mpoly_realloc(a, n_randint(state, 100));
+      fmpz_mpoly_realloc(a, n_randint(state, 100));
       fmpz_mpoly_clear(a);      
    }
       
+   flint_randclear(state);
    _fmpz_cleanup();
    printf("PASS\n");
    return 0;

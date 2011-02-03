@@ -35,7 +35,7 @@
 
 void GSO_mpfr(mpfr_mat_t r, mpfr_t max, mpfr_mat_t mu, fmpz_mat_t G, ulong a, ulong kappa, ulong zeroes)
 {
-  ulong i, j;
+  ulong i;
   mpfr_t tmp, rtmp;
 
   mpfr_init2(tmp, mu->prec);
