@@ -19,63 +19,46 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2010 Fredrik Johansson
+    Copyright (C) 2011 Fredrik Johansson
 
 ******************************************************************************/
 
+#include <stdlib.h>
 #include "flint.h"
 #include "fmpz.h"
-#include "fmpz_mat.h"
 #include "fmpz_vec.h"
-#include "ulong_extras.h"
+#include "fmpz_mat.h"
+#include "nmod_mat.h"
+#include "nmod_vec.h"
 
 
-/*
-  Standard Fisher-Yates shuffle to randomise an array; returns whether
-  the permutation is even (0) or odd (1)
-*/
-static int shuffle(long * array, flint_rand_t state, long n)
+void
+fmpz_mat_det_bound(fmpz_t bound, const fmpz_mat_t A)
 {
-    long i, j, tmp;
-    int parity;
+    fmpz_t p, s, t;
+    long i, j;
 
-    parity = 0;
-    for (i = n - 1; i > 0; i--)
+    fmpz_init(p);
+    fmpz_init(s);
+    fmpz_init(t);
+    fmpz_set_ui(p, 1UL);
+
+    for (i = 0; i < A->r; i++)
     {
-        j = n_randint(state, i+1);
-        parity ^= (i == j);
-        tmp = array[i];
-        array[i] = array[j];
-        array[j] = tmp;
+        fmpz_set_ui(s, 0UL);
+
+        for (j = 0; j < A->c; j++)
+            fmpz_addmul(s, A->rows[i] + j, A->rows[i] + j);
+
+        fmpz_sqrtrem(s, t, s);
+        if (!fmpz_is_zero(t))
+            fmpz_add_ui(s, s, 1UL);
+
+        fmpz_mul(p, p, s);
     }
-    return parity;
-}
 
-int
-fmpz_mat_randpermdiag(fmpz_mat_t mat, flint_rand_t state,
-                      const fmpz * diag, long n)
-{
-    int parity;
-    long i;
-    long * rows;
-    long * cols;
-
-    rows = malloc(sizeof(long) * mat->r);
-    cols = malloc(sizeof(long) * mat->c);
-
-    for (i = 0; i < mat->r; i++) rows[i] = i;
-    for (i = 0; i < mat->c; i++) cols[i] = i;
-
-    parity = shuffle(rows, state, mat->r);
-    parity ^= shuffle(cols, state, mat->c);
-
-    fmpz_mat_zero(mat);
-
-    for (i = 0; i < n; i++)
-        fmpz_set(&mat->rows[rows[i]][cols[i]], &diag[i]);
-
-    free(rows);
-    free(cols);
-
-    return parity;
+    fmpz_set(bound, p);
+    fmpz_clear(p);
+    fmpz_clear(s);
+    fmpz_clear(t);
 }

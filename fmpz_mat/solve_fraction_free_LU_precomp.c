@@ -19,63 +19,40 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2010 Fredrik Johansson
+    Copyright (C) 2010,2011 Fredrik Johansson
 
 ******************************************************************************/
 
+#include <stdlib.h>
 #include "flint.h"
 #include "fmpz.h"
-#include "fmpz_mat.h"
 #include "fmpz_vec.h"
-#include "ulong_extras.h"
+#include "fmpz_mat.h"
 
 
-/*
-  Standard Fisher-Yates shuffle to randomise an array; returns whether
-  the permutation is even (0) or odd (1)
-*/
-static int shuffle(long * array, flint_rand_t state, long n)
+void
+_fmpz_mat_solve_fraction_free_LU_precomp(fmpz * b, const fmpz_mat_t LU)
 {
-    long i, j, tmp;
-    int parity;
+    long i, j, n;
+    fmpz ** a = LU->rows;
+    n = LU->r;
 
-    parity = 0;
-    for (i = n - 1; i > 0; i--)
+    for (i = 0; i < n - 1; i++)
     {
-        j = n_randint(state, i+1);
-        parity ^= (i == j);
-        tmp = array[i];
-        array[i] = array[j];
-        array[j] = tmp;
+        for (j = i + 1; j < n; j++)
+        {
+            fmpz_mul(b + j, b + j, a[i] + i);
+            fmpz_submul(b + j, a[j] + i, b + i);
+            if (i > 0)
+                fmpz_divexact(b + j, b + j, a[i-1] + (i-1));
+        }
     }
-    return parity;
-}
 
-int
-fmpz_mat_randpermdiag(fmpz_mat_t mat, flint_rand_t state,
-                      const fmpz * diag, long n)
-{
-    int parity;
-    long i;
-    long * rows;
-    long * cols;
-
-    rows = malloc(sizeof(long) * mat->r);
-    cols = malloc(sizeof(long) * mat->c);
-
-    for (i = 0; i < mat->r; i++) rows[i] = i;
-    for (i = 0; i < mat->c; i++) cols[i] = i;
-
-    parity = shuffle(rows, state, mat->r);
-    parity ^= shuffle(cols, state, mat->c);
-
-    fmpz_mat_zero(mat);
-
-    for (i = 0; i < n; i++)
-        fmpz_set(&mat->rows[rows[i]][cols[i]], &diag[i]);
-
-    free(rows);
-    free(cols);
-
-    return parity;
+    for (i = n - 2; i >= 0; i--)
+    {
+        fmpz_mul(b + i, b + i, a[n-1] + (n-1));
+        for (j = i + 1; j < n; j++)
+            fmpz_submul(b + i, b + j, a[i] + j);
+        fmpz_divexact(b + i, b + i, a[i] + i);
+    }
 }

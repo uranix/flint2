@@ -19,63 +19,58 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2010 Fredrik Johansson
+    Copyright (C) 2010,2011 Fredrik Johansson
 
 ******************************************************************************/
 
+#include <stdlib.h>
 #include "flint.h"
 #include "fmpz.h"
-#include "fmpz_mat.h"
 #include "fmpz_vec.h"
-#include "ulong_extras.h"
+#include "fmpz_mat.h"
 
 
-/*
-  Standard Fisher-Yates shuffle to randomise an array; returns whether
-  the permutation is even (0) or odd (1)
-*/
-static int shuffle(long * array, flint_rand_t state, long n)
+void
+fmpz_mat_solve_fraction_free_LU(fmpz * x, fmpz_t den, const fmpz_mat_t A,
+    const fmpz * b)
 {
-    long i, j, tmp;
-    int parity;
+    long dim, rank, i;
+    fmpz_mat_t T;
+    fmpz * tmp;
+    long * perm;
 
-    parity = 0;
-    for (i = n - 1; i > 0; i--)
+    dim = A->r;
+
+    if (dim < 1)
     {
-        j = n_randint(state, i+1);
-        parity ^= (i == j);
-        tmp = array[i];
-        array[i] = array[j];
-        array[j] = tmp;
+        fmpz_set_ui(den, 1UL);
+        return;
     }
-    return parity;
-}
 
-int
-fmpz_mat_randpermdiag(fmpz_mat_t mat, flint_rand_t state,
-                      const fmpz * diag, long n)
-{
-    int parity;
-    long i;
-    long * rows;
-    long * cols;
+    /* Compute LU decomposition in a temporary matrix */
+    fmpz_mat_init_set(T, A);
+    perm = malloc(dim * sizeof(long));
 
-    rows = malloc(sizeof(long) * mat->r);
-    cols = malloc(sizeof(long) * mat->c);
+    rank = _fmpz_mat_rowreduce(perm, T, ROWREDUCE_FAST_ABORT);
 
-    for (i = 0; i < mat->r; i++) rows[i] = i;
-    for (i = 0; i < mat->c; i++) cols[i] = i;
+    if (FLINT_ABS(rank) == dim)
+    {
+        fmpz_set(den, T->rows[dim-1] + (dim-1));
+        tmp = _fmpz_vec_init(dim);
+        for (i = 0; i < dim; i++)
+            fmpz_set(tmp + i, b + perm[i]);
 
-    parity = shuffle(rows, state, mat->r);
-    parity ^= shuffle(cols, state, mat->c);
+        _fmpz_mat_solve_fraction_free_LU_precomp(tmp, T);
 
-    fmpz_mat_zero(mat);
+        for (i = 0; i < dim; i++)
+            fmpz_set(x + i, tmp + i);
+        _fmpz_vec_clear(tmp, dim);
+    }
+    else
+    {
+        fmpz_zero(den);
+    }
 
-    for (i = 0; i < n; i++)
-        fmpz_set(&mat->rows[rows[i]][cols[i]], &diag[i]);
-
-    free(rows);
-    free(cols);
-
-    return parity;
+    free(perm);
+    fmpz_mat_clear(T);
 }

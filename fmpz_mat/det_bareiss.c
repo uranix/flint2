@@ -19,63 +19,47 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2010 Fredrik Johansson
+    Copyright (C) 2010,2011 Fredrik Johansson
 
 ******************************************************************************/
 
+#include <stdlib.h>
 #include "flint.h"
 #include "fmpz.h"
-#include "fmpz_mat.h"
 #include "fmpz_vec.h"
-#include "ulong_extras.h"
+#include "fmpz_mat.h"
 
 
-/*
-  Standard Fisher-Yates shuffle to randomise an array; returns whether
-  the permutation is even (0) or odd (1)
-*/
-static int shuffle(long * array, flint_rand_t state, long n)
+void
+_fmpz_mat_det_bareiss(fmpz_t det, fmpz_mat_t tmp)
 {
-    long i, j, tmp;
-    int parity;
+    long rank;
 
-    parity = 0;
-    for (i = n - 1; i > 0; i--)
+    rank = _fmpz_mat_rowreduce(NULL, tmp, ROWREDUCE_FAST_ABORT);
+
+    if (FLINT_ABS(rank) == tmp->r)
     {
-        j = n_randint(state, i+1);
-        parity ^= (i == j);
-        tmp = array[i];
-        array[i] = array[j];
-        array[j] = tmp;
+        if (rank < 0)
+            fmpz_neg(det, tmp->rows[-rank-1] + (-rank-1));
+        else
+            fmpz_set(det, tmp->rows[rank-1] + (rank-1));
     }
-    return parity;
+    else
+        fmpz_zero(det);
 }
 
-int
-fmpz_mat_randpermdiag(fmpz_mat_t mat, flint_rand_t state,
-                      const fmpz * diag, long n)
+void
+fmpz_mat_det_bareiss(fmpz_t det, const fmpz_mat_t A)
 {
-    int parity;
-    long i;
-    long * rows;
-    long * cols;
+    fmpz_mat_t tmp;
 
-    rows = malloc(sizeof(long) * mat->r);
-    cols = malloc(sizeof(long) * mat->c);
+    if (A->r < 1)
+    {
+        fmpz_set_ui(det, 1UL);
+        return;
+    }
 
-    for (i = 0; i < mat->r; i++) rows[i] = i;
-    for (i = 0; i < mat->c; i++) cols[i] = i;
-
-    parity = shuffle(rows, state, mat->r);
-    parity ^= shuffle(cols, state, mat->c);
-
-    fmpz_mat_zero(mat);
-
-    for (i = 0; i < n; i++)
-        fmpz_set(&mat->rows[rows[i]][cols[i]], &diag[i]);
-
-    free(rows);
-    free(cols);
-
-    return parity;
+    fmpz_mat_init_set(tmp, A);
+    _fmpz_mat_det_bareiss(det, tmp);
+    fmpz_mat_clear(tmp);
 }

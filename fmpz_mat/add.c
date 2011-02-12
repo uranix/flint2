@@ -19,63 +19,20 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2010 Fredrik Johansson
+    Copyright (C) 2011 Fredrik Johansson
 
 ******************************************************************************/
 
+#include <stdlib.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_mat.h"
-#include "fmpz_vec.h"
-#include "ulong_extras.h"
 
-
-/*
-  Standard Fisher-Yates shuffle to randomise an array; returns whether
-  the permutation is even (0) or odd (1)
-*/
-static int shuffle(long * array, flint_rand_t state, long n)
+void
+fmpz_mat_add(fmpz_mat_t res, const fmpz_mat_t mat1, const fmpz_mat_t mat2)
 {
-    long i, j, tmp;
-    int parity;
-
-    parity = 0;
-    for (i = n - 1; i > 0; i--)
-    {
-        j = n_randint(state, i+1);
-        parity ^= (i == j);
-        tmp = array[i];
-        array[i] = array[j];
-        array[j] = tmp;
-    }
-    return parity;
-}
-
-int
-fmpz_mat_randpermdiag(fmpz_mat_t mat, flint_rand_t state,
-                      const fmpz * diag, long n)
-{
-    int parity;
     long i;
-    long * rows;
-    long * cols;
 
-    rows = malloc(sizeof(long) * mat->r);
-    cols = malloc(sizeof(long) * mat->c);
-
-    for (i = 0; i < mat->r; i++) rows[i] = i;
-    for (i = 0; i < mat->c; i++) cols[i] = i;
-
-    parity = shuffle(rows, state, mat->r);
-    parity ^= shuffle(cols, state, mat->c);
-
-    fmpz_mat_zero(mat);
-
-    for (i = 0; i < n; i++)
-        fmpz_set(&mat->rows[rows[i]][cols[i]], &diag[i]);
-
-    free(rows);
-    free(cols);
-
-    return parity;
+    for (i = 0; i < res->r; i++)
+        _fmpz_vec_add(res->rows[i], mat1->rows[i], mat2->rows[i], res->c);
 }

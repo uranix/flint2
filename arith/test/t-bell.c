@@ -25,82 +25,74 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <mpir.h>
 #include "flint.h"
-#include "fmpz.h"
+#include "arith.h"
 #include "fmpz_vec.h"
-#include "fmpz_mat.h"
 #include "ulong_extras.h"
+#include "profiler.h"
 
-
-int
-main(void)
+int main(void)
 {
-    fmpz_mat_t A;
-    flint_rand_t state;
-    long i, m;
+    fmpz * b1;
+    fmpz * b2;
+    long n, k;
 
-    fmpz_t det1, det2;
+    const long maxn = 400;
 
-    printf("det_multi_mod....");
+    printf("bell....");
     fflush(stdout);
 
-    flint_randinit(state);
+    b1 = _fmpz_vec_init(maxn);
 
-    for (i = 0; i < 10000; i++)
+    /* Consistency test */
+    for (n = 0; n < maxn; n++)
+        fmpz_bell(b1 + n, n);
+
+    for (n = 0; n < maxn; n++)
     {
-        int proved = n_randlimb(state) % 2;
-        m = n_randint(state, 10);
+        b2 = _fmpz_vec_init(n);
+        fmpz_bell_vec(b2, n);
 
-        fmpz_mat_init(A, m, m);
-
-        fmpz_init(det1);
-        fmpz_init(det2);
-
-        fmpz_mat_randtest(A, state, 1+n_randint(state,200));
-
-        fmpz_mat_det_bareiss(det1, A);
-        fmpz_mat_det_multi_mod(det2, A, proved);
-
-        if (!fmpz_equal(det1, det2))
+        if (!_fmpz_vec_equal(b1, b2, n))
         {
             printf("FAIL:\n");
-            printf("different determinants!\n");
-            fmpz_mat_print_pretty(A), printf("\n");
-            printf("det1: "), fmpz_print(det1), printf("\n");
-            printf("det2: "), fmpz_print(det2), printf("\n");
+            printf("n = %ld\n", n);
             abort();
         }
 
-        fmpz_clear(det1);
-        fmpz_clear(det2);
-        fmpz_mat_clear(A);
+        _fmpz_vec_clear(b2, n);
     }
 
-    for (i = 0; i < 10000; i++)
+    /* Compare with B_n = sum of Stirling numbers of 2nd kind */
+    for (n = 0; n < 2500; n += (n < 50) ? + 1 : n/4)
     {
-        m = 2 + n_randint(state, 10);
-        fmpz_mat_init(A, m, m);
-        fmpz_init(det2);
+        b2 = _fmpz_vec_init(n+1);
 
-        fmpz_mat_randrank(A, state, 1+n_randint(state, m - 1), 1+n_randint(state, 10));
-        fmpz_mat_randops(A, state, n_randint(state, 2*m*m + 1));
+        fmpz_stirling2_vec(b2, n, n+1);
 
-        fmpz_mat_det_multi_mod(det2, A, 0);
-        if (*det2)
+        for (k = 1; k <= n; k++)
+            fmpz_add(b2, b2, b2 + k);
+
+        fmpz_bell(b1, n);
+
+        if (!fmpz_equal(b1, b2))
         {
             printf("FAIL:\n");
-            printf("expected zero determinant!\n");
-            fmpz_mat_print_pretty(A), printf("\n");
+            printf("n = %ld\n", n);
+            fmpz_print(b1);
+            printf("\n");
+            fmpz_print(b2);
+            printf("\n");
             abort();
         }
 
-        fmpz_mat_clear(A);
-        fmpz_clear(det2);
+        _fmpz_vec_clear(b2, n+1);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
+    _fmpz_vec_clear(b1, maxn);
+
     printf("PASS\n");
     return 0;
 }

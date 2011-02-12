@@ -34,6 +34,7 @@ long
 fmpz_mat_rank(const fmpz_mat_t A)
 {
     long m, n, rank;
+    long * perm;
     fmpz_mat_t tmp;
 
     m = A->r;
@@ -43,7 +44,7 @@ fmpz_mat_rank(const fmpz_mat_t A)
         return 0;
 
     fmpz_mat_init_set(tmp, A);
-    rank = _fmpz_mat_rowreduce(tmp, 0);
+    rank = _fmpz_mat_rowreduce(NULL, tmp, 0);
     fmpz_mat_clear(tmp);
     return FLINT_ABS(rank);
 }
