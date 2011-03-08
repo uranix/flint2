@@ -23,43 +23,14 @@
 
 ******************************************************************************/
 
-#include <stdio.h>
-#include <mpir.h>
+#include <math.h>
 #include "flint.h"
-#include "fmpz.h"
-#include "fmpz_poly.h"
-#include "fmpq_poly.h"
-#include "arith.h"
 
-void fmpq_poly_bernoulli(fmpq_poly_t poly, long n)
+
+double bell_number_size(ulong n)
 {
-    fmpz_t t;
-    long k;
+    if (n == 0)
+        return 2;
 
-    if (n < 1)
-    {
-        fmpq_poly_set_ui(poly, 1UL);
-        return;
-    }
-
-    fmpq_poly_fit_length(poly, n + 1);
-    fmpz_bernoulli_vec(poly->den, poly->coeffs, n + 1);
-
-    /* Multiply the odd term by binomial(n,1) = n */
-    fmpz_mul_ui(poly->coeffs + 1, poly->coeffs + 1, n);
-
-    /* Multiply even terms by binomial coefficients */
-    fmpz_init(t);
-    fmpz_set_ui(t, 1UL);
-    for (k = 2; k <= n; k += 2)
-    {
-        fmpz_mul_ui(t, t, (n-k+1)*(n-k+2));
-        fmpz_divexact_ui(t, t, k*(k-1));
-        fmpz_mul(poly->coeffs + k, poly->coeffs + k, t);
-    }
-    fmpz_clear(t);
-
-    _fmpz_poly_reverse(poly->coeffs, poly->coeffs, n + 1, n + 1);
-    _fmpq_poly_set_length(poly, n + 1);
-    fmpq_poly_canonicalise(poly);
+    return n * log(0.792 * n/log(n+1)) * 1.44269504088896 + 2;
 }

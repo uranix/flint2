@@ -24,16 +24,42 @@
 ******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "arith.h"
+#include "fmpz.h"
+#include "ulong_extras.h"
 
-void fmpz_bernoulli_vec(fmpz_t den, fmpz * num, long n)
+int main()
 {
-    if (n < 2500)
-        _fmpz_bernoulli_vec_recursive(den, num, n);
-    else
-        _fmpz_bernoulli_vec_series(den, num, n);
+    fmpz_t s, t;
+    long n;
+
+    printf("bernoulli_number_denom....");
+    fflush(stdout);
+
+    fmpz_init(s);
+    fmpz_init(t);
+
+    for (n = 0; n < 1000; n++)
+    {
+        bernoulli_number_denom(t, n);
+        fmpz_addmul_ui(s, t, n_nth_prime(n+1));
+    }
+
+    fmpz_set_str(t, "34549631155954474103407159", 10);
+
+    if (!fmpz_equal(s, t))
+    {
+        printf("FAIL: Hash disagrees with known value\n");
+        abort();
+    }
+
+    fmpz_clear(s);
+    fmpz_clear(t);
+
+    _fmpz_cleanup();
+    printf("PASS\n");
+    return 0;
 }

@@ -27,60 +27,13 @@
 #include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
-#include "arith.h"
-#include "profiler.h"
+#include "ulong_extras.h"
 #include "fmpz.h"
-#include "fmpz_mat.h"
-#include "fmpq_poly.h"
 
-
-int main()
+/* TODO: speedup for small n,k */
+void fmpz_bin_uiui(fmpz_t res, ulong n, ulong k)
 {
-    fmpq_poly_t P, Q;
-    mpz_t t;
-
-    long k, n;
-
-    printf("bernoulli_poly....");
-    fflush(stdout);
-
-    for (n = 0; n <= 100; n++)
-    {
-        fmpq_poly_init(P);
-        fmpq_poly_init(Q);
-
-        mpz_init(t);
-
-        for (k = 0; k <= n; k++)
-        {
-            fmpq_poly_bernoulli(P, k);
-            mpz_bin_uiui(t, n+1, k);
-            fmpq_poly_scalar_mul_mpz(P, P, t);
-            fmpq_poly_add(Q, Q, P);
-        }
-
-        fmpq_poly_scalar_div_ui(Q, Q, n+1);
-        mpz_clear(t);
-
-        fmpq_poly_zero(P);
-        fmpq_poly_set_coeff_ui(P, n, 1UL);
-
-        if (!fmpq_poly_equal(P, Q))
-        {
-            printf("ERROR: sum up to n = %ld did not add to x^n\n", n);
-            printf("Sum: ");
-            fmpq_poly_print_pretty(Q, "x");
-            printf("\nExpected: ");
-            fmpq_poly_print_pretty(P, "x");
-            printf("\n");
-            abort();
-        }
-
-        fmpq_poly_clear(P);
-        fmpq_poly_clear(Q);
-    }
-
-    _fmpz_cleanup();
-    printf("PASS\n");
-    return 0;
+    __mpz_struct * t = _fmpz_promote(res);
+    mpz_bin_uiui(t, n, k);
+    _fmpz_demote_val(res);
 }

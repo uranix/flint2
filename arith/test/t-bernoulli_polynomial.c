@@ -37,60 +37,42 @@
 int main()
 {
     fmpq_poly_t P, Q;
+    mpz_t t;
 
-    long i, n;
+    long k, n;
 
-    printf("bernoulli_vec....");
+    printf("bernoulli_polynomial....");
     fflush(stdout);
 
-    for (n = 0; n <= 3200; n += (n<100) ? 1 : n/3)
+    for (n = 0; n <= 100; n++)
     {
-        fmpq_poly_init2(P, n);
-        fmpq_poly_init2(Q, n);
+        fmpq_poly_init(P);
+        fmpq_poly_init(Q);
 
-        _fmpz_bernoulli_vec_recursive(P->den, P->coeffs, n);
-        _fmpz_bernoulli_vec_series(Q->den, Q->coeffs, n);
-        _fmpq_poly_set_length(P, n);
-        _fmpq_poly_set_length(Q, n);
+        mpz_init(t);
 
-        if (!fmpq_poly_equal(P, Q))
+        for (k = 0; k <= n; k++)
         {
-            mpq_t x, y;
-            printf("ERROR: different results for %ld = \n", n);
-            mpq_init(x);
-            mpq_init(y);
-            for (i = 0; i < n; i++)
-            {
-                fmpq_poly_get_coeff_mpq(x, P, i);
-                fmpq_poly_get_coeff_mpq(y, Q, i);
-                if (!mpq_equal(x, y))
-                {
-                    gmp_printf("P: %d: %Qd\n", i, x);
-                    gmp_printf("Q: %d: %Qd\n", i, y);
-                }
-            }
-            mpq_clear(y);
-            mpq_clear(x);
-            abort();
+            bernoulli_polynomial(P, k);
+            mpz_bin_uiui(t, n+1, k);
+            fmpq_poly_scalar_mul_mpz(P, P, t);
+            fmpq_poly_add(Q, Q, P);
         }
 
-        fmpq_poly_clear(P);
-        fmpq_poly_clear(Q);
-    }
+        fmpq_poly_scalar_div_ui(Q, Q, n+1);
+        mpz_clear(t);
 
-    for (n = 0; n < 100; n++)
-    {
-        fmpq_poly_init2(P, n);
-        fmpq_poly_init2(Q, n);
-
-        _fmpz_bernoulli_vec_recursive(P->den, P->coeffs, n);
-        fmpz_bernoulli_vec(Q->den, Q->coeffs, n);
-        _fmpq_poly_set_length(P, n);
-        _fmpq_poly_set_length(Q, n);
+        fmpq_poly_zero(P);
+        fmpq_poly_set_coeff_ui(P, n, 1UL);
 
         if (!fmpq_poly_equal(P, Q))
         {
-            printf("ERROR: different results for %ld = \n", n);
+            printf("ERROR: sum up to n = %ld did not add to x^n\n", n);
+            printf("Sum: ");
+            fmpq_poly_print_pretty(Q, "x");
+            printf("\nExpected: ");
+            fmpq_poly_print_pretty(P, "x");
+            printf("\n");
             abort();
         }
 

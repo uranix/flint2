@@ -25,74 +25,60 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <mpir.h>
 #include "flint.h"
 #include "arith.h"
-#include "fmpz_vec.h"
-#include "ulong_extras.h"
 #include "profiler.h"
+#include "fmpz.h"
+#include "fmpz_mat.h"
+#include "fmpq_poly.h"
 
-int main(void)
+
+int main()
 {
-    fmpz * b1;
-    fmpz * b2;
-    long n, k;
+    fmpq_poly_t Pn, Pn1, Pn2, R;
 
-    const long maxn = 400;
+    long n;
 
-    printf("bell....");
+    printf("legendre_polynomial....");
     fflush(stdout);
 
-    b1 = _fmpz_vec_init(maxn);
+    fmpq_poly_init(Pn);
+    fmpq_poly_init(Pn1);
+    fmpq_poly_init(Pn2);
+    fmpq_poly_init(R);
 
-    /* Consistency test */
-    for (n = 0; n < maxn; n++)
-        fmpz_bell(b1 + n, n);
+    fmpq_poly_set_ui(Pn, 1UL);
+    fmpq_poly_set_coeff_ui(Pn1, 1, 1UL);
 
-    for (n = 0; n < maxn; n++)
+    for (n = 0; n <= 500; n++)
     {
-        b2 = _fmpz_vec_init(n);
-        fmpz_bell_vec(b2, n);
+        legendre_polynomial(R, n);
 
-        if (!_fmpz_vec_equal(b1, b2, n))
+        if (!fmpq_poly_equal(Pn, R))
         {
-            printf("FAIL:\n");
-            printf("n = %ld\n", n);
+            printf("FAIL: n = %ld\n", n);
+            printf("Direct: "); fmpq_poly_print_pretty(R, "x"); printf("\n");
+            printf("Recur.: "); fmpq_poly_print_pretty(Pn, "x"); printf("\n");
             abort();
         }
 
-        _fmpz_vec_clear(b2, n);
+        fmpq_poly_shift_left(Pn2, Pn1, 1);
+        fmpq_poly_scalar_mul_ui(Pn2, Pn2, 2*n + 3);
+        fmpq_poly_scalar_mul_si(Pn, Pn, -(n+1));
+        fmpq_poly_add(Pn2, Pn2, Pn);
+        fmpq_poly_scalar_div_ui(Pn2, Pn2, n+2);
+
+        fmpq_poly_swap(Pn, Pn1);
+        fmpq_poly_swap(Pn1, Pn2);
     }
 
-    /* Compare with B_n = sum of Stirling numbers of 2nd kind */
-    for (n = 0; n < 2500; n += (n < 50) ? + 1 : n/4)
-    {
-        b2 = _fmpz_vec_init(n+1);
+    fmpq_poly_clear(Pn);
+    fmpq_poly_clear(Pn1);
+    fmpq_poly_clear(Pn2);
+    fmpq_poly_clear(R);
 
-        fmpz_stirling2_vec(b2, n, n+1);
-
-        for (k = 1; k <= n; k++)
-            fmpz_add(b2, b2, b2 + k);
-
-        fmpz_bell(b1, n);
-
-        if (!fmpz_equal(b1, b2))
-        {
-            printf("FAIL:\n");
-            printf("n = %ld\n", n);
-            fmpz_print(b1);
-            printf("\n");
-            fmpz_print(b2);
-            printf("\n");
-            abort();
-        }
-
-        _fmpz_vec_clear(b2, n+1);
-    }
-
-    _fmpz_vec_clear(b1, maxn);
-
+    _fmpz_cleanup();
     printf("PASS\n");
     return 0;
 }

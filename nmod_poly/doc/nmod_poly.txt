@@ -890,44 +890,237 @@ void nmod_poly_gcd_euclidean(nmod_poly_t G,
 
 *******************************************************************************
 
-    Logarithm series
+    Square roots
 
-    Functions for evaluating the logarithm of a formal power series,
-    $$\log(f(x)) = \sum_{k=1}^{\infty} \frac{(-1)^{k+1}}{k} (f(x)-1)^k.$$
-    Results are undefined if some coefficients $1/k$ do not exist in the
-    given field; that is, if the computation is done to order $O(x^n)$, the
-    modulus $p$ must be a prime satisfying $p \ge n$.
+    The series expansions for $\sqrt{h}$ and $1/\sqrt{h}$ are defined
+    by means of the generalised binomial theorem
+    $$h^r = (1+y)^r =
+        \sum_{k=0}^{\infty} {r \choose k} y^k.$$
+    It is assumed that $h$ has constant term $1$ and that the coefficients
+    $2^{-k}$ exist in the coefficient ring (i.e. $2$ must be invertible).
+
 
 *******************************************************************************
 
-void _nmod_poly_log_series_monomial_ui(mp_ptr res,
-            mp_limb_t coeff, ulong power, long n, nmod_t mod)
+void _nmod_poly_invsqrt_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
 
-    Set the first \code{n} coefficients of \code{res} to the
-    series expansion of $\log(1+cx^r)$ with $c,r$ given by \code{coeff},
-    \code{power}. It is assumed that \code{n > 0}, \code{power > 0} and
-    that the coefficient is reduced modulo the modulus.
+    Set the first $n$ terms of $g$ to the series expansion of $1/\sqrt{h}$.
+    It is assumed that $n > 0$, that $h$ has constant term 1 and that $h$
+    is zero-padded as necessary to length $n$. Aliasing is not permitted.
 
-void nmod_poly_log_series_monomial_ui(nmod_poly_t res,
-            mp_limb_t coeff, ulong power, long n)
+void nmod_poly_invsqrt_series(nmod_poly_t g, const nmod_poly_t h, long n)
 
-    Set \code{res} to the series expansion of $\log(1+cx^r)$ to order $O(x^n)$
-    where $c,r$ are given by \code{coeff}, \code{power}.
+    Set $g$ to the series expansion of $1/\sqrt{h}$ to order $O(x^n)$.
+    It is assumed that $h$ has constant term 1.
 
-void _nmod_poly_log_series(mp_ptr res, mp_srcptr f, long n, nmod_t mod)
+void _nmod_poly_sqrt_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
 
-    Set the first \code{n} coefficients of \code{res} to the series
-    expansion of \code{log(f)}. It is assumed that \code{n > 0}, that
-    \code{f} has constant term 1 and that \code{f} is zero-padded as
-    necessary to length \code{n}.
+    Set the first $n$ terms of $g$ to the series expansion of $\sqrt{h}$.
+    It is assumed that $n > 0$, that $h$ has constant term 1 and that $h$
+    is zero-padded as necessary to length $n$. Aliasing is not permitted.
 
-    Uses the identity $\log(f(x)) = \int \frac{f'(x)}{f(x)} dx.$
-    Since differentiation and integration can be done in linear time, the
-    complexity is equivalent to that of division (multiplication).
+void nmod_poly_sqrt_series(nmod_poly_t g, const nmod_poly_t h, long n)
 
-void nmod_poly_log_series(nmod_poly_t res, const nmod_poly_t f, long n)
+    Set $g$ to the series expansion of $\sqrt{h}$ to order $O(x^n)$.
+    It is assumed that $h$ has constant term 1.
 
-    Set \code{res} to the series expansion of \code{log(f)}
-    to order $O(x^n)$. It is assumed that \code{f} has constant
-    term 1. The case $f = \log(1+cx^r)$ is automatically checked and handled
-    efficiently.
+*******************************************************************************
+
+    Transcendental functions
+
+    The elementary transcendental functions of a formal power series $h$
+    are defined as
+
+    $$\exp(h(x)) = \sum_{k=0}^{\infty} \frac{(h(x))^k}{k!}$$
+
+    $$\log(h(x)) = \int_0^x \frac{h'(t)}{h(t)} dt$$
+
+    $$\operatorname{atan}(h(x)) = \int_0^x\frac{h'(t)}{1+(h(t))^2} dt$$
+
+    $$\operatorname{atanh}(h(x)) = \int_0^x\frac{h'(t)}{1-(h(t))^2} dt$$
+
+    $$\operatorname{asin}(h(x)) = \int_0^x\frac{h'(t)}{\sqrt{1-(h(t))^2}} dt$$
+
+    $$\operatorname{asinh}(h(x)) = \int_0^x\frac{h'(t)}{\sqrt{1+(h(t))^2}} dt$$
+
+    The functions sin, cos, tan, etc. are defined using standard inverse
+    or functional relations.
+
+    The logarithm function assumes that $h$ has constant term $1$. All
+    other functions assume that $h$ has constant term $0$.
+
+    All functions assume that the coefficient $1/k$ or $1/k!$ exists
+    for all indices $k$. When computing to order $O(x^n)$, the modulus $p$
+    must therefore be a prime satisfying $p \ge n$. Further, we always
+    require that $p > 2$ in order to be able to multiply by $1/2$ for
+    internal purposes.
+
+    If the input does not satisfy all these conditions, results are undefined.
+
+    Except where otherwise noted, functions are implemented with optimal
+    (up to constants) complexity $O(M(n))$, where $M(n)$ is the cost
+    of polynomial multiplication.
+
+*******************************************************************************
+
+void _nmod_poly_log_series_monomial_ui(mp_ptr g,
+            mp_limb_t c, ulong r, long n, nmod_t mod)
+
+    Set $g = \log(1+cx^r) + O(x^n)$. Assumes $n > 0$, $r > 0$, and that
+    the coefficient is reduced by the modulus. Works efficiently in linear
+    time.
+
+void nmod_poly_log_series_monomial_ui(nmod_poly_t g,
+            mp_limb_t c, ulong r, long n)
+
+    Set $g = \log(1+cx^r) + O(x^n)$. Works efficiently in linear time.
+
+void _nmod_poly_log_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \log(h) + O(x^n)$. Assumes $n > 0$ and that $h$ is zero-padded
+    as necessary to length $n$. Aliasing of $g$ and $h$ is allowed.
+
+void nmod_poly_log_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \log(h) + O(x^n)$. The case $h = 1+cx^r$ is automatically
+    detected and handled efficiently.
+
+void _nmod_poly_exp_series_monomial_ui(mp_ptr g,
+            mp_limb_t c, ulong r, long n, nmod_t mod)
+
+    Set $g = \exp(cx^r) + O(x^n)$. Assumes $n > 0$, $r > 0$, and that
+    the coefficient is reduced by the modulus. Works efficiently
+    in linear time.
+
+void nmod_poly_exp_series_monomial_ui(nmod_poly_t g,
+            mp_limb_t c, ulong r, long n)
+
+    Set $g = \exp(cx^r) + O(x^n)$. Works efficiently in linear time.
+
+void _nmod_poly_exp_series_basecase(mp_ptr g, mp_srcptr h, long hlen,
+                                        long n, nmod_t mod)
+
+    Set $g = \exp(h) + O(x^n)$ using a simple $O(n^2)$ algorithm.
+    Assumes $n > 0$ and $\operatorname{hlen} > 0$. Only the first
+    $\operatorname{hlen}$ coefficients of $h$ will be read.
+    Aliasing of $f$ and $h$ is allowed.
+
+void nmod_poly_exp_series_basecase(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \exp(h) + O(x^n)$ using a simple $O(n^2)$ algorithm.
+
+void _nmod_poly_exp_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \exp(h) + O(x^n)$. Assumes $n > 0$ and that $h$ is zero-padded
+    as necessary to length $n$. Aliasing of $g$ and $h$ is not allowed.
+
+    Uses Newton iteration (the version given in \cite{HanZim2004}).
+    For small $n$, falls back to the basecase algorithm.
+
+void nmod_poly_exp_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \exp(h) + O(x^n)$. The case $h = cx^r$ is automatically
+    detected and handled efficiently. Otherwise this function automatically
+    uses the basecase algorithm for small $n$ and Newton iteration otherwise.
+
+void _nmod_poly_atan_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{atan}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed.
+
+void nmod_poly_atan_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{atan}(h) + O(x^n)$.
+
+void _nmod_poly_atanh_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{atanh}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed.
+
+void nmod_poly_atanh_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{atanh}(h) + O(x^n)$.
+
+void _nmod_poly_asin_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{asin}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed.
+
+void nmod_poly_asin_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{asin}(h) + O(x^n)$.
+
+void _nmod_poly_asinh_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{asinh}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed.
+
+void nmod_poly_asinh_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{asinh}(h) + O(x^n)$.
+
+void _nmod_poly_sin_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{sin}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed. The value is computed using the identity
+    $\sin(x) = 2 \tan(x/2)) / (1 + \tan^2(x/2)).$
+
+void nmod_poly_sin_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{sin}(h) + O(x^n)$.
+
+void _nmod_poly_cos_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{cos}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    allowed. The value is computed using the identity
+    $\cos(x) = (1-\tan^2(x/2)) / (1 + \tan^2(x/2)).$
+
+void nmod_poly_cos_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{cos}(h) + O(x^n)$.
+
+void _nmod_poly_tan_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{tan}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    not allowed. Uses Newton iteration to invert the atan function.
+
+void nmod_poly_tan_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{tan}(h) + O(x^n)$.
+
+void _nmod_poly_sinh_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{sinh}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    not allowed. Uses the identity $\sinh(x) = (e^x - e^{-x})/2$.
+
+void nmod_poly_sinh_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{sinh}(h) + O(x^n)$.
+
+void _nmod_poly_cosh_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{cos}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Aliasing of $g$ and $h$ is
+    not allowed. Uses the identity $\cosh(x) = (e^x + e^{-x})/2$.
+
+void nmod_poly_cosh_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{cosh}(h) + O(x^n)$.
+
+void _nmod_poly_tanh_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+
+    Set $g = \operatorname{tanh}(h) + O(x^n)$. Assumes $n > 0$ and that $h$
+    is zero-padded as necessary to length $n$. Uses the identity
+    $\tanh(x) = (e^{2x}-1)/(e^{2x}+1)$.
+
+void nmod_poly_tanh_series(nmod_poly_t g, const nmod_poly_t h, long n)
+
+    Set $g = \operatorname{tanh}(h) + O(x^n)$.

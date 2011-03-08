@@ -31,26 +31,9 @@
 #include "fmpz_vec.h"
 #include "arith.h"
 
-#if FLINT64
-#define MAX_BELL_TINY 25
-#else
-#define MAX_BELL_TINY 15
-#endif
 
-static const mp_limb_t bell_tiny[] = 
-{
-    1UL, 1UL, 2UL, 5UL, 15UL, 52UL, 203UL, 877UL, 4140UL, 21147UL, 115975UL,
-    678570UL, 4213597UL, 27644437UL, 190899322UL, 1382958545UL,
-#if FLINT64
-    10480142147UL, 82864869804UL, 682076806159UL, 5832742205057UL,
-    51724158235372UL, 474869816156751UL, 4506715738447323UL,
-    44152005855084346UL, 445958869294805289UL,
-    4638590332229999353UL,
-#endif
-};
-
-
-static long _bell_series_cutoff(long n)
+static long
+_bell_series_cutoff(long n)
 {
     double N, log_N, log_pow, log_fac;
 
@@ -68,7 +51,8 @@ static long _bell_series_cutoff(long n)
     return N;
 }
 
-void _mpz_bell_bsplit(mpz_t P, mpz_t Q, long a, long b, long n, long bmax)
+static void
+_mpz_bell_bsplit(mpz_t P, mpz_t Q, long a, long b, long n, long bmax)
 {
     if (b - a < 20)
     {
@@ -104,7 +88,8 @@ void _mpz_bell_bsplit(mpz_t P, mpz_t Q, long a, long b, long n, long bmax)
     }
 }
 
-void _fmpz_bell(fmpz_t b, long n)
+static void
+_bell_number(fmpz_t b, long n)
 {
     long N, prec;
     mpz_t P, Q;
@@ -142,40 +127,10 @@ void _fmpz_bell(fmpz_t b, long n)
     mpz_clear(Q);
 }
 
-void fmpz_bell(fmpz_t b, ulong n)
+void bell_number(fmpz_t b, ulong n)
 {
-    if (n <= MAX_BELL_TINY)
-        fmpz_set_ui(b, bell_tiny[n]);
+    if (n <= SMALL_BELL_LIMIT)
+        fmpz_set_ui(b, bell_number_small[n]);
     else
-        _fmpz_bell(b, n);
-}
-
-void fmpz_bell_vec(fmpz * b, long n)
-{
-    long i, k;
-    fmpz * t;
-
-    if (n <= MAX_BELL_TINY)
-    {
-        for (i = 0; i < n; i++)
-            fmpz_set_ui(b + i, bell_tiny[i]);
-        return;
-    }
-
-    n -= 1;
-    t = _fmpz_vec_init(n);
-
-    fmpz_set_ui(t, 1UL);
-    fmpz_set_ui(b, 1UL);
-    fmpz_set_ui(b + 1, 1UL);
-
-    for (i = 1; i < n; i++)
-    {
-        fmpz_set(t + i, t);
-        for (k = i; k > 0; k--)
-            fmpz_add(t + k - 1, t + k - 1, t + k);
-        fmpz_set(b + i + 1, t);
-    }
-
-    _fmpz_vec_clear(t, n);
+        _bell_number(b, n);
 }
