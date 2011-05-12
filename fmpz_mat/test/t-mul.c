@@ -59,8 +59,8 @@ int main(void)
         fmpz_mat_randtest(A, state, n_randint(state, 200) + 1);
         fmpz_mat_randtest(B, state, n_randint(state, 200) + 1);
 
-        fmpz_mat_mul_classical(C, A, B);
-        fmpz_mat_mul(D, A, B);
+        fmpz_mat_mul(C, A, B);
+        fmpz_mat_mul_classical_inline(D, A, B);
 
         if (!fmpz_mat_equal(C, D))
         {
@@ -69,6 +69,7 @@ int main(void)
         }
 
         fmpz_mat_mul(A, A, B);
+
         if (!fmpz_mat_equal(A, C))
         {
             printf("FAIL: aliasing failed\n");

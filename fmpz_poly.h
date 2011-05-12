@@ -22,6 +22,7 @@
     Copyright (C) 2006, 2007, 2008, 2009, 2010 William Hart
     Copyright (C) 2009 Andy Novocin
     Copyright (C) 2010 Sebastian Pancratz
+    Copyright (C) 2011 Fredrik Johansson
 
 ******************************************************************************/
 
@@ -32,6 +33,7 @@
 #include <mpir.h>
 #include "fmpz.h"
 #include "fmpz_vec.h"
+#include "nmod_poly.h"
 
 /*  Type definitions *********************************************************/
 
@@ -91,7 +93,7 @@ ulong fmpz_poly_max_limbs(const fmpz_poly_t poly)
 }
 
 static __inline__ 
-long _fmpz_poly_max_bits(const fmpz_poly_t poly)
+long fmpz_poly_max_bits(const fmpz_poly_t poly)
 {
     return _fmpz_vec_max_bits(poly->coeffs, poly->length);
 }
@@ -190,6 +192,18 @@ int fmpz_poly_equal(const fmpz_poly_t poly1, const fmpz_poly_t poly2);
 
 #define fmpz_poly_is_zero(poly) \
     ((poly)->length == 0)
+
+static __inline__
+int fmpz_poly_is_one(const fmpz_poly_t op)
+{
+    return (op->length) == 1 && (*(op->coeffs) == 1L);
+}
+
+static __inline__
+int fmpz_poly_is_unit(const fmpz_poly_t op)
+{
+    return (op->length == 1) && (*(op->coeffs) == 1L || *(op->coeffs) == -1L);
+}
 
 /*  Addition and subtraction  ************************************************/
 
@@ -665,5 +679,39 @@ int fmpz_poly_read_pretty(fmpz_poly_t poly, char **x)
     return fmpz_poly_fread_pretty(stdin, poly, x);
 }
 
-#endif
+static __inline__
+void fmpz_poly_debug(const fmpz_poly_t poly)
+{
+    printf("(alloc = %ld, length = %ld, vec = ", poly->alloc, poly->length);
+    if (poly->coeffs)
+    {
+        printf("{");
+        _fmpz_vec_print(poly->coeffs, poly->alloc);
+        printf("}");
+    }
+    else
+    {
+        printf("NULL");
+    }
+    printf(")");
+    fflush(stdout);
+}
 
+/*  CRT  ********************************************************************/
+
+void fmpz_poly_get_nmod_poly(nmod_poly_t res, const fmpz_poly_t poly);
+
+void fmpz_poly_set_nmod_poly(fmpz_poly_t res, const nmod_poly_t poly);
+
+void fmpz_poly_set_nmod_poly_unsigned(fmpz_poly_t res, const nmod_poly_t poly);
+
+void
+fmpz_poly_CRT_ui(fmpz_poly_t res, const fmpz_poly_t poly1,
+                        const fmpz_t m1, const nmod_poly_t poly2);
+
+void
+fmpz_poly_CRT_ui_unsigned(fmpz_poly_t res, const fmpz_poly_t poly1,
+                        const fmpz_t m1, const nmod_poly_t poly2);
+
+
+#endif

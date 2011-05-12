@@ -67,7 +67,7 @@ main(void)
         fmpz_mat_solve_mat(X, den, A, B);
 
         fmpz_mat_mul(AX, A, X);
-        _fmpz_vec_scalar_divexact_fmpz(AX->entries, AX->entries, m*n, den);
+        fmpz_mat_scalar_divexact_fmpz(AX, AX, den);
 
         if (!fmpz_mat_equal(AX, B))
         {

@@ -459,6 +459,12 @@ code, e.g.\
 \code{build/examples/multi_crt 100493287498239 13} will build up the given integer from 
 its value mod the given number of primes.
 
+\code{stirling_matrix}  Generates Stirling number matrices of the first
+and second kind and computes their product, which should come out as the
+identity matrix. The matrices are printed to standard output.
+For example \code{build/examples/stirling_matrix 10} does this
+with 10 by 10 matrices.
+
 \chapter{FLINT macros}
 
 The file \code{flint.h} contains various useful macros.
@@ -731,6 +737,49 @@ independently of the other coefficients.
 We now describe the functions available in \code{fmpz_poly}.
 
 \input{input/fmpz_poly.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Rational numbers                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{fmpq}
+\epigraph{Arbitrary-precision rational numbers}{}
+
+\section{Introduction}
+
+The \code{fmpq_t} data type represents rational numbers. An \code{fmpq_t}
+is an array of length 1 of type \code{fmpq}, with \code{fmpq} being
+implemented as a pair of \code{fmpz}'s representing numerator and
+denominator. This format allows efficient representation of rational
+numbers with small numerators or denominators.
+
+
+\input{input/fmpq.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Rational matrices                                                            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{fmpq\_mat}
+\epigraph{Matrices over $\Q$}{}
+
+\section{Introduction}
+
+The \code{fmpq_mat_t} data type represents matrices over $\Q$.
+
+A rational matrix is stored as an array of \code{fmpq} elements in order
+to allow convenient and efficient manipulation of individual entries.
+In general, \code{fmpq_mat} functions assume that input entries are
+in canonical form, and produce output with entries in canonical form.
+
+Since rational arithmetic is expensive, computations are typically performed
+by clearing denominators, performing the heavy work over the integers,
+and converting the final result back to a rational matrix. The
+\code{fmpq_mat} functions take care of such conversions transparently.
+For users who need fine-grained control, various
+functions for conversion between rational and integer matrices are provided.
+
+\input{input/fmpq_mat.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Rational polynomials                                                         %

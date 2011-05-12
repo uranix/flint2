@@ -46,6 +46,8 @@ nmod_mat_struct;
 /* fmpz_mat_t allows reference-like semantics for fmpz_mat_struct */
 typedef nmod_mat_struct nmod_mat_t[1];
 
+#define nmod_mat_entry(mat,i,j) ((mat)->rows[(i)][(j)])
+
 static __inline__
 void
 _nmod_mat_set_mod(nmod_mat_t mat, mp_limb_t n)
@@ -71,7 +73,7 @@ int nmod_mat_randpermdiag(nmod_mat_t mat, flint_rand_t state,
 void nmod_mat_randrank(nmod_mat_t, flint_rand_t state, long rank);
 void nmod_mat_randops(nmod_mat_t mat, long count, flint_rand_t state);
 
-void nmod_mat_print_pretty(nmod_mat_t mat);
+void nmod_mat_print_pretty(const nmod_mat_t mat);
 
 int nmod_mat_equal(const nmod_mat_t mat1, const nmod_mat_t mat2);
 

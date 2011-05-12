@@ -121,9 +121,35 @@ long fmpz_get_si(const fmpz_t f);
 
 ulong fmpz_get_ui(const fmpz_t f);
 
-void fmpz_set_si(fmpz_t f, long val);
+static __inline__ void
+fmpz_set_si(fmpz_t f, long val)
+{
+    if (val < COEFF_MIN || val > COEFF_MAX) /* val is large */
+    {
+        __mpz_struct *mpz_coeff = _fmpz_promote(f);
+        mpz_set_si(mpz_coeff, val);
+    }
+    else
+    {
+        _fmpz_demote(f);
+        *f = val;               /* val is small */
+    }
+}
 
-void fmpz_set_ui(fmpz_t f, ulong val);
+static __inline__ void
+fmpz_set_ui(fmpz_t f, ulong val)
+{
+    if (val > COEFF_MAX)        /* val is large */
+    {
+        __mpz_struct *mpz_coeff = _fmpz_promote(f);
+        mpz_set_ui(mpz_coeff, val);
+    }
+    else
+    {
+        _fmpz_demote(f);
+        *f = val;               /* val is small */
+    }
+}
 
 void fmpz_get_mpz(mpz_t x, const fmpz_t f);
 
@@ -185,13 +211,54 @@ int fmpz_cmp_ui(const fmpz_t f, ulong g);
 
 int fmpz_cmpabs(const fmpz_t f, const fmpz_t g);
 
+static __inline__
+int fmpz_is_even(const fmpz_t f)
+{
+    if (!COEFF_IS_MPZ(*f))
+    {
+        return !((*f) & 1L);
+    }
+    else
+    {
+        return mpz_even_p(COEFF_TO_PTR(*f));
+    }
+}
+
+static __inline__
+int fmpz_is_odd(const fmpz_t f)
+{
+    if (!COEFF_IS_MPZ(*f))
+    {
+        return ((*f) & 1L);
+    }
+    else
+    {
+        return mpz_odd_p(COEFF_TO_PTR(*f));
+    }
+}
+
 mp_size_t fmpz_size(const fmpz_t f);
 
 int fmpz_sgn(const fmpz_t f);
 
 mp_bitcnt_t fmpz_bits(const fmpz_t f);
 
-void fmpz_neg(fmpz_t f1, const fmpz_t f2);
+static __inline__ void
+fmpz_neg(fmpz_t f1, const fmpz_t f2)
+{
+    if (!COEFF_IS_MPZ(*f2))     /* coeff is small */
+    {
+        fmpz t = -*f2;          /* Need to save value in case of aliasing */
+        _fmpz_demote(f1);
+        *f1 = t;
+    }
+    else                        /* coeff is large */
+    {
+        /* No need to retain value in promotion, as if aliased, both already large */
+        __mpz_struct *mpz_ptr = _fmpz_promote(f1);
+        mpz_neg(mpz_ptr, COEFF_TO_PTR(*f2));
+    }
+}
 
 void fmpz_abs(fmpz_t f1, const fmpz_t f2);
 
@@ -221,6 +288,12 @@ void fmpz_submul(fmpz_t f, const fmpz_t g, const fmpz_t h);
 
 void fmpz_pow_ui(fmpz_t f, const fmpz_t g, ulong exp);
 
+void fmpz_powm_ui(fmpz_t f, const fmpz_t g, ulong exp, const fmpz_t m);
+
+void fmpz_powm(fmpz_t f, const fmpz_t g, const fmpz_t e, const fmpz_t m);
+
+int fmpz_sqrtmod(fmpz_t b, const fmpz_t a, const fmpz_t p);
+
 void fmpz_sqrt(fmpz_t f, const fmpz_t g);
 
 void fmpz_sqrtrem(fmpz_t f, fmpz_t r, const fmpz_t g);
@@ -234,6 +307,8 @@ void fmpz_mod(fmpz_t f, const fmpz_t g, const fmpz_t h);
 void fmpz_gcd(fmpz_t f, const fmpz_t g, const fmpz_t h);
 
 int fmpz_invmod(fmpz_t f, const fmpz_t g, const fmpz_t h);
+
+long fmpz_remove(fmpz_t rop, const fmpz_t op, const fmpz_t f);
 
 void fmpz_divexact(fmpz_t f, const fmpz_t g, const fmpz_t h);
 
@@ -354,12 +429,15 @@ void fmpz_fac_ui(fmpz_t f, ulong n);
 
 void fmpz_bin_uiui(fmpz_t res, ulong n, ulong k);
 
-void _fmpz_CRT_ui_precomp(fmpz_t out, fmpz_t r1, fmpz_t m1, ulong r2,
-    ulong m2, mp_limb_t m2inv, fmpz_t m1m2, mp_limb_t c, int sign);
+void _fmpz_CRT_ui_precomp(fmpz_t out, const fmpz_t r1, const fmpz_t m1,
+    ulong r2, ulong m2, mp_limb_t m2inv, const fmpz_t m1m2, mp_limb_t c,
+        int sign);
 
-void fmpz_CRT_ui(fmpz_t out, fmpz_t r1, fmpz_t m1, ulong r2, ulong m2);
+void fmpz_CRT_ui(fmpz_t out, const fmpz_t r1, const fmpz_t m1,
+    ulong r2, ulong m2);
 
-void fmpz_CRT_ui_unsigned(fmpz_t out, fmpz_t r1, fmpz_t m1, ulong r2, ulong m2);
+void fmpz_CRT_ui_unsigned(fmpz_t out, const fmpz_t r1, const fmpz_t m1,
+    ulong r2, ulong m2);
 
 
 #define FLINT_FMPZ_LOG_MULTI_MOD_CUTOFF 2
@@ -401,6 +479,15 @@ void fmpz_multi_CRT_ui_unsigned(fmpz_t output, const mp_limb_t * residues,
 
 void fmpz_multi_CRT_ui(fmpz_t output, const mp_limb_t * residues,
     const fmpz_comb_t comb, fmpz_comb_temp_t temp);
+
+static __inline__ void
+fmpz_set_ui_mod(fmpz_t f, mp_limb_t x, mp_limb_t m)
+{
+    if (x < m / 2)
+        fmpz_set_ui(f, x);
+    else
+        fmpz_set_si(f, x - m);
+}
 
 #endif
 

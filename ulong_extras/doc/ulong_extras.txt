@@ -413,6 +413,13 @@ mp_limb_t n_powmod2(mp_limb_t a, mp_limb_signed_t exp, mp_limb_t n)
     This is implemented by precomputing an inverse limb and calling the 
     \code{preinv} version of this function.
 
+mp_limb_t n_sqrtmod(mp_limb_t a, mp_limb_t p)
+
+    Computes a square root of $a$ modulo $p$.
+
+    Assumes that $p$ is a prime and that $a$ is reduced modulo $p$.
+    Returns 0 if $a$ is a quadratic non-residue modulo $p$.
+
 *******************************************************************************
 
     Prime number generation and counting
@@ -859,9 +866,9 @@ mp_limb_t n_factor_one_line(mp_limb_t n, ulong iters)
 
 mp_limb_t n_factor_lehman(mp_limb_t n)
 
-   Lehman's factoring algorithm. Currently works up to $10^{16}$, but is
-   not particularly efficient and so is not used in the general factor
-   function. Always returns a factor of $n$.
+    Lehman's factoring algorithm. Currently works up to $10^{16}$, but is
+    not particularly efficient and so is not used in the general factor
+    function. Always returns a factor of $n$.
 
 mp_limb_t n_factor_SQUFOF(mp_limb_t n, ulong iters)
 
