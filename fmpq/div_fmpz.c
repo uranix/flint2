@@ -19,7 +19,6 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2011 Fredrik Johansson
     Copyright (C) 2011 Sebastian Pancratz
 
 ******************************************************************************/
@@ -30,39 +29,22 @@
 #include "fmpq.h"
 #include "ulong_extras.h"
 
-void
-_fmpq_div(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num, const fmpz_t op1den,
-                                    const fmpz_t op2num, const fmpz_t op2den)
+void fmpq_div_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x)
 {
-    fmpz_t t, u;
+    fmpz_t y;
 
-    fmpz_init(t);
-    fmpz_init(u);
-    fmpz_set(t, op2den);
-    fmpz_set(u, op2num);
+    fmpz_init(y);
+    fmpz_set_ui(y, 1);
 
-    _fmpq_mul(rnum, rden, op1num, op1den, t, u);
+    _fmpq_mul(fmpq_numref(res), fmpq_denref(res),
+              fmpq_numref(op), fmpq_denref(op), y, x);
 
-    fmpz_clear(t);
-    fmpz_clear(u);
+    fmpz_clear(y);
 
-    if (fmpz_sgn(rden) < 0)
+    if (fmpz_sgn(fmpq_denref(res)) < 0)
     {
-        fmpz_neg(rnum, rnum);
-        fmpz_neg(rden, rden);
+        fmpz_neg(fmpq_numref(res), fmpq_numref(res));
+        fmpz_neg(fmpq_denref(res), fmpq_denref(res));
     }
-}
-
-void fmpq_div(fmpq_t res, const fmpq_t op1, const fmpq_t op2)
-{
-    if (fmpq_is_zero(op2))
-    {
-        printf("Exception: fmpq_div: division by zero");
-        abort();
-    }
-
-    _fmpq_div(fmpq_numref(res), fmpq_denref(res),
-              fmpq_numref(op1), fmpq_denref(op1),
-              fmpq_numref(op2), fmpq_denref(op2));
 }
 

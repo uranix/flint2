@@ -27,66 +27,92 @@
 #include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
-#include "ulong_extras.h"
-#include "long_extras.h"
-#include "padic.h"
+#include "fmpq.h"
+#include "fmpq_mat.h"
 
 int
 main(void)
 {
     int i, result;
     flint_rand_t state;
-
-    printf("get_set_mpq... ");
-    fflush(stdout);
-
     flint_randinit(state);
 
-    /* Check that Zp(QQ(x)) == x. */
-    for (i = 0; i < 10000; i++)
+    printf("neg....");
+    fflush(stdout);
+
+    /* Aliasing */
+    for (i = 0; i < 1000; i++)
     {
-        fmpz_t p;
-        long N;
-        padic_ctx_t ctx;
+        fmpq_mat_t A, B;
 
-        padic_t a, b;
-        mpq_t c;
+        long m, n, bits;
 
-        fmpz_init(p);
-        fmpz_set_ui(p, n_randprime(state, 5, 1));
-        N = z_randint(state, 50) + 1;
-        padic_ctx_init(ctx, p, N, PADIC_SERIES);
+        m = n_randint(state, 10);
+        n = n_randint(state, 10);
 
-        padic_init(a, ctx);
-        padic_init(b, ctx);
-        mpq_init(c);
+        bits = 1 + n_randint(state, 100);
 
-        padic_randtest(a, state, ctx);
+        fmpq_mat_init(A, m, n);
+        fmpq_mat_init(B, m, n);
 
-        padic_get_mpq(c, a, ctx);
-        padic_set_mpq(b, c, ctx);
+        fmpq_mat_randtest(B, state, bits);
 
-        result = (padic_equal(a, b, ctx));
+        fmpq_mat_neg(A, B);
+        fmpq_mat_neg(B, B);
+
+        result = fmpq_mat_equal(A, B);
         if (!result)
         {
-            printf("FAIL:\n\n");
-            printf("a = "), padic_print(a, ctx), printf("\n");
-            printf("c = "), padic_print(b, ctx), printf("\n");
-            gmp_printf("b = %Qd\n", b);
+            printf("FAIL:\n");
+            printf("A:\n");
+            fmpq_mat_print(A);
+            printf("B:\n");
+            fmpq_mat_print(B);
             abort();
         }
 
-        padic_clear(a, ctx);
-        padic_clear(b, ctx);
-        mpq_clear(c);
+        fmpq_mat_clear(A);
+        fmpq_mat_clear(B);
+    }
 
-        fmpz_clear(p);
-        padic_ctx_clear(ctx);
+    /* --A == A */
+    for (i = 0; i < 1000; i++)
+    {
+        fmpq_mat_t A, B;
+
+        long m, n, bits;
+
+        m = n_randint(state, 10);
+        n = n_randint(state, 10);
+
+        bits = 1 + n_randint(state, 100);
+
+        fmpq_mat_init(A, m, n);
+        fmpq_mat_init(B, m, n);
+
+        fmpq_mat_randtest(B, state, bits);
+
+        fmpq_mat_neg(A, B);
+        fmpq_mat_neg(A, A);
+
+        result = fmpq_mat_equal(A, B);
+        if (!result)
+        {
+            printf("FAIL:\n");
+            printf("A:\n");
+            fmpq_mat_print(A);
+            printf("B:\n");
+            fmpq_mat_print(B);
+            abort();
+        }
+
+        fmpq_mat_clear(A);
+        fmpq_mat_clear(B);
     }
 
     flint_randclear(state);
+
     _fmpz_cleanup();
     printf("PASS\n");
     return EXIT_SUCCESS;
 }
-

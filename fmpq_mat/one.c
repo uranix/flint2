@@ -19,7 +19,6 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2011 Fredrik Johansson
     Copyright (C) 2011 Sebastian Pancratz
 
 ******************************************************************************/
@@ -28,41 +27,19 @@
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq.h"
-#include "ulong_extras.h"
+#include "fmpq_mat.h"
 
-void
-_fmpq_div(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num, const fmpz_t op1den,
-                                    const fmpz_t op2num, const fmpz_t op2den)
+void fmpq_mat_one(fmpq_mat_t mat)
 {
-    fmpz_t t, u;
+    long i, j, min;
 
-    fmpz_init(t);
-    fmpz_init(u);
-    fmpz_set(t, op2den);
-    fmpz_set(u, op2num);
+    for (i = 0; i < mat->r; i++)
+        for (j = 0; j < mat->c; j++)
+            fmpq_zero(fmpq_mat_entry(mat, i, j));
 
-    _fmpq_mul(rnum, rden, op1num, op1den, t, u);
+    min = FLINT_MIN(mat->r, mat->c);
 
-    fmpz_clear(t);
-    fmpz_clear(u);
-
-    if (fmpz_sgn(rden) < 0)
-    {
-        fmpz_neg(rnum, rnum);
-        fmpz_neg(rden, rden);
-    }
-}
-
-void fmpq_div(fmpq_t res, const fmpq_t op1, const fmpq_t op2)
-{
-    if (fmpq_is_zero(op2))
-    {
-        printf("Exception: fmpq_div: division by zero");
-        abort();
-    }
-
-    _fmpq_div(fmpq_numref(res), fmpq_denref(res),
-              fmpq_numref(op1), fmpq_denref(op1),
-              fmpq_numref(op2), fmpq_denref(op2));
+    for (i = 0; i < min; i++)
+        fmpq_one(fmpq_mat_entry(mat, i, i));
 }
 

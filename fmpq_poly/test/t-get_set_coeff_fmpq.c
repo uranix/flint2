@@ -17,9 +17,11 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 =============================================================================*/
+
 /******************************************************************************
 
-    Copyright (C) 2011 Sebastian Pancratz
+    Copyright (C) 2010, 2011 Sebastian Pancratz
+    Copyright (C) 2009 William Hart
 
 ******************************************************************************/
 
@@ -27,61 +29,59 @@
 #include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
+#include "fmpz.h"
+#include "fmpq.h"
+#include "fmpq_poly.h"
 #include "ulong_extras.h"
-#include "long_extras.h"
-#include "padic.h"
 
 int
 main(void)
 {
-    int i, result;
+    int i, j, result;
     flint_rand_t state;
+    ulong cflags = 0UL;
 
-    printf("get_set_mpq... ");
+    printf("get/set_coeff_fmpq....");
     fflush(stdout);
 
     flint_randinit(state);
 
-    /* Check that Zp(QQ(x)) == x. */
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 100; i++)
     {
-        fmpz_t p;
-        long N;
-        padic_ctx_t ctx;
+        fmpq_poly_t a;
+        fmpq_t x, y;
+        long coeff, len;
 
-        padic_t a, b;
-        mpq_t c;
+        fmpq_poly_init(a);
+        fmpq_init(x);
+        fmpq_init(y);
+        len = (long) (n_randint(state, 100) + 1);
 
-        fmpz_init(p);
-        fmpz_set_ui(p, n_randprime(state, 5, 1));
-        N = z_randint(state, 50) + 1;
-        padic_ctx_init(ctx, p, N, PADIC_SERIES);
-
-        padic_init(a, ctx);
-        padic_init(b, ctx);
-        mpq_init(c);
-
-        padic_randtest(a, state, ctx);
-
-        padic_get_mpq(c, a, ctx);
-        padic_set_mpq(b, c, ctx);
-
-        result = (padic_equal(a, b, ctx));
-        if (!result)
+        for (j = 0; j < 100; j++)
         {
-            printf("FAIL:\n\n");
-            printf("a = "), padic_print(a, ctx), printf("\n");
-            printf("c = "), padic_print(b, ctx), printf("\n");
-            gmp_printf("b = %Qd\n", b);
-            abort();
+            fmpq_randtest(x, state, 200);
+            coeff = (long) n_randint(state, len);
+            fmpq_poly_set_coeff_fmpq(a, coeff, x);
+            fmpq_poly_get_coeff_fmpq(y, a, coeff);
+
+            cflags |= fmpq_poly_is_canonical(a) ? 0 : 1;
+            result = (fmpq_equal(x, y) && !cflags);
+            if (!result)
+            {
+                printf("FAIL:\n\n");
+                printf("a     = "), fmpq_poly_debug(a), printf("\n\n");
+                printf("coeff = %ld\n\n", coeff);
+                printf("len   = %ld\n\n", len);
+                printf("cflags = %lu\n\n", cflags);
+                printf("x = "), fmpq_print(x), printf("\n");
+                printf("y = "), fmpq_print(y), printf("\n");
+                abort();
+            }
         }
 
-        padic_clear(a, ctx);
-        padic_clear(b, ctx);
-        mpq_clear(c);
-
-        fmpz_clear(p);
-        padic_ctx_clear(ctx);
+        fmpq_clear(x);
+        fmpq_clear(y);
+        fmpq_poly_clear(a);
     }
 
     flint_randclear(state);
@@ -89,4 +89,3 @@ main(void)
     printf("PASS\n");
     return EXIT_SUCCESS;
 }
-

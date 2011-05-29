@@ -1009,6 +1009,29 @@ void fmpz_poly_xgcd(fmpz_t r, fmpz_poly_t s, fmpz_poly_t t,
     function then returns immediately, otherwise $s$ and $t$ are found such
     that \code{s*f + t*g = r}.
 
+void _fmpz_poly_lcm(fmpz * res, const fmpz * poly1, long len1, 
+                                const fmpz * poly2, long len2)
+
+    Computes the least common multiple \code{res} of \code{(poly1, len1)} 
+    and \code{(poly2, len2)}, assuming \code{len1 >= len2 > 0}.  The 
+    result is normalised to have positive leading coefficient.
+
+    Assumes that \code{res} has space for \code{len1 + len2 - 1} 
+    coefficients.  Aliasing between \code{res}, \code{poly1} and 
+    \code{poly2} is not supported.
+
+void fmpz_poly_lcm(fmpz_poly_t res, const fmpz_poly_t poly1, 
+                                    const fmpz_poly_t poly2)
+
+    Computes the least common multiple \code{res} of \code{poly1} and 
+    \code{poly2}, normalised to have non-negative leading coefficient.
+
+    If either \code{poly1} or \code{poly2} are zero, the result is 
+    the zero polynomial.
+
+    This ensures that the equality $\gcd(a, b) \lcm(a, b) = \pm a b$ 
+    holds.
+
 void _fmpz_poly_resultant(fmpz_t res, const fmpz * poly1, long len1, 
                                       const fmpz * poly2, long len2)
 

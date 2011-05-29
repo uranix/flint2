@@ -61,15 +61,31 @@ static __inline__ void fmpq_zero(fmpq_t res)
     fmpz_set_ui(fmpq_denref(res), 1UL);
 }
 
+static __inline__ void fmpq_one(fmpq_t res)
+{
+    fmpz_set_ui(fmpq_numref(res), 1);
+    fmpz_set_ui(fmpq_denref(res), 1);
+}
+
 static __inline__ int fmpq_equal(const fmpq_t x, const fmpq_t y)
 {
     return fmpz_equal(fmpq_numref(x), fmpq_numref(y)) &&
            fmpz_equal(fmpq_denref(x), fmpq_denref(y));
 }
 
+static __inline__ int fmpq_sgn(const fmpq_t x)
+{
+    return fmpz_sgn(fmpq_numref(x));
+}
+
 static __inline__ int fmpq_is_zero(const fmpq_t x)
 {
     return fmpz_is_zero(fmpq_numref(x));
+}
+
+static __inline__ int fmpq_is_one(const fmpq_t x)
+{
+    return fmpz_is_one(fmpq_numref(x)) && fmpz_is_one(fmpq_denref(x));
 }
 
 static __inline__ void fmpq_set(fmpq_t dest, const fmpq_t src)
@@ -142,6 +158,9 @@ void _fmpq_mul(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num,
 void fmpq_mul(fmpq_t res, const fmpq_t op1, const fmpq_t op2);
 
 
+void fmpq_mul_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x);
+
+
 void _fmpq_addmul(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num,
     const fmpz_t op1den, const fmpz_t op2num, const fmpz_t op2den);
 
@@ -157,6 +176,8 @@ void fmpq_submul(fmpq_t res, const fmpq_t op1, const fmpq_t op2);
 void fmpq_inv(fmpq_t dest, const fmpq_t src);
 
 void fmpq_div(fmpq_t res, const fmpq_t op1, const fmpq_t op2);
+
+void fmpq_div_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x);
 
 
 int _fmpq_mod_fmpz(fmpz_t res, const fmpz_t num, const fmpz_t den, const fmpz_t mod);

@@ -27,64 +27,76 @@
 #include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
-#include "ulong_extras.h"
-#include "long_extras.h"
-#include "padic.h"
+#include "fmpz.h"
+#include "fmpq.h"
 
 int
 main(void)
 {
     int i, result;
     flint_rand_t state;
-
-    printf("get_set_mpq... ");
-    fflush(stdout);
-
     flint_randinit(state);
 
-    /* Check that Zp(QQ(x)) == x. */
+    printf("one....");
+    fflush(stdout);
+
+    /* x == 1 * x */
     for (i = 0; i < 10000; i++)
     {
-        fmpz_t p;
-        long N;
-        padic_ctx_t ctx;
+        fmpq_t x, y, z;
 
-        padic_t a, b;
-        mpq_t c;
+        fmpq_init(x);
+        fmpq_init(y);
+        fmpq_init(z);
 
-        fmpz_init(p);
-        fmpz_set_ui(p, n_randprime(state, 5, 1));
-        N = z_randint(state, 50) + 1;
-        padic_ctx_init(ctx, p, N, PADIC_SERIES);
+        fmpq_randtest(x, state, 200);
+        fmpq_one(y);
 
-        padic_init(a, ctx);
-        padic_init(b, ctx);
-        mpq_init(c);
+        fmpq_mul(z, y, x);
 
-        padic_randtest(a, state, ctx);
-
-        padic_get_mpq(c, a, ctx);
-        padic_set_mpq(b, c, ctx);
-
-        result = (padic_equal(a, b, ctx));
+        result = fmpq_is_canonical(z) && fmpq_equal(x, z);
         if (!result)
         {
-            printf("FAIL:\n\n");
-            printf("a = "), padic_print(a, ctx), printf("\n");
-            printf("c = "), padic_print(b, ctx), printf("\n");
-            gmp_printf("b = %Qd\n", b);
+            printf("FAIL:\n");
+            printf("x = "), fmpq_print(x), printf("\n");
+            printf("y = "), fmpq_print(y), printf("\n");
+            printf("z = "), fmpq_print(z), printf("\n");
             abort();
         }
 
-        padic_clear(a, ctx);
-        padic_clear(b, ctx);
-        mpq_clear(c);
+        fmpq_clear(x);
+        fmpq_clear(y);
+        fmpq_clear(z);
+    }
 
-        fmpz_clear(p);
-        padic_ctx_clear(ctx);
+    /* x/x == 1 */
+    for (i = 0; i < 10000; i++)
+    {
+        fmpq_t x, y;
+
+        fmpq_init(x);
+        fmpq_init(y);
+
+        while (fmpq_is_zero(x))
+            fmpq_randtest(x, state, 200);
+
+        fmpq_div(y, x, x);
+
+        result = fmpq_is_canonical(y) && fmpq_is_one(y);
+        if (!result)
+        {
+            printf("FAIL:\n");
+            printf("x = "), fmpq_print(x), printf("\n");
+            printf("y = "), fmpq_print(y), printf("\n");
+            abort();
+        }
+
+        fmpq_clear(x);
+        fmpq_clear(y);
     }
 
     flint_randclear(state);
+
     _fmpz_cleanup();
     printf("PASS\n");
     return EXIT_SUCCESS;

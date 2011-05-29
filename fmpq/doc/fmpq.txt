@@ -87,6 +87,10 @@ void fmpq_zero(fmpq_t res)
 
     Sets the value of \code{res} to 0.
 
+void fmpq_one(fmpq_t res)
+
+    Sets the value of \code{res} to $1$.
+
 *******************************************************************************
 
     Comparison
@@ -97,10 +101,18 @@ int fmpq_is_zero(fmpq_t res)
 
     Returns nonzero if \code{res} has value 0, and returns zero otherwise.
 
+int fmpq_is_one(fmpq_t res)
+
+    Returns nonzero if \code{res} has value $1$, and returns zero otherwise.
+
 int fmpq_equal(const fmpq_t x, const fmpq_t y)
 
     Returns nonzero if \code{x} and \code{y} are equal, and zero otherwise.
     Assumes that \code{x} and \code{y} are both in canonical form.
+
+int fmpq_sgn(const fmpq_t x)
+
+    Returns the sign of the rational number $x$.
 
 void fmpq_height(fmpz_t height, const fmpq_t x)
 
@@ -252,6 +264,16 @@ void fmpq_inv(fmpq_t dest, const fmpq_t src)
     Sets \code{dest} to \code{1 / src}. The result is placed in canonical
     form, assuming that \code{src} is already in canonical form.
 
+
+void fmpq_mul_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x)
+
+    Sets \code{res} to the product of the rational number \code{op} 
+    and the integer \code{x}.
+
+void fmpq_div_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x)
+
+    Sets \code{res} to the quotient of the rational number \code{op} 
+    and the integer \code{x}.
 
 *******************************************************************************
 

@@ -27,68 +27,82 @@
 #include <stdlib.h>
 #include <mpir.h>
 #include "flint.h"
-#include "ulong_extras.h"
-#include "padic.h"
+#include "fmpz.h"
+#include "fmpq.h"
 
 int
 main(void)
 {
     int i, result;
     flint_rand_t state;
-
-    printf("get_set_mpz... ");
-    fflush(stdout);
-
     flint_randinit(state);
 
-    /* Check that Zp(QQ(x)) == x. */
+    printf("mul_fmpz....");
+    fflush(stdout);
+
+    /* Aliasing x = x*z */
     for (i = 0; i < 10000; i++)
     {
-        fmpz_t p;
-        long N;
-        padic_ctx_t ctx;
+        fmpq_t x, y;
+        fmpz_t z;
 
-        padic_t a, b;
-        mpz_t c;
+        fmpq_init(x);
+        fmpq_init(y);
+        fmpz_init(z);
 
-        fmpz_init(p);
-        fmpz_set_ui(p, n_randprime(state, 5, 1));
-        N = n_randint(state, 50) + 1;
-        padic_ctx_init(ctx, p, N, PADIC_SERIES);
+        fmpq_randtest(x, state, 200);
+        fmpz_randtest(z, state, 200);
 
-        padic_init(a, ctx);
-        padic_init(b, ctx);
-        mpz_init(c);
+        fmpq_mul_fmpz(y, x, z);
+        fmpq_mul_fmpz(x, x, z);
 
-        padic_randtest(a, state, ctx);
-        if (padic_val(a) < 0)
-        {
-            padic_val(a) = - padic_val(a);
-            padic_normalise(a, ctx);
-        }
-
-        padic_get_mpz(c, a, ctx);
-        padic_set_mpz(b, c, ctx);
-
-        result = (padic_equal(a, b, ctx));
+        result = (fmpq_is_canonical(x) && fmpq_is_canonical(y) && fmpq_equal(x, y));
         if (!result)
         {
-            printf("FAIL:\n\n");
-            printf("a = "), padic_print(a, ctx), printf("\n");
-            printf("b = "), padic_print(b, ctx), printf("\n");
-            gmp_printf("c = %Zd\n", c);
+            printf("FAIL (alias):\n");
+            printf("x = "), fmpq_print(x), printf("\n");
+            printf("y = "), fmpq_print(y), printf("\n");
+            printf("z = "), fmpz_print(z), printf("\n");
             abort();
         }
 
-        padic_clear(a, ctx);
-        padic_clear(b, ctx);
-        mpz_clear(c);
+        fmpq_clear(x);
+        fmpq_clear(y);
+        fmpz_clear(z);
+    }
 
-        fmpz_clear(p);
-        padic_ctx_clear(ctx);
+    /* Compare with fmpq_mul */
+    for (i = 0; i < 10000; i++)
+    {
+        fmpq_t x, y, z;
+
+        fmpq_init(x);
+        fmpq_init(y);
+        fmpq_init(z);
+
+        fmpq_randtest(x, state, 200);
+        fmpz_randtest(fmpq_numref(z), state, 200);
+
+        fmpq_mul_fmpz(y, x, fmpq_numref(z));
+        fmpq_mul(x, x, z);
+
+        result = (fmpq_is_canonical(x) && fmpq_is_canonical(y) && fmpq_equal(x, y));
+        if (!result)
+        {
+            printf("FAIL (cmp):\n");
+            printf("x = "), fmpq_print(x), printf("\n");
+            printf("y = "), fmpq_print(y), printf("\n");
+            printf("z = "), fmpq_print(z), printf("\n");
+            abort();
+        }
+
+        fmpq_clear(x);
+        fmpq_clear(y);
+        fmpq_clear(z);
     }
 
     flint_randclear(state);
+
     _fmpz_cleanup();
     printf("PASS\n");
     return EXIT_SUCCESS;

@@ -30,6 +30,7 @@
 
 #include <mpir.h>
 #include "fmpz.h"
+#include "fmpq.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
@@ -114,6 +115,8 @@ void fmpq_poly_set_mpz(fmpq_poly_t poly, const mpz_t x);
 
 void fmpq_poly_set_mpq(fmpq_poly_t poly, const mpq_t x);
 
+void fmpq_poly_set_fmpz_poly(fmpq_poly_t rop, const fmpz_poly_t op);
+
 void _fmpq_poly_set_array_mpq(fmpz * poly, fmpz_t den, const mpq_t * a, long n);
 
 void fmpq_poly_set_array_mpq(fmpq_poly_t poly, const mpq_t * a, long n);
@@ -127,6 +130,14 @@ char * fmpq_poly_get_str(const fmpq_poly_t poly);
 char * fmpq_poly_get_str_pretty(const fmpq_poly_t poly, const char * var);
 
 void fmpq_poly_zero(fmpq_poly_t poly);
+
+static __inline__ void fmpq_poly_one(fmpq_poly_t poly)
+{
+    fmpq_poly_fit_length(poly, 1);
+    _fmpq_poly_set_length(poly, 1);
+    fmpz_set_ui(poly->coeffs, 1);
+    fmpz_set_ui(poly->den, 1);
+}
 
 void fmpq_poly_neg(fmpq_poly_t poly1, const fmpq_poly_t poly2);
 
@@ -149,6 +160,8 @@ void fmpq_poly_truncate(fmpq_poly_t poly, long n)
 
 /*  Getting and setting coefficients  ****************************************/
 
+void fmpq_poly_get_coeff_fmpq(fmpq_t x, const fmpq_poly_t poly, long n);
+
 void fmpq_poly_get_coeff_mpq(mpq_t x, const fmpq_poly_t poly, long n);
 
 void fmpq_poly_set_coeff_si(fmpq_poly_t poly, long n, long x);
@@ -156,6 +169,8 @@ void fmpq_poly_set_coeff_si(fmpq_poly_t poly, long n, long x);
 void fmpq_poly_set_coeff_ui(fmpq_poly_t poly, long n, ulong x);
 
 void fmpq_poly_set_coeff_fmpz(fmpq_poly_t poly, long n, const fmpz_t x);
+
+void fmpq_poly_set_coeff_fmpq(fmpq_poly_t poly, long n, const fmpq_t x);
 
 void fmpq_poly_set_coeff_mpz(fmpq_poly_t poly, long n, const mpz_t x);
 
@@ -262,6 +277,28 @@ void _fmpq_poly_mullow(fmpz * rpoly, fmpz_t rden,
 
 void fmpq_poly_mullow(fmpq_poly_t res, 
                    const fmpq_poly_t poly1, const fmpq_poly_t poly2, long n);
+
+static __inline__ 
+void fmpq_poly_addmul(fmpq_poly_t rop, const fmpq_poly_t op1, fmpq_poly_t op2)
+{
+    fmpq_poly_t t;
+
+    fmpq_poly_init(t);
+    fmpq_poly_mul(t, op1, op2);
+    fmpq_poly_add(rop, rop, t);
+    fmpq_poly_clear(t);
+}
+
+static __inline__ 
+void fmpq_poly_submul(fmpq_poly_t rop, const fmpq_poly_t op1, fmpq_poly_t op2)
+{
+    fmpq_poly_t t;
+
+    fmpq_poly_init(t);
+    fmpq_poly_mul(t, op1, op2);
+    fmpq_poly_sub(rop, rop, t);
+    fmpq_poly_clear(t);
+}
 
 /*  Powering  ****************************************************************/
 
