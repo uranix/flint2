@@ -27,7 +27,10 @@
 #ifndef NMOD_MPOLY_H
 #define NMOD_MPOLY_H
 
+#undef ulong /* interferes with system headers */
 #include <stdio.h>
+#define ulong unsigned long
+
 #include <mpir.h>
 
 #include "nmod_vec.h"

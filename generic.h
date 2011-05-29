@@ -26,7 +26,10 @@
 #ifndef GENERIC_H
 #define GENERIC_H
 
+#undef ulong /* interferes with system headers */
 #include <stdio.h>
+#define ulong unsigned long
+
 #include <mpir.h>
 #include "flint.h"
 #include "fmpz_poly.h"
