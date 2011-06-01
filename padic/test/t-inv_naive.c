@@ -111,7 +111,7 @@ main(void)
             padic_inv(b, a, ctx);
             padic_mul(d, a, b, ctx);
 
-            padic_normalise(d, ctx2);
+            padic_reduce(d, ctx2);
 
             result = (padic_is_one(d, ctx2));
             if (!result)
@@ -122,6 +122,7 @@ main(void)
                 printf("d = "), padic_print(d, ctx2), printf("\n");
                 abort();
             }
+            padic_ctx_clear(ctx2);
         }
 
         padic_clear(a, ctx);

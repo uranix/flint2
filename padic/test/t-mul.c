@@ -250,8 +250,8 @@ main(void)
             padic_mul(e, b, c, ctx);
             padic_mul(e, a, e, ctx);
 
-            padic_normalise(d, ctx2);
-            padic_normalise(e, ctx2);
+            padic_reduce(d, ctx2);
+            padic_reduce(e, ctx2);
 
             result = (padic_equal(d, e, ctx2));
             if (!result)
@@ -264,6 +264,7 @@ main(void)
                 printf("e = "), padic_debug(e, ctx2), printf("\n");
                 abort();
             }
+            padic_ctx_clear(ctx2);
         }
 
         padic_clear(a, ctx);
