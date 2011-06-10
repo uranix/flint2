@@ -38,60 +38,31 @@ main(void)
     int i, result;
     flint_rand_t state;
 
-    printf("lcm....");
+    printf("sqr_karatsuba....");
     fflush(stdout);
 
     flint_randinit(state);
 
     /* Check aliasing of a and b */
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < 2000; i++)
     {
         fmpz_poly_t a, b, c;
 
         fmpz_poly_init(a);
         fmpz_poly_init(b);
         fmpz_poly_init(c);
+        fmpz_poly_randtest(a, state, n_randint(state, 50), 200);
+        fmpz_poly_set(b, a);
 
-        fmpz_poly_randtest(b, state, n_randint(state, 40), 80);
-        fmpz_poly_randtest(c, state, n_randint(state, 40), 80);
+        fmpz_poly_sqr_karatsuba(c, b);
+        fmpz_poly_sqr_karatsuba(b, b);
 
-        fmpz_poly_lcm(a, b, c);
-        fmpz_poly_lcm(b, b, c);
-
-        result = (fmpz_poly_equal(a, b));
+        result = (fmpz_poly_equal(b, c));
         if (!result)
         {
-            printf("FAIL (aliasing a and b):\n");
+            printf("FAIL:\n");
             fmpz_poly_print(a), printf("\n\n");
             fmpz_poly_print(b), printf("\n\n");
-            abort();
-        }
-
-        fmpz_poly_clear(a);
-        fmpz_poly_clear(b);
-        fmpz_poly_clear(c);
-    }
-
-    /* Check aliasing of a and c */
-    for (i = 0; i < 500; i++)
-    {
-        fmpz_poly_t a, b, c;
-
-        fmpz_poly_init(a);
-        fmpz_poly_init(b);
-        fmpz_poly_init(c);
-
-        fmpz_poly_randtest(b, state, n_randint(state, 40), 80);
-        fmpz_poly_randtest(c, state, n_randint(state, 40), 80);
-
-        fmpz_poly_lcm(a, b, c);
-        fmpz_poly_lcm(c, b, c);
-
-        result = (fmpz_poly_equal(a, c));
-        if (!result)
-        {
-            printf("FAIL (aliasing a and c):\n");
-            fmpz_poly_print(a), printf("\n\n");
             fmpz_poly_print(c), printf("\n\n");
             abort();
         }
@@ -101,52 +72,70 @@ main(void)
         fmpz_poly_clear(c);
     }
 
-    /* Check that GCD(f, g) LCM(f, g) == f g */
-    for (i = 0; i < 500; i++)
+    /* Compare with mul_karatsuba */
+    for (i = 0; i < 2000; i++)
     {
-        fmpz_poly_t f, g, gcd, lcm, lhs, rhs;
+        fmpz_poly_t a, b, c;
 
-        fmpz_poly_init(f);
-        fmpz_poly_init(g);
-        fmpz_poly_init(gcd);
-        fmpz_poly_init(lcm);
-        fmpz_poly_init(lhs);
-        fmpz_poly_init(rhs);
+        fmpz_poly_init(a);
+        fmpz_poly_init(b);
+        fmpz_poly_init(c);
+        fmpz_poly_randtest(a, state, n_randint(state, 50), 200);
 
-        fmpz_poly_randtest(f, state, n_randint(state, 40), 80);
-        fmpz_poly_randtest(g, state, n_randint(state, 40), 80);
+        fmpz_poly_sqr_karatsuba(b, a);
+        fmpz_poly_mul_karatsuba(c, a, a);
 
-        fmpz_poly_gcd(gcd, f, g);
-        fmpz_poly_lcm(lcm, f, g);
-        fmpz_poly_mul(lhs, gcd, lcm);
-        fmpz_poly_mul(rhs, f, g);
-        if (!fmpz_poly_is_zero(rhs) && fmpz_sgn(fmpz_poly_lead(rhs)) < 0)
-            fmpz_poly_neg(rhs, rhs);
-
-        result = (fmpz_poly_equal(lhs, rhs));
+        result = (fmpz_poly_equal(b, c));
         if (!result)
         {
-            printf("FAIL (GCD(f, g) * LCM(f, g) == f * g):\n");
-            fmpz_poly_print(f), printf("\n");
-            fmpz_poly_print(g), printf("\n");
-            fmpz_poly_print(gcd), printf("\n");
-            fmpz_poly_print(lcm), printf("\n");
-            fmpz_poly_print(lhs), printf("\n");
-            fmpz_poly_print(rhs), printf("\n");
+            printf("FAIL:\n");
+            fmpz_poly_print(a), printf("\n\n");
+            fmpz_poly_print(b), printf("\n\n");
+            fmpz_poly_print(c), printf("\n\n");
             abort();
         }
 
-        fmpz_poly_clear(f);
-        fmpz_poly_clear(g);
-        fmpz_poly_clear(gcd);
-        fmpz_poly_clear(lcm);
-        fmpz_poly_clear(lhs);
-        fmpz_poly_clear(rhs);
+        fmpz_poly_clear(a);
+        fmpz_poly_clear(b);
+        fmpz_poly_clear(c);
+    }
+
+    /* Check _fmpz_poly_sqr_karatsuba directly */
+    for (i = 0; i < 2000; i++)
+    {
+        long len;
+        fmpz_poly_t a, out1, out2;
+
+        len = n_randint(state, 100) + 1;
+        fmpz_poly_init(a);
+        fmpz_poly_init(out1);
+        fmpz_poly_init(out2);
+        fmpz_poly_randtest(a, state, len, 200);
+
+        fmpz_poly_sqr_karatsuba(out1, a);
+        fmpz_poly_fit_length(a, a->alloc + n_randint(state, 10));
+        a->length = a->alloc;
+        fmpz_poly_fit_length(out2, 2 * a->length - 1);
+        _fmpz_poly_sqr_karatsuba(out2->coeffs, a->coeffs, a->length);
+        _fmpz_poly_set_length(out2, 2 * a->length - 1);
+        _fmpz_poly_normalise(out2);
+
+        result = (fmpz_poly_equal(out1, out2));
+        if (!result)
+        {
+            printf("FAIL:\n");
+            fmpz_poly_print(out1), printf("\n\n");
+            fmpz_poly_print(out2), printf("\n\n");
+            abort();
+        }
+
+        fmpz_poly_clear(a);
+        fmpz_poly_clear(out1);
+        fmpz_poly_clear(out2);
     }
 
     flint_randclear(state);
     _fmpz_cleanup();
     printf("PASS\n");
-    return EXIT_SUCCESS;
+    return 0;
 }
-
