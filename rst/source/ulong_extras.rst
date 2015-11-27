@@ -160,5 +160,17 @@ Arithmetic with precomputed inverse
 
     For details of the precomputed inverse see [MolGra2011]_. 
 
+.. function:: ulong n_mod2_preinv(ulong a, ulong n, ulong ninv)
+
+    Return the Euclidean remainder of `a` divided by `n` given a precomputed
+    inverse *ninv* provided by *n_preinvert_limb*.
+
+    **Conditions:** We require `n > 0`.
+
+    **Algorithm:** Both `a` and `n` are shifted left by the same number of
+    bits `b` so that `n` is normalised. In general `a` now occupies two limbs.
+    We then reduce `a` modulo `n` using Algorithm 4 of [MolGra2011]_.
+    Finally the resulting remainder is shifted right `b` bits.
+
 
 
