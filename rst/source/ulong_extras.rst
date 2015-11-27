@@ -144,6 +144,21 @@ Bit manipulation
     alternate pairs of bits, then alternate nibbles and finally swap all bytes
     in the word using the *byte_swap* macro from *longlong.h*.
 
+Arithmetic with precomputed inverse
+-----------------------------------
+
+.. function:: ulong n_preinvert_limb(ulong n)
+
+    Return a Moller-Granlund precomputed inverse of the word `n`.
+
+    **Conditions:** We require `n > 0`.
+
+    **Algorithm:** This function normalises `n` (shifts it so that its most
+    significant bit is set) and then computes the precomputed inverse
+    `\beta^2/(n - 1) - \beta` where `\beta = 2^w` with `w =` *FLINT_BITS*,
+    using the *invert_limb* macro from longlong.h.
+
+    For details of the precomputed inverse see [MolGra2011]_. 
 
 
 
