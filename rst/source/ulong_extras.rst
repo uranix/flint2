@@ -195,5 +195,19 @@ Arithmetic with precomputed inverse
     We then reduce `a` modulo `n` using Algorithm 4 of [MolGra2011]_.
     Finally the resulting remainder is shifted right by `b` bits.
 
+.. function:: ulong n_ll_mod_preinv(ulong a1, ulong a0, ulong n, ulong ninv)
+
+    Given a two word input `a = \langle a_1, a_0 \rangle`, return the
+    remainder upon division of `a` by `n`, given a precomputed inverse *ninv*
+    provided by *n_preinvert_limb*.
+
+    This function is useful for delayed reduction and reduction of products
+    that have accumulated in no more than two words.
+
+    **Conditions:** We require `n > 0`.
+
+    **Algorithm:** If the word `a_1` is not reduced modulo `n` we reduce it
+    as per *n_mod2_preinv*. The remainder of `a` divided by `n` is then
+    computed using Algorithm 4 of [MolGra2011]_.
 
 
