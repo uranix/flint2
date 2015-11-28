@@ -210,4 +210,18 @@ Arithmetic with precomputed inverse
     as per *n_mod2_preinv*. The remainder of `a` divided by `n` is then
     computed using Algorithm 4 of [MolGra2011]_.
 
+.. function:: ulong n_lll_mod_preinv(ulong a2, ulong a1, ulong a0, ulong n, ulong ninv)
 
+    Given a three word input `a = \langle a_2, a_1, a_0 \rangle`, return the
+    remainder upon division of `a` by `n`, given a precomputed inverse *ninv*
+    provided by *n_preinvert_limb*.
+
+    This function is useful for delayed reduction and reduction of products
+    that have accumulated in three words.
+
+    **Conditions:** We require `n > 0` and `a_2 < n`.
+
+    **Algorithm:** As the word `a_2` is reduced modulo `n` we reduce
+    `\langle a_2, a_1 \rangle` modulo `n`. Now as `a_2` is reduced modulo `n`
+    we reduce `\langle a_1, a_0 \rangle` modulo `n`. The remainders modulo `n`
+    are computed using Algorithm 4 of [MolGra2011]_.
