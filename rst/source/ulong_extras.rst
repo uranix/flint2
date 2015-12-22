@@ -229,7 +229,7 @@ Arithmetic with precomputed inverse
 Greatest common divisor
 -----------------------
 
-.. function:: mp_limb_t n_gcd(ulong x, ulong y)
+.. function:: ulong n_gcd(ulong x, ulong y)
 
     Return the greatest common divisor of `x` and `y`. If `x = 0` we define
     `\gcd(x, y) = y` and if `y = 0` we define `\gcd(x, y) = x`.
