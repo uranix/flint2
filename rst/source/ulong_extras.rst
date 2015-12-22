@@ -225,3 +225,62 @@ Arithmetic with precomputed inverse
     `\langle a_2, a_1 \rangle` modulo `n`. Now as `a_2` is reduced modulo `n`
     we reduce `\langle a_1, a_0 \rangle` modulo `n`. The remainders modulo `n`
     are computed using Algorithm 4 of [MolGra2011]_.
+
+Greatest common divisor
+-----------------------
+
+.. function:: mp_limb_t n_gcd(mp_limb_t x, mp_limb_t y)
+
+    Return the greatest common divisor of `x` and `y`. If `x = 0` we define
+    `\gcd(x, y) = y` and if `y = 0` we define `\gcd(x, y) = x`.
+
+    **Conditions:** None.
+
+    **Algorithm:** Two algorithms are used, the first on machines with a fast
+    *count_trailing_zeros* function (currently *x86* and *x86_64*), the other
+    as a fallback on other architectures.
+
+    Algorithm 1: First deal with the special cases where either `x = 0` or
+    `y = 0`. Now determine the greatest power of `2` dividing both inputs. Call
+    this value `2^k`. This value must be the power of `2` dividing the greatest
+    common divisor.
+
+    From this point on, any powers of two dividing the two values can be
+    divided out, since they do not contribute to the result. In particular we
+    begin with the two values shifted right until they are both odd. Call these
+    positive, odd values `r_0` and `r_1`.
+
+    At each iteration we start with two unequal, odd values. We subtract the
+    smaller from the larger, which doesn't change their GCD, but it makes the
+    larger number even. We shift it to the right again so that it is odd, and
+    repeat.
+
+    The loop terminates when both of the values are the same. This must happen
+    eventually since the sum of the two values is always decreasing and both
+    numbers are always positive. The final common value must be
+    `\gcd(r_0, r_1)`. We multiply this by `2^k` to get `\gcd(x, y)`.
+
+    Algorithm 2: This is a variant of the ordinary Euclidean algorithm. We
+    begin with `r_0 = x` and `r_1 = y` and keep applying the division algorithm
+    in order to obtain a remainder sequence `\{r_i\}`. The last nonzero
+    remainder is the greatest common divisor (if both inputs are zero all tests
+    fall through and zero is returned).
+
+    To minimize the number of divisions performed, the algorithm deals
+    specially with the cases were `r_i < 4r_{i+1}`, i.e. where the quotient is
+    `1`, `2` or `3`.
+
+    We first compute `s = r_i - r_{i+1}`. If `s < r_{i+1}`, i.e.
+    `r_i < 2r_{i+1}`, we know the quotient is `1`, else if `s < 2r_{i+1}`, i.e.
+    `r_i < 3r_{i+1}` we know the quotient is `2`. In the remaining cases, the
+    quotient must be `3`.
+
+    When the quotient is `4` or above, we use division. However this happens
+    rarely for generic inputs.
+
+    To prevent overflows in the arithmetic the values are first reordered so
+    that `r_0 \geq r_1`. The special case where both have top bit set is then
+    dealt with, followed by the case where the second value has its second most
+    significant bit set. It is then safe to multiply the second value by `4` as
+    required by the algorithm, without overflow.
+
