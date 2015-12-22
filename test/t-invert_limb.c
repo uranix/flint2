@@ -19,7 +19,7 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2009, 2015 William Hart
+    Copyright (C) 2015 William Hart
 
 ******************************************************************************/
 
@@ -27,32 +27,35 @@
 #include "flint.h"
 #include "ulong_extras.h"
 
+#define invert_limb_naive(ninv, n)                    \
+   do {                                               \
+      mp_limb_t dummy;                                \
+      udiv_qrnnd (ninv, dummy, ~(n), ~(WORD(0)), n);  \
+   } while (0)
+
 int main(void)
 {
    int i, result;
    FLINT_TEST_INIT(state);
    
-   flint_printf("mod2_preinv....");
+   flint_printf("invert_limb....");
    fflush(stdout);
 
    for (i = 0; i < 100000 * flint_test_multiplier(); i++)
    {
-      ulong d, dinv, n, r1, r2;
+      mp_limb_t n, ninv1, ninv2;
 
-      d = n_randtest_not_zero(state);
       n = n_randtest(state);
+      n |= (UWORD(1) << (FLINT_BITS - 1));
       
-      dinv = n_preinvert_limb(d);
+      invert_limb(ninv1, n);
+      invert_limb_naive(ninv2, n);
 
-      r1 = n_mod2_preinv(n, d, dinv);
-      r2 = n % d;
-
-      result = (r1 == r2);
+      result = (ninv1 == ninv2);
       if (!result)
       {
          flint_printf("FAIL:\n");
-         flint_printf("n = %wu, d = %wu, dinv = %wu\n", n, d, dinv); 
-         flint_printf("r1 = %wu, r2 = %wu\n", r1, r2);
+         flint_printf("n = %wx, ninv1 = %wx, ninv2 = %wx\n", n, ninv1, ninv2); 
          abort();
       }
    }

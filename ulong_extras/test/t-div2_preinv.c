@@ -32,27 +32,27 @@ int main(void)
    int i, result;
    FLINT_TEST_INIT(state);
    
-   flint_printf("mod2_preinv....");
+   flint_printf("div2_preinv....");
    fflush(stdout);
 
    for (i = 0; i < 100000 * flint_test_multiplier(); i++)
    {
-      ulong d, dinv, n, r1, r2;
+      ulong d, dinv, n, q1, q2;
 
       d = n_randtest_not_zero(state);
       n = n_randtest(state);
       
       dinv = n_preinvert_limb(d);
 
-      r1 = n_mod2_preinv(n, d, dinv);
-      r2 = n % d;
+      q1 = n_div2_preinv(n, d, dinv);
+      q2 = n / d;
 
-      result = (r1 == r2);
+      result = (q1 == q2);
       if (!result)
       {
          flint_printf("FAIL:\n");
          flint_printf("n = %wu, d = %wu, dinv = %wu\n", n, d, dinv); 
-         flint_printf("r1 = %wu, r2 = %wu\n", r1, r2);
+         flint_printf("q1 = %wu, q2 = %wu\n", q1, q2);
          abort();
       }
    }

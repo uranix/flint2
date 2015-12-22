@@ -19,7 +19,7 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2009, 2015 William Hart
+    Copyright (C) 2009, 2010, 2015 William Hart
 
 ******************************************************************************/
 
@@ -27,38 +27,37 @@
 #include "flint.h"
 #include "ulong_extras.h"
 
-int main(void)
+/* 
+   Method of Niels Moller and Torbjorn Granlund see paper:
+   Improved Division by Invariant Integers: (algorithm 4)
+   https://gmplib.org/~tege/division-paper.pdf 
+*/
+
+ulong n_div2_preinv(ulong a, ulong n, ulong ninv)
 {
-   int i, result;
-   FLINT_TEST_INIT(state);
-   
-   flint_printf("mod2_preinv....");
-   fflush(stdout);
+   ulong norm, q1, q0, r;
 
-   for (i = 0; i < 100000 * flint_test_multiplier(); i++)
+   FLINT_ASSERT(n != 0);
+
+   count_leading_zeros(norm, n);
+   n <<= norm;
+
    {
-      ulong d, dinv, n, r1, r2;
+      const ulong u1 = r_shift(a, FLINT_BITS - norm);
+      const ulong u0 = (a << norm);
 
-      d = n_randtest_not_zero(state);
-      n = n_randtest(state);
-      
-      dinv = n_preinvert_limb(d);
+      umul_ppmm(q1, q0, ninv, u1);
+      add_ssaaaa(q1, q0, q1, q0, u1, u0);
 
-      r1 = n_mod2_preinv(n, d, dinv);
-      r2 = n % d;
+      q1++;
+      r = u0 - q1*n;
 
-      result = (r1 == r2);
-      if (!result)
+      if (r > q0)
       {
-         flint_printf("FAIL:\n");
-         flint_printf("n = %wu, d = %wu, dinv = %wu\n", n, d, dinv); 
-         flint_printf("r1 = %wu, r2 = %wu\n", r1, r2);
-         abort();
+         r += n;
+         q1--;
       }
-   }
 
-   FLINT_TEST_CLEANUP(state);
-   
-   flint_printf("PASS\n");
-   return 0;
+      return (r < n) ? q1 : q1 + 1;
+   }
 }

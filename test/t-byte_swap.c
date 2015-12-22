@@ -19,7 +19,7 @@
 =============================================================================*/
 /******************************************************************************
 
-    Copyright (C) 2009, 2015 William Hart
+    Copyright (C) 2015 William Hart
 
 ******************************************************************************/
 
@@ -27,32 +27,70 @@
 #include "flint.h"
 #include "ulong_extras.h"
 
+ulong byte_swap_naive(ulong n)
+{
+   ulong r = 0;
+   slong i;
+
+   for (i = 0; i < sizeof(ulong); i++)
+   {
+      r <<= 8;
+      r |= (n & 0xFF);
+      n >>= 8;
+   }
+
+   return r;
+}
+
 int main(void)
 {
    int i, result;
    FLINT_TEST_INIT(state);
    
-   flint_printf("mod2_preinv....");
+   flint_printf("byte_swap....");
    fflush(stdout);
 
-   for (i = 0; i < 100000 * flint_test_multiplier(); i++)
+   /* byte_swap(byte_swap(n)) == n */
+   for (i = 0; i < 10000 * flint_test_multiplier(); i++)
    {
-      ulong d, dinv, n, r1, r2;
+      ulong n, r1, r2;
 
-      d = n_randtest_not_zero(state);
       n = n_randtest(state);
       
-      dinv = n_preinvert_limb(d);
-
-      r1 = n_mod2_preinv(n, d, dinv);
-      r2 = n % d;
+      r1 = n;
+      
+      r2 = n;
+      byte_swap(r2);
+      byte_swap(r2);
 
       result = (r1 == r2);
       if (!result)
       {
          flint_printf("FAIL:\n");
-         flint_printf("n = %wu, d = %wu, dinv = %wu\n", n, d, dinv); 
-         flint_printf("r1 = %wu, r2 = %wu\n", r1, r2);
+         flint_printf("byte_swap(byte_swap(n)) != n\n");
+         flint_printf("n = %wx, r1 = %wx, r2 = %wx\n", n, r1, r2);
+         abort();
+      }
+   }
+
+   /* byte_swap(n) == byte_swap_naive(n) */
+   for (i = 0; i < 10000 * flint_test_multiplier(); i++)
+   {
+      ulong n, r1, r2;
+
+      n = n_randtest(state);
+      
+      r1 = n;
+      byte_swap(r1);
+
+      r2 = byte_swap_naive(n);
+
+      result = (r1 == r2);
+      if (!result)
+      {
+         flint_printf("FAIL:\n");
+         flint_printf("byte_swap(n) != byte_swap_naive(n)\n");
+         flint_printf("n = %wx, r1 = %wx, r2 = %wx\n", n, r1, r2);
          abort();
       }
    }
