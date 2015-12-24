@@ -284,3 +284,28 @@ Greatest common divisor
     significant bit set. It is then safe to multiply the second value by `4` as
     required by the algorithm, without overflow.
 
+.. function:: n_gcdinv(ulong * a, ulong x, ulong y)
+
+    Return the greatest common divisor of `x` and `y` and set `a` to a value in
+    the range `[0, y)` such that `ax \equiv \gcd(x, y) \pmod{y}`.
+
+    If `y = 1` then the greatest common divisor is `1` and `a` is set to `0`.
+
+    **Conditions:** We require `x < y`. In particular `y \neq 0`.
+
+    **Algorithm:** The algorithm to compute the greatest common divisor is as
+    per *n_gcd*.
+
+    In order to compute the cofactor, we start with `v_1 = 0` and `v_2 = 1`.
+    Each time we compute `x = qy + r` in the Euclidean algorithm, we set 
+
+    .. math::
+        \left(\begin{array}{c}v_1\\ v_2\end{array}\right) = 
+        \left(\begin{array}{cc}0 & 1\\ 1 & -q\end{array}\right)
+        \left(\begin{array}{c}v_1\\ v_2\end{array}\right).
+
+    Upon termination of the Euclidean algorithm, `v_1` is a cofactor in the
+    range `[-y/2, y/2]`. If it is negative we add `y` to it so that it is in
+    the range `[0, y)`.
+
+    For a proof that the cofactors never overflow, see *n_xgcd*.
