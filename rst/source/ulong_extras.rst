@@ -294,7 +294,7 @@ Greatest common divisor
     **Conditions:** We require `x < y`. In particular `y \neq 0`.
 
     **Algorithm:** The algorithm to compute the greatest common divisor is as
-    per *n_gcd*.
+    per Algorithm 2 of *n_gcd*.
 
     In order to compute the cofactor, we start with `v_1 = 0` and `v_2 = 1`.
     Each time we compute `x = qy + r` in the Euclidean algorithm, we set 
