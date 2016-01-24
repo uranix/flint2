@@ -284,7 +284,7 @@ Greatest common divisor
     significant bit set. It is then safe to multiply the second value by `4` as
     required by the algorithm, without overflow.
 
-.. function:: n_gcdinv(ulong * a, ulong x, ulong y)
+.. function:: ulong n_gcdinv(ulong * a, ulong x, ulong y)
 
     Return the greatest common divisor of `x` and `y` and set `a` to a value in
     the range `[0, y)` such that `ax \equiv \gcd(x, y) \pmod{y}`.
@@ -309,3 +309,90 @@ Greatest common divisor
     the range `[0, y)`.
 
     For a proof that the cofactors never overflow, see *n_xgcd*.
+
+.. function:: ulong n_xgcd(ulong * s, ulong * t, ulong x, ulong y)
+
+    Return the greatest common divisor of `x` and `y` and set `s` and `t` to
+    non-negative values such that `\gcd(x, y) = sx - ty`.
+
+    If `y \neq 0` we will have `s \leq y` and `t \leq x`.
+
+    In the case that `y = 0` we will have `s = 1` and `t = 0`.
+
+    **Conditions:** We require `x \geq y`.
+
+    **Algorithm:** The algorithm to compute the greatest common divisor is as
+    per Algorithm 2 of *n_gcd*.
+
+    We compute the cofactors by starting with a matrix with signed entries
+
+    .. math::
+        M = \left(\begin{array}{cc}u_1 & v_1\\ u_2 & v_2\end{array}\right)
+        = \left(\begin{array}{cc}1 & 0\\ 0 & 1\end{array}\right)
+
+    At each iteration of the algorithm we compute 
+    `r_{i - 1} = q_ir_i + r_{i + 1}`.
+
+    We multiply the matrix `M` on the left by
+
+    .. math::
+        \left(\begin{array}{cc}0 & 1\\ 1 & -q_i\end{array}\right)
+    
+    After each step of the algorithm we will have
+
+    .. math::
+        \left(\begin{array}{c}r_i\\ r_{i + 1}\end{array}\right) = 
+        \left(\begin{array}{cc}u_1 & v_1\\ u_2 & v_2\end{array}\right)
+        \left(\begin{array}{c}x\\ y\end{array}\right)
+          
+    We claim that if the greatest common divisor is computed via the Euclidean
+    algorithm, starting with `x \geq y > 0` and `x` not a multiple of `y` then
+    we always have `|s| \leq y/2` and `|t| < x/2`.
+
+    Recall that the cofactors are obtained by backsubstituting the steps of the
+    Euclidean algorithm. We first prove the result for the case
+    `\gcd(x, y) = 1`. We proceed by induction.
+
+    We will show that at each step in the backsubstitution we have
+    `1 = \pm s r_{i-1} \mp t r_i` with `s \leq r_i/2, t < r_{i-1}/2`.
+
+    At the final step of the Euclidean algorithm we have
+    `r_{n-1} = q_nr_n + 1`. We can rewrite this as `1 = r_{n-1} - q_nr_n`.
+    As `r_n > 1` we must have `q_n < r_{n-1}/2`. Similarly, as
+    `r_n > 1` we have `1 \leq r_n/2`. Thus the claim holds at
+    the first step of the backsubstitution.
+
+    Suppose the claim is true at some point in the backsubstitution. The
+    next equation to backsubstitute is `r_{i-2} = q_{i-1}r_{i-1} + r_i`.
+    This we rewrite as `r_i = r_{i-2} - q_{i-1}r_{i-1}`.
+
+    Making the substitution yields
+    `1 = s r_{i-1} - t (r_{i-2} - q_{i-1}r_{i-1})
+    = (s + t q_{i-1}) r_{i-1} - t r_{i-2}`.
+
+    It suffices to show that `s + t q_{i-1} < r_{i-2}/2` since
+    `t < r_{i-1}/2` which would complete the induction.
+
+    But `s + t q_{i-1} < r_i/2 + r_{i-1}/2 q_{i-1} = r_{i-2}/2`, so the claim
+    is proved.
+
+    In the case where the greatest common divisor is greater than `1`, all the
+    equations are simply multiplied through by the GCD and the result holds
+    there too.
+
+    The important consequence of this theorem is that the cofactors can never
+    overflow a signed word and comparison of the cofactors with zero is always
+    permitted.
+
+    This means that at the end of the algorithm, if we have `1 = -s x + t y`
+    for `s, t > 0` we can replace `s` with `s + y` and `t` with `t - x`. Then
+    the first cofactor is guaranteed to be positive.
+
+    In the case where `y = 0` the algorithm terminates immediately with
+    cofactors `s = 1` and `t = 0`.
+
+    In the case where `x` is a multiple of `y` the algorithm terminates
+    after one step with `s = y` and `t = 1 - x`.
+
+
+    
