@@ -226,6 +226,9 @@ Arithmetic with precomputed inverse
     we reduce `\langle a_1, a_0 \rangle` modulo `n`. The remainders modulo `n`
     are computed using Algorithm 4 of [MolGra2011]_.
 
+For additional functions which take a precomputed inverse, see the modular
+arithmetic section below.
+
 Greatest common divisor
 -----------------------
 
@@ -394,5 +397,40 @@ Greatest common divisor
     In the case where `x` is a multiple of `y` the algorithm terminates
     after one step with `s = y` and `t = 1 - x`.
 
+Modular arithmetic
+------------------
 
+.. function:: ulong n_addmod(ulong a, ulong b, ulong n)
+
+    Returns `a + b \pmod{n}`.
+
+    **Conditions:** Requires that `a` and `b` are reduced modulo `n`.
+
+    **Algorithm:** We subtract `y` from `n` and if the result is greater than
+    `x` we know that the result of `x + y` will be less than `n`. But this
+    comparison has the advantage of not overflowing the word.
+
+    If `x + y` will be less than `n` we return that result, otherwise we return
+    `x + y - n`. It does not matter if overflow occurs during this computation
+    since the result is computed modulo `2^B` where `B` is the number of bits
+    in a word, and the result fits in a word.
     
+.. function:: ulong n_submod(ulong a, ulong b, ulong n)
+
+    Returns `a - b \pmod{n}`.
+
+    **Conditions:** Requires that `a` and `b` are reduced modulo `n`.
+
+    **Algorithm:** If `y > x` we compute `x - y + n`, otherwise the we compute
+    `x - y`. It doesn't matter if overflow occurs during the computation of
+    `x - y + n` since the result is computed modulo `2^B` where `B` is the
+    number of bits in a word, and the result fits in a word.
+
+.. function:: ulong n_negmod(ulong a, ulong n)
+
+    Returns `-a \pmod{n}`.
+
+    **Conditions:** Requires that `a` is reduced modulo `n`.
+
+    **Algorithm:** This function calls *n_submod* with first argument `0`. The
+    call is inlined.
