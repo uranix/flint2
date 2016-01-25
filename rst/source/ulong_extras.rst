@@ -404,7 +404,8 @@ Modular arithmetic
 
     Returns `a + b \pmod{n}`.
 
-    **Conditions:** Requires that `a` and `b` are reduced modulo `n`.
+    **Conditions:** Requires that `a` and `b` are reduced modulo `n` and that
+    `n \neq 0`.
 
     **Algorithm:** We subtract `y` from `n` and if the result is greater than
     `x` we know that the result of `x + y` will be less than `n`. But this
@@ -419,7 +420,8 @@ Modular arithmetic
 
     Returns `a - b \pmod{n}`.
 
-    **Conditions:** Requires that `a` and `b` are reduced modulo `n`.
+    **Conditions:** Requires that `a` and `b` are reduced modulo `n` and that
+    `n \neq 0`.
 
     **Algorithm:** If `y > x` we compute `x - y + n`, otherwise the we compute
     `x - y`. It doesn't matter if overflow occurs during the computation of
@@ -430,7 +432,43 @@ Modular arithmetic
 
     Returns `-a \pmod{n}`.
 
-    **Conditions:** Requires that `a` is reduced modulo `n`.
+    **Conditions:** Requires that `a` is reduced modulo `n` and that
+    `n \neq 0`.
 
     **Algorithm:** This function calls *n_submod* with first argument `0`. The
     call is inlined.
+
+.. function:: ulong n_mulmod_preinv(ulong a, ulong b, ulong n, ulong ninv, ulong norm)
+
+    Returns `ab/2^m \pmod{n}` where `m =` *norm*, given a precomputed inverse
+    *ninv* provided by *n_preinvert_limb*. This function is intended to be used
+    to compute `ab \pmod{n}` as described below.
+
+    This is the fastest but least convenient mulmod function. It requires `n`
+    to be normalised (most significant bit set). In this case it can be used
+    with *norm* equal to `0` and the function will then compute `ab \pmod{n}`.
+
+    However, the function is designed to be used with other values of `n` as
+    follows. Let *norm* be the number of leading zeroes of `n`. Before using
+    this function we shift `a`, `b` and `n` to the left by *norm* bits. Then
+    after using the function, we shift the result to the right by *norm* bits.
+
+    Using the function in this way will result in `ab \pmod{n}` for any `n`.
+
+    Note that the function performs an additional shift right by *norm* bits
+    internally so that the result is meaningful after the user also performs
+    such a shift (two such shifts are required in total since both `a` and
+    `b` will have been shifted left by *norm* bits).
+    
+    The function is generally intended to be used in cases where a long
+    computation is carried out in shifted representation. This function is
+    designed to leave the result in such representation so that no additional
+    shifts are required before the next operation.
+
+    **Conditions**: We require `n \neq 0`, `a, b < n` and `n` to be normalised,
+    i.e. most significant bit set. However, see the description for how to use
+    this function with other values of `n`.
+
+    **Algorithm**: The function first shifts `a` right by *norm* bits, then
+    computes the product `ab`. The result is then reduced modulo `n` using 
+    Algorithm 4 of [MolGra2011]_.
