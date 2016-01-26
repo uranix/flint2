@@ -472,3 +472,24 @@ Modular arithmetic
     **Algorithm**: The function first shifts `a` right by *norm* bits, then
     computes the product `ab`. The result is then reduced modulo `n` using 
     Algorithm 4 of [MolGra2011]_.
+
+ulong n_mulmod2_preinv(ulong a, ulong b, ulong n, ulong ninv)
+
+    Returns `ab \pmod{n}` given a precomputed *ninv* provided by 
+    *n_preinvert_limb*.
+
+    **Conditions:** We require `n \neq 0`.
+
+    **Algorithm:** The product `ab` is reduced modulo `n` using
+    *n_ll_mod_preinv*.
+
+ulong n_mulmod2(ulong a, ulong b, ulong n)
+
+    Returns `ab \pmod{n}`. This is the most convenient, but least efficient
+    mulmod function. It is provided for convenience only. As it doesn't take a
+    precomputed inverse it is only useful in code that is not time critical.
+
+    **Conditions:** We require `n \neq 0`.
+
+    **Algorithm:** A precomputed inverse is computed after which the
+    implementation is the same as *n_mulmod2_preinv*.
