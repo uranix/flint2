@@ -294,7 +294,8 @@ Greatest common divisor
 
     If `y = 1` then the greatest common divisor is `1` and `a` is set to `0`.
 
-    **Conditions:** We require `x < y`. In particular `y \neq 0`.
+    **Conditions:** We require `x < y`. In particular `y \neq 0`. Aliasing of
+    `a` with any of the inputs is permitted.
 
     **Algorithm:** The algorithm to compute the greatest common divisor is as
     per Algorithm 2 of *n_gcd*.
@@ -322,7 +323,8 @@ Greatest common divisor
 
     In the case that `y = 0` we will have `s = 1` and `t = 0`.
 
-    **Conditions:** We require `x \geq y`.
+    **Conditions:** We require `x \geq y`. Aliasing of `s` and `t` with any
+    of the inputs is permitted.
 
     **Algorithm:** The algorithm to compute the greatest common divisor is as
     per Algorithm 2 of *n_gcd*.
@@ -473,7 +475,7 @@ Modular arithmetic
     computes the product `ab`. The result is then reduced modulo `n` using 
     Algorithm 4 of [MolGra2011]_.
 
-ulong n_mulmod2_preinv(ulong a, ulong b, ulong n, ulong ninv)
+.. function:: ulong n_mulmod2_preinv(ulong a, ulong b, ulong n, ulong ninv)
 
     Returns `ab \pmod{n}` given a precomputed *ninv* provided by 
     *n_preinvert_limb*.
@@ -483,7 +485,7 @@ ulong n_mulmod2_preinv(ulong a, ulong b, ulong n, ulong ninv)
     **Algorithm:** The product `ab` is reduced modulo `n` using
     *n_ll_mod_preinv*.
 
-ulong n_mulmod2(ulong a, ulong b, ulong n)
+.. function:: ulong n_mulmod2(ulong a, ulong b, ulong n)
 
     Returns `ab \pmod{n}`. This is the most convenient, but least efficient
     mulmod function. It is provided for convenience only. As it doesn't take a
@@ -493,3 +495,42 @@ ulong n_mulmod2(ulong a, ulong b, ulong n)
 
     **Algorithm:** A precomputed inverse is computed after which the
     implementation is the same as *n_mulmod2_preinv*.
+
+.. function:: ulong n_powmod_ui_preinv(ulong a, ulong m, ulong n, ulong ninv, ulong norm)
+
+    Returns `a^m \pmod{n}`. For convenience we define everything
+    modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
+
+    This is the fastest but least convenient powmod function. It requires `n`
+    to be normalised. However it can be used with other values of `n` with
+    inputs in shifted representation as per *n_mulmod_preinv*.
+
+    **Conditions:** We require `n \neq 0`, `a < n` and `n` to be normalised,
+    i.e. most significant bit set. However, see the description for how to use
+    this function with other values of `n`. Note that `m` is unsigned.
+
+    **Algorithm:** This uses binary exponentiation with an optimisation to
+    save a multiplication after the first `1` is encountered in the binary
+    representation of `m`.
+
+.. function:: ulong n_powmod2_ui_preinv(ulong a, ulong m, ulong n, ulong ninv)
+
+    Returns `a^m \pmod{n}`. For convenience we define everything
+    modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
+
+    **Conditions:** We require `n \neq 0`. Note that `m` is unsigned.
+
+    **Algorithm:** If `a \geq n` we first reduce it modulo `n`. We then use
+    binary exponentiation with an optimisation to save a multiplication after
+    the first `1` is encountered in the binary representation of `m`.
+
+.. function:: ulong n_powmod2_preinv(ulong a, slong m, ulong n, ulong ninv)
+
+    Returns `a^m \pmod{n}`. For convenience we define everything
+    modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
+
+    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `a`
+    is not invertible modulo `n` and exception is raised.
+
+    **Algorithm:** If `m < 0` we first invert `a` modulo `n`. If `a \geq n` we
+    reduce it modulo `n`. We then call *n_powmod_ui_preinv*.
