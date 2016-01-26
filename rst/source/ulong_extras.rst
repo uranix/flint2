@@ -534,3 +534,13 @@ Modular arithmetic
 
     **Algorithm:** If `m < 0` we first invert `a` modulo `n`. If `a \geq n` we
     reduce it modulo `n`. We then call *n_powmod_ui_preinv*.
+
+.. function:: ulong n_powmod2(ulong a, slong m, ulong n)
+
+    Returns `a^m \pmod{n}`. For convenience we define everything
+    modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
+
+    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `a`
+    is not invertible modulo `n` an exception is raised.
+
+    **Algorithm:** We precompute an inverse and call *n_powmod2_preinv*.
