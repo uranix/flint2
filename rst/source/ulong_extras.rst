@@ -496,6 +496,16 @@ Modular arithmetic
     **Algorithm:** A precomputed inverse is computed after which the
     implementation is the same as *n_mulmod2_preinv*.
 
+.. function:: ulong n_invmod(ulong x, ulong y)
+
+    Returns the inverse of `x` modulo `y` if it exists. If not, an exception is
+    raised.
+
+    **Conditions:** We require `y > x` and `\gcd(x, y) = 1`. If the latter does
+    not hold an exception is raised.
+
+    **Algorithm:** We call *n_gcdinv* and check that the computed GCD is `1`.
+
 .. function:: ulong n_powmod_ui_preinv(ulong a, ulong m, ulong n, ulong ninv, ulong norm)
 
     Returns `a^m \pmod{n}`. For convenience we define everything
@@ -529,8 +539,8 @@ Modular arithmetic
     Returns `a^m \pmod{n}`. For convenience we define everything
     modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
 
-    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `a`
-    is not invertible modulo `n` an exception is raised.
+    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `m`
+    is negative and `a` is not invertible modulo `n` an exception is raised.
 
     **Algorithm:** If `m < 0` we first invert `a` modulo `n`. If `a \geq n` we
     reduce it modulo `n`. We then call *n_powmod_ui_preinv*.
@@ -540,7 +550,7 @@ Modular arithmetic
     Returns `a^m \pmod{n}`. For convenience we define everything
     modulo `1` to be `0` and otherwise `a^0 = 1 \pmod{n}` for all `n`.
 
-    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `a`
-    is not invertible modulo `n` an exception is raised.
+    **Conditions:** We require `n \neq 0`. Note that `m` is signed. If `m`
+    is negative and `a` is not invertible modulo `n` an exception is raised.
 
     **Algorithm:** We precompute an inverse and call *n_powmod2_preinv*.
