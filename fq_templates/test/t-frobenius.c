@@ -46,7 +46,7 @@ main(void)
     fflush(stdout);
 
     /* Check aliasing */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         TEMPLATE(T, ctx_t) ctx;
 
@@ -85,7 +85,7 @@ main(void)
     }
 
     /* Check sigma^e(x) == x^{p^e}  */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         TEMPLATE(T, ctx_t) ctx;
         TEMPLATE(T, t) a, b, c;
@@ -129,7 +129,7 @@ main(void)
     }
 
     /* Check sigma^e(x + y) = sigma^e(x) + sigma^e(y) */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         TEMPLATE(T, ctx_t) ctx;
 
@@ -183,7 +183,7 @@ main(void)
     }
 
     /* Check sigma^e(x * y) = sigma^e(x) * sigma^e(y) on Zq */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         TEMPLATE(T, ctx_t) ctx;
 
