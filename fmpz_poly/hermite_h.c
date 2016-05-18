@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Ralf Stephan
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Ralf Stephan
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "fmpz_poly.h"
 
@@ -51,13 +37,13 @@ _fmpz_poly_hermite_h(fmpz * coeffs, ulong n)
     while (1)
     {
         fmpz_set(coeffs + n, c);
-        fmpz_divexact_si(c, c, -4);
-        fmpz_mul_ui(c, c, n);
         if (--n == 0)
             break;
 
         fmpz_zero(coeffs + n);
-        fmpz_mul_ui(c, c, n);
+        fmpz_neg(c, c);
+        fmpz_mul2_uiui(c, c, n+1, n);
+        fmpz_fdiv_q_2exp(c, c, 2);
         fmpz_divexact_ui(c, c, fac);
         ++fac;
         if (--n == 0)
