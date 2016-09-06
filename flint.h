@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h> /* for alloca on FreeBSD */
-#if !defined(BSD) && !defined(__MINGW64__) && !defined(__MINGW32__) && !defined(_MSC_VER)
+#if (!defined(BSD) && !defined(__MINGW64__) && !defined(__MINGW32__) && !defined(_MSC_VER)) || defined(__GNU__)
 /* MinGW and FreeBSD have alloca, but not alloca.h */
 #include <alloca.h>
 #endif
@@ -149,8 +149,17 @@ void flint_set_abort(void (*func)(void));
 #define FLINT_TLS_PREFIX
 #endif
 
+#ifdef _OPENMP
+#define FLINT_PREFER_OMP 1
+#elif HAVE_PTHREAD
+#define FLINT_PREFER_OMP 0
+#else
+#define FLINT_PREFER_OMP 1
+#endif
+
 FLINT_DLL int flint_get_num_threads(void);
 FLINT_DLL void flint_set_num_threads(int num_threads);
+FLINT_DLL void flint_parallel_cleanup(void);
 
 FLINT_DLL int flint_test_multiplier(void);
 

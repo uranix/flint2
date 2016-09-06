@@ -169,6 +169,9 @@ void fmpz_poly_truncate(fmpz_poly_t poly, slong newlen)
 
 FLINT_DLL void fmpz_poly_set_trunc(fmpz_poly_t res, const fmpz_poly_t poly, slong n);
 
+FLINT_DLL void fmpz_poly_set_rational_roots(fmpz_poly_t pol, fmpq * vec, slong len);
+
+
 /*  Randomisation  ***********************************************************/
 
 FLINT_DLL void fmpz_poly_randtest(fmpz_poly_t f, flint_rand_t state, 
@@ -917,9 +920,21 @@ FLINT_DLL void _fmpz_poly_taylor_shift_divconquer(fmpz * poly, const fmpz_t c, s
 FLINT_DLL void fmpz_poly_taylor_shift_divconquer(fmpz_poly_t g, const fmpz_poly_t f,
     const fmpz_t c);
 
-FLINT_DLL void _fmpz_poly_taylor_shift_multi_mod(fmpz * poly, const fmpz_t c, slong n);
+FLINT_DLL void _fmpz_poly_taylor_shift_multi_mod_threaded(fmpz * poly, const fmpz_t c, slong n);
 
-FLINT_DLL void fmpz_poly_taylor_shift_multi_mod(fmpz_poly_t g, const fmpz_poly_t f, const fmpz_t c);
+FLINT_DLL void _fmpz_poly_taylor_shift_multi_mod_omp(fmpz * poly, const fmpz_t c, slong n);
+
+FMPZ_POLY_INLINE
+void fmpz_poly_taylor_shift_multi_mod(fmpz_poly_t g, const fmpz_poly_t f, const fmpz_t c)
+{
+    if (f != g)
+        fmpz_poly_set(g, f);
+#if FLINT_PREFER_OMP
+    _fmpz_poly_taylor_shift_multi_mod_omp(g->coeffs, c, g->length);
+#else
+    _fmpz_poly_taylor_shift_multi_mod_threaded(g->coeffs, c, g->length);
+#endif
+}
 
 FLINT_DLL void _fmpz_poly_taylor_shift(fmpz * poly, const fmpz_t c, slong n);
 
