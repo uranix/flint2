@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-   Copyright (C) 2010 Sebastian Pancratz
-   Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -33,12 +19,12 @@
 #define FLINT_REVERSE_NEWTON_CUTOFF 15
 
 void
-_nmod_poly_revert_series_newton(mp_ptr Qinv, mp_srcptr Q, long n, nmod_t mod)
+_nmod_poly_revert_series_newton(mp_ptr Qinv, mp_srcptr Q, slong n, nmod_t mod)
 {
-    long *a, i, k;
+    slong *a, i, k;
     mp_ptr T, U, V;
 
-    if (n >= 1) Qinv[0] = 0UL;
+    if (n >= 1) Qinv[0] = UWORD(0);
     if (n >= 2) Qinv[1] = n_invmod(Q[1], mod.n);
     if (n <= 2)
         return;
@@ -48,8 +34,8 @@ _nmod_poly_revert_series_newton(mp_ptr Qinv, mp_srcptr Q, long n, nmod_t mod)
     V = _nmod_vec_init(n);
 
     k = n;
-    for (i = 1; (1L << i) < k; i++);
-    a = (long *) flint_malloc(i * sizeof(long));
+    for (i = 1; (WORD(1) << i) < k; i++);
+    a = (slong *) flint_malloc(i * sizeof(slong));
     a[i = 0] = k;
     while (k >= FLINT_REVERSE_NEWTON_CUTOFF)
         a[++i] = (k = (k + 1) / 2);
@@ -61,9 +47,9 @@ _nmod_poly_revert_series_newton(mp_ptr Qinv, mp_srcptr Q, long n, nmod_t mod)
     {
         k = a[i];
         _nmod_poly_compose_series(T, Q, k, Qinv, k, k, mod);
-        _nmod_poly_derivative(U, T, k, mod); U[k - 1] = 0UL;
-        T[1] = 0UL;
-        _nmod_poly_div_series(V, T, U, k, mod);
+        _nmod_poly_derivative(U, T, k, mod); U[k - 1] = UWORD(0);
+        T[1] = UWORD(0);
+        _nmod_poly_div_series(V, T, k, U, k, k, mod);
         _nmod_poly_derivative(T, Qinv, k, mod);
         _nmod_poly_mullow(U, V, k, T, k, k, mod);
         _nmod_vec_sub(Qinv, Qinv, U, k, mod);
@@ -77,26 +63,26 @@ _nmod_poly_revert_series_newton(mp_ptr Qinv, mp_srcptr Q, long n, nmod_t mod)
 
 void
 nmod_poly_revert_series_newton(nmod_poly_t Qinv, 
-                                 const nmod_poly_t Q, long n)
+                                 const nmod_poly_t Q, slong n)
 {
     mp_ptr Qinv_coeffs, Q_coeffs;
     nmod_poly_t t1;
-    long Qlen;
+    slong Qlen;
     
     Qlen = Q->length;
 
     if (Qlen < 2 || Q->coeffs[0] != 0 || Q->coeffs[1] == 0)
     {
-        printf("exception: nmod_poly_revert_series_newton: input must have "
-            "zero constant and an invertible coefficient of x^1");
-        abort();
+        flint_printf("Exception (nmod_poly_revert_series_newton). Input must have \n"
+               "zero constant and an invertible coefficient of x^1.\n");
+        flint_abort();
     }
 
     if (Qlen < n)
     {
         Q_coeffs = _nmod_vec_init(n);
-        mpn_copyi(Q_coeffs, Q->coeffs, Qlen);
-        mpn_zero(Q_coeffs + Qlen, n - Qlen);
+        flint_mpn_copyi(Q_coeffs, Q->coeffs, Qlen);
+        flint_mpn_zero(Q_coeffs + Qlen, n - Qlen);
     }
     else
         Q_coeffs = Q->coeffs;

@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 William Hart
     Copyright (C) 2010 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "flint.h"
 #include "fmpz.h"
@@ -35,7 +21,7 @@
 #include "ulong_extras.h"
 
 void fmpq_poly_randtest(fmpq_poly_t poly, flint_rand_t state, 
-                        long len, mp_bitcnt_t bits)
+                        slong len, mp_bitcnt_t bits)
 {
     ulong m;
 
@@ -44,7 +30,7 @@ void fmpq_poly_randtest(fmpq_poly_t poly, flint_rand_t state,
     fmpq_poly_fit_length(poly, len);
     _fmpq_poly_set_length(poly, len);
 
-    if (m & 1UL)
+    if (m & UWORD(1))
     {
         _fmpz_vec_randtest(poly->coeffs, state, len, bits);
     }
@@ -59,7 +45,7 @@ void fmpq_poly_randtest(fmpq_poly_t poly, flint_rand_t state,
         fmpz_clear(x);
     }
 
-    if (m & 2UL)
+    if (m & UWORD(2))
     {
         fmpz_randtest_not_zero(poly->den, state, FLINT_MAX(bits, 1));
         fmpz_abs(poly->den, poly->den);
@@ -73,7 +59,7 @@ void fmpq_poly_randtest(fmpq_poly_t poly, flint_rand_t state,
 }
 
 void fmpq_poly_randtest_unsigned(fmpq_poly_t poly, flint_rand_t state,
-                                 long len, mp_bitcnt_t bits)
+                                 slong len, mp_bitcnt_t bits)
 {
     ulong m;
 
@@ -82,7 +68,7 @@ void fmpq_poly_randtest_unsigned(fmpq_poly_t poly, flint_rand_t state,
     fmpq_poly_fit_length(poly, len);
     _fmpq_poly_set_length(poly, len);
 
-    if (m & 1UL)
+    if (m & UWORD(1))
     {
         _fmpz_vec_randtest_unsigned(poly->coeffs, state, len, bits);
     }
@@ -97,7 +83,7 @@ void fmpq_poly_randtest_unsigned(fmpq_poly_t poly, flint_rand_t state,
         fmpz_clear(x);
     }
 
-    if (m & 2UL)
+    if (m & UWORD(2))
     {
         fmpz_randtest_not_zero(poly->den, state, FLINT_MAX(bits, 1));
         fmpz_abs(poly->den, poly->den);
@@ -111,12 +97,12 @@ void fmpq_poly_randtest_unsigned(fmpq_poly_t poly, flint_rand_t state,
 }
 
 void fmpq_poly_randtest_not_zero(fmpq_poly_t f, flint_rand_t state, 
-                                 long len, mp_bitcnt_t bits)
+                                 slong len, mp_bitcnt_t bits)
 {
     if ((bits == 0) | (len == 0))
     {
-        printf("Exception: 0 passed to fmpz_poly_randtest_not_zero\n");
-        abort();
+        flint_printf("Exception (fmpq_poly_randtest_not_zeo). bits == 0.\n");
+        flint_abort();
     }
 
     fmpq_poly_randtest(f, state, len, bits);

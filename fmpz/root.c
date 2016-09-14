@@ -1,46 +1,33 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-
-******************************************************************************/
-
-#undef ulong /* avoid conflict with standard library */
+#define ulong ulongxx /* interferes with system includes */
 #include <stdlib.h>
-#define ulong unsigned long
+#undef ulong
+#define ulong mp_limb_t
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "fmpz.h"
 
 void
-fmpz_root(fmpz_t r, fmpz_t f, long n)
+fmpz_root(fmpz_t r, const fmpz_t f, slong n)
 {
     fmpz c = *f;
     
     if (n == 0)
     {
-        printf("Exception: unable to take 0-th root in fmpz_root\n");
-        abort();
+        flint_printf("Exception (fmpz_root). Unable to take 0-th root.\n");
+        flint_abort();
     }
 
     if (n == 1)
@@ -53,10 +40,10 @@ fmpz_root(fmpz_t r, fmpz_t f, long n)
     {
         if (n == 2)
         {
-            if (c < 0L)
+            if (c < WORD(0))
             {
-                printf("Exception: unable to take square root of negative value in fmpz_root\n");
-                abort();
+                flint_printf("Exception (fmpz_root). Unable to take square root of negative value.\n");
+                flint_abort();
             }
 
             fmpz_set_ui(r, n_sqrt(c));
@@ -77,7 +64,7 @@ fmpz_root(fmpz_t r, fmpz_t f, long n)
             cval = FLINT_ABS(c);
             mpz2._mp_d = &cval; /* mock up an mpz */
             mpz2._mp_size = 1;
-            if (c < 0L)
+            if (c < WORD(0))
                 mpz2._mp_size = -1;
             mpz2._mp_alloc = 1;
 

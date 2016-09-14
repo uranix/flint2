@@ -1,39 +1,33 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 Tom Boothby
     Copyright (C) 2009 William Hart
     Copyright (C) 2010 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
 
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#define ulong ulongxx /* interferes with system includes */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <mpir.h>
-#include <pthread.h>
+#undef ulong
+#include <gmp.h>
+#define ulong mp_limb_t
+
 #include "flint.h"
 #include "ulong_extras.h"
+#include <pthread.h>
 
-unsigned int * sieve;
+#if FLINT_REENTRANT && !HAVE_TLS
+
+static pthread_once_t primes_initialised = PTHREAD_ONCE_INIT;
+pthread_mutex_t primes_lock;
+#endif
 
 const unsigned int flint_primes_small[] =
 {
@@ -49,130 +43,63 @@ const unsigned int flint_primes_small[] =
     953,967,971,977,983,991,997,1009,1013,1019,1021
 };
 
-mp_limb_t * flint_primes;
-mp_limb_t flint_primes_cutoff = 0;
 
-double * flint_prime_inverses;
+/* _flint_primes[i] holds an array of 2^i primes */
+FLINT_TLS_PREFIX mp_limb_t * _flint_primes[FLINT_BITS];
+FLINT_TLS_PREFIX double * _flint_prime_inverses[FLINT_BITS];
+FLINT_TLS_PREFIX int _flint_primes_used = 0;
+#pragma omp threadprivate(_flint_primes, _flint_prime_inverses, _flint_primes_used)
 
-ulong flint_num_primes = 0;
-pthread_mutex_t flint_num_primes_mutex;
-
-void n_compute_primes(ulong num)
+#if FLINT_REENTRANT && !HAVE_TLS
+void n_compute_primes_init()
 {
-    ulong num_primes, primes_cutoff;
-    ulong sieve_size;
-    unsigned int i, j, p, q, oldq = 0;
-
-    if (flint_num_primes >= num) return;
-
-    pthread_mutex_lock(&flint_num_primes_mutex);
-    if (flint_num_primes >= num) /* someone may have changed this before we locked */
-    {
-        pthread_mutex_unlock(&flint_num_primes_mutex);
-        return; 
-    }
-
-    num_primes = FLINT_MAX(flint_num_primes, FLINT_NUM_PRIMES_SMALL);
-
-    if (!flint_num_primes) flint_primes_cutoff = FLINT_PRIMES_SMALL_CUTOFF;
-
-    num = FLINT_MAX(num, 16384);
-    n_nth_prime_bounds(&primes_cutoff, &primes_cutoff, num+1);
-    /* bad things will happen if primes_cutoff equals a prime */
-    primes_cutoff += primes_cutoff & 1;
-
-    if (primes_cutoff > FLINT_PRIMES_SMALL_CUTOFF*FLINT_PRIMES_SMALL_CUTOFF)
-    {
-        printf("Exception: cannot precompute sufficiently many primes!\n");
-        abort();
-    }
-
-    sieve_size = primes_cutoff/2 - flint_primes_cutoff/2;
-    sieve = (unsigned int *) flint_malloc(sizeof(unsigned int)*sieve_size);
-   
-    for (j = 0; j < sieve_size; j++)
-      sieve[j] = 1;
-
-    for (i = 1; ; i++) /* skip 2 */
-    {
-        p = flint_primes_small[i];
-        if (p*p > flint_primes_cutoff) break;
-
-        q = flint_primes_cutoff - (flint_primes_cutoff%p); /* first multiple of p before sieve start */
-        q = q + (1 + q%2)*p; /* first odd multiple of p after sieve start */
-        q = q/2 - flint_primes_cutoff/2;   /* index of first odd multiple of p left in the sieve */
-
-        while (q < sieve_size)
-        {
-            sieve[q] = 0;
-            q += p;
-        }
-    }
-
-    for ( ; (i < FLINT_NUM_PRIMES_SMALL); i++)
-    {
-        p = flint_primes_small[i];
-        if (p*p > primes_cutoff) break;
-
-        q = (p*p)/2 - flint_primes_cutoff/2;   /* index of first multiple of p left in the sieve */
-
-        for (j = oldq; j < q; j++) /* count new primes up to p^2 */
-        {
-            if (sieve[j]) num_primes++;
-        }
-
-        oldq = q;
-
-        while (q < sieve_size)
-        {
-            sieve[q] = 0;
-            q += p;
-        }
-    }
-
-    for (j = oldq; j < sieve_size; j++) /* there may be some primes after the last p^2 */
-    {
-        if (sieve[j]) num_primes++;
-    }
-
-    if (!flint_num_primes) 
-    {
-        flint_primes = (mp_limb_t *) flint_malloc(sizeof(mp_limb_t)*num_primes);
-        flint_prime_inverses = (double *) flint_malloc(sizeof(double)*num_primes);
-    }
-    else
-    {
-        flint_primes = flint_realloc(flint_primes, sizeof(mp_limb_t)*num_primes);
-        flint_prime_inverses = flint_realloc(flint_prime_inverses, sizeof(double)*num_primes);
-    }
-
-    if (!flint_num_primes)
-    {
-        for (i = 0; i < FLINT_NUM_PRIMES_SMALL; i++) /* write out small primes */
-        {
-            p = flint_primes[i] = flint_primes_small[i];
-            flint_prime_inverses[i] = n_precompute_inverse(p);
-            flint_num_primes = FLINT_NUM_PRIMES_SMALL;
-        }
-    }
-   
-    i = flint_num_primes;
-
-    for (j = 0; j < sieve_size; j++) /* write out primes computed in sieve */
-    {
-        if (sieve[j]) 
-        {
-            p = flint_primes[i] = 2*(j + flint_primes_cutoff/2) + 1;
-            flint_prime_inverses[i++] = n_precompute_inverse(p);
-        }
-    }
-
-    flint_primes_cutoff = primes_cutoff;
-    if (flint_primes_cutoff & 1) flint_primes_cutoff++;
-
-    flint_num_primes = num_primes;
-
-    flint_free(sieve);
-
-    pthread_mutex_unlock(&flint_num_primes_mutex);
+   pthread_mutex_init(&primes_lock, NULL);
 }
+#endif
+
+void
+n_compute_primes(ulong num_primes)
+{
+    int i, m;
+    ulong num_computed;
+
+#if FLINT_REENTRANT && !HAVE_TLS
+    pthread_once(&primes_initialised, n_compute_primes_init);
+    pthread_mutex_lock(&primes_lock);
+#endif
+
+    m = FLINT_CLOG2(num_primes);
+
+    if (_flint_primes_used == 0)
+        flint_register_cleanup_function(n_cleanup_primes);
+
+    if (m >= _flint_primes_used)
+    {
+        n_primes_t iter;
+
+        num_computed = UWORD(1) << m;
+        _flint_primes[m] = flint_malloc(sizeof(mp_limb_t) * num_computed);
+        _flint_prime_inverses[m] = flint_malloc(sizeof(double) * num_computed);
+
+        n_primes_init(iter);
+        for (i = 0; i < num_computed; i++)
+        {
+            _flint_primes[m][i] = n_primes_next(iter);
+            _flint_prime_inverses[m][i] = n_precompute_inverse(_flint_primes[m][i]);
+        }
+        n_primes_clear(iter);
+
+        /* copy to lower power-of-two slots */
+        for (i = m - 1; i >= _flint_primes_used; i--)
+        {
+            _flint_primes[i] = _flint_primes[m];
+            _flint_prime_inverses[i] = _flint_prime_inverses[m];
+        }
+        _flint_primes_used = m + 1;
+    }
+
+#if FLINT_REENTRANT && !HAVE_TLS
+    pthread_mutex_unlock(&primes_lock);
+#endif
+}
+

@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "fmpz.h"
@@ -44,13 +30,13 @@ fmpz_sub(fmpz_t f, const fmpz_t g, const fmpz_t h)
         {
             __mpz_struct *mpz3 = _fmpz_promote(f);  /* g is saved and h is large */
             __mpz_struct *mpz2 = COEFF_TO_PTR(c2);
-            if (c1 < 0L)
+            if (c1 < WORD(0))
             {
-                mpz_add_ui(mpz3, mpz2, -c1);
+                flint_mpz_add_ui(mpz3, mpz2, -c1);
                 mpz_neg(mpz3, mpz3);
             }
             else
-                mpz_ui_sub(mpz3, c1, mpz2);
+                flint_mpz_ui_sub(mpz3, c1, mpz2);
             _fmpz_demote_val(f);    /* may have cancelled */
         }
     }
@@ -60,10 +46,10 @@ fmpz_sub(fmpz_t f, const fmpz_t g, const fmpz_t h)
         {
             __mpz_struct *mpz3 = _fmpz_promote(f);  /* h is saved and g is large */
             __mpz_struct *mpz1 = COEFF_TO_PTR(c1);
-            if (c2 < 0L)
-                mpz_add_ui(mpz3, mpz1, -c2);
+            if (c2 < WORD(0))
+                flint_mpz_add_ui(mpz3, mpz1, -c2);
             else
-                mpz_sub_ui(mpz3, mpz1, c2);
+                flint_mpz_sub_ui(mpz3, mpz1, c2);
             _fmpz_demote_val(f);    /* may have cancelled */
         }
         else                    /* g and h are large */

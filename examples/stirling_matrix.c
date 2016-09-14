@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 /*
     Demo FLINT program for generating Stirling number matrices
@@ -37,12 +23,12 @@
 
 int main(int argc, char* argv[])
 {
-    long n;
+    slong n;
     fmpz_mat_t S1, S2, P;
 
     if (argc != 2)
     {
-        printf("Syntax: stirling_matrix <integer>\n");
+        flint_printf("Syntax: stirling_matrix <integer>\n");
         return EXIT_FAILURE;
     }
 
@@ -52,21 +38,21 @@ int main(int argc, char* argv[])
     fmpz_mat_init(S2, n, n);
     fmpz_mat_init(P, n, n);
 
-    stirling_number_1_mat(S1);
-    stirling_number_2_mat(S2);
+    arith_stirling_matrix_1(S1);
+    arith_stirling_matrix_2(S2);
     fmpz_mat_mul(P, S1, S2);
 
-    printf("S1 [Stirling numbers of 1st kind]:\n");
+    flint_printf("S1 [Stirling numbers of 1st kind]:\n");
     fmpz_mat_print_pretty(S1);
-    printf("\n\n");
+    flint_printf("\n\n");
 
-    printf("S2 [Stirling numbers of 2nd kind]:\n");
+    flint_printf("S2 [Stirling numbers of 2nd kind]:\n");
     fmpz_mat_print_pretty(S2);
-    printf("\n\n");
+    flint_printf("\n\n");
 
-    printf("S1 * S2:\n");
+    flint_printf("S1 * S2:\n");
     fmpz_mat_print_pretty(P);
-    printf("\n\n");
+    flint_printf("\n\n");
 
     fmpz_mat_clear(S1);
     fmpz_mat_clear(S2);

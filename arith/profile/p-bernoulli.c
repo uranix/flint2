@@ -1,28 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright 2009 William Hart
     Copyright 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +33,7 @@ void sample(void * arg, ulong count)
     fmpz * den;
     bernoulli_vec_t * params = (bernoulli_vec_t *) arg;
     ulong n = params->n;
-    long i;
+    slong i;
     int algorithm = params->algorithm;
 
     num = _fmpz_vec_init(n);
@@ -59,15 +45,15 @@ void sample(void * arg, ulong count)
     {
         if (algorithm == 0)
         {
-            _bernoulli_number_vec_recursive(num, den, n);
+            _arith_bernoulli_number_vec_recursive(num, den, n);
         }
         else if (algorithm == 1)
         {
-            _bernoulli_number_vec_multi_mod(num, den, n);
+            _arith_bernoulli_number_vec_multi_mod(num, den, n);
         }
         else if (algorithm == 2)
         {
-            _bernoulli_number_vec_zeta(num, den, n);
+            _arith_bernoulli_number_vec_zeta(num, den, n);
             mpfr_free_cache();
         }
     }
@@ -82,11 +68,11 @@ int main(void)
 {
     double min_recursive, min_multi_mod, min_zeta, max;
     bernoulli_vec_t params;
-    long n;
+    slong n;
 
-    printf("n / recursive / multi_mod / zeta / best [times in us]\n");
+    flint_printf("n / recursive / multi_mod / zeta / best [times in us]\n");
 
-    for (n = 2; n <= 10000; n = (long) ((double) n * 1.2) + 1)
+    for (n = 2; n <= 10000; n = (slong) ((double) n * 1.2) + 1)
     {
         params.n = n;
 
@@ -104,16 +90,16 @@ int main(void)
         params.algorithm = 2;
         prof_repeat(&min_zeta, &max, sample, &params);
 
-        printf("%ld %.2f %.2f %.2f ", 
+        flint_printf("%wd %.2f %.2f %.2f ", 
             n, min_recursive, min_multi_mod, min_zeta);
 
         if (min_recursive && min_recursive < min_multi_mod && \
             min_recursive < min_zeta)
-            printf("(recursive)\n");
+            flint_printf("(recursive)\n");
         else if (min_multi_mod < min_zeta)
-            printf("(multi_mod)\n");
+            flint_printf("(multi_mod)\n");
         else
-            printf("(zeta)\n");
+            flint_printf("(zeta)\n");
     }
 
     return 0;

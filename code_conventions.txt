@@ -17,32 +17,59 @@ Primitive types
 Depending on the main interpretation of the value of a variable, where 
 possible the following primitive datatype should be used:
 
-    | bit counts up to a single limb         | unsigned long       |
-    | bit counts, multiprecision             | mp_bitcnt_t         |
-    | limb counts in multiprecision integers | mp_size_t           |
-    | limbs                                  | mp_limb_t           |
-    | mp_limb_t arrays                       | mp_ptr/ mp_srcptr   |
-    | ui/ si function constants              | unsigned long/ long |
-    | polynomial lengths                     | long                |
-    | number of indeterminates               | long                |
-    | row/ column indices                    | long                |
-    | precision for mpfr types               | mpfr_prec_t         |
+    | bit counts up to a single limb         | ulong                       |
+    | bit counts, multiprecision             | mp_bitcnt_t                 |
+    | byte counts (strings)                  | size_t                      |
+    | limb counts in multiprecision integers | mp_size_t                   |
+    | limbs (unsigned/signed)                | mp_limb_t/ mp_limb_signed_t |
+    | mp_limb_t arrays                       | mp_ptr/ mp_srcptr           |
+    | ui/ si function constants              | ulong/ slong                |
+    | exponents (unsigned/signed)            | ulong/ slong                |
+    | polynomial lengths                     | slong                       |
+    | number of indeterminates               | slong                       |
+    | row/ column indices                    | slong                       |
+    | precision for mpfr types               | mpfr_prec_t                 |
 
 The typical definitions of these in terms of primitive types are:
 
-    | mp_bitcnt_t   | unsigned long, or unsigned long long               |
-    | mp_size_t     | int, long, or long long                            |
-    | mp_limb_t     | unsigned int, unsigned long, or unsigned long long |
-    | mp_ptr        | mp_limb_t *                                        |
-    | mp_srcptr     | const mp_limb_t *                                  |
+    | mp_bitcnt_t   | ulong, or ulong long                                 |
+    | mp_size_t     | long, or long long                                   |
+    | mp_limb_t     | ulong, or ulong long                                 |
+    | mp_ptr        | mp_limb_t *                                          |
+    | mp_srcptr     | const mp_limb_t *                                    |
+    | slong         | long or long long                                    |
+    | ulong         | ulong or ulong long                                  |
 
-Type definitions
-----------------
+Constant integers
+-----------------
 
-Aside from the more mathematical FLINT types, we also use the following 
-definitions:
+Because the ulong/slong types can be (unsigned) long on Linux and (unsigned)
+long long on Windows, we cannot use the usual 123456789UL to declare them.
 
-   | ulong | unsigned long |
+Instead, we provide two macros:
+
+  WORD(123456789) /* slong constant */
+  UWORD(123456789) /* ulong constant */
+
+Format specifiers
+-----------------
+
+Again, because a ulong/slong use different types on Windows and Linux, we cannot
+use the format specifers %lu/%ld in printf. For this purpose we provide the
+flint_printf functions, which is the same as printf, except that it supports:
+
+   flint_printf("%wu", d); /* print ulong */
+   flint_printf("%wd", d); /* print slong */
+
+Use of const
+------------
+
+Input parameters to functions should be marked const in the following cases:
+
+* complex types that are passed by reference, e.g. fmpz_poly_t
+
+They should not be used on output parameters or for simple types or simple
+structs which are passed by value and not reference, e.g. nmod_t.
 
 Random functions
 ----------------
@@ -67,6 +94,22 @@ the convention module1_get_module2 and module1_set_module2, where module1 is
 notionally the more complex of the two modules. E.g. fmpz_poly_get_nmod_poly.
 The set function should set an object of module1 to the value of an object of
 module2, and the get function should do the opposite.
+
+Function prototypes
+-------------------
+
+All function prototypes in .h files in FLINT require a FLINT_DLL declaration in
+front of them. Please keep the initial part of the prototype all on a single
+line, rather than placing the FLINT_DLL and/or return type on a different
+line, e.g. prototypes should look like this:
+
+FLINT_DLL void myfunc(blah, ....
+      ...., blah, blah)
+
+Note that dll import/export is handled differently for inlines. Please don't
+add FLINT_DLL to inline functions. Rather, add a single FLINT_DLL to the
+non-inline branch inside the relevant BLAH_INLINES_C #define at the top of the
+.h file.
 
 Code formatting
 ---------------

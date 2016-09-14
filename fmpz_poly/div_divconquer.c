@@ -1,39 +1,26 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008, 2009 William Hart
+    Copyright (C) 2010 Sebastian Pancratz
+    Copyright (C) 2012 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008, 2009 William Hart
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
 static void
-__fmpz_poly_div_divconquer(fmpz * Q, const fmpz * A, long lenA, 
-                                     const fmpz * B, long lenB)
+__fmpz_poly_div_divconquer(fmpz * Q, const fmpz * A, slong lenA, 
+                                     const fmpz * B, slong lenB)
 {
     if (lenA < 2 * lenB - 1)
     {
@@ -41,64 +28,14 @@ __fmpz_poly_div_divconquer(fmpz * Q, const fmpz * A, long lenA,
            Convert unbalanced division into a 2 q1 - 1 by q1 division
          */
 
-        const long q1 = lenA - lenB + 1;
-        const long q2 = lenB - q1;
+        const slong q1 = lenA - lenB + 1;
+        const slong q2 = lenB - q1;
 
         fmpz * temp = _fmpz_vec_init(2 * q1 - 1);
 
         _fmpz_poly_div_divconquer_recursive(Q, temp, A + q2, B + q2, q1);
 
         _fmpz_vec_clear(temp, 2 * q1 - 1);
-    }
-    else if (lenA > 2 * lenB - 1)
-    {
-        /*
-           Shift A right until it is of length 2 lenB - 1, call this p1
-         */
-
-        const long shift = lenA - 2 * lenB + 1;
-        const fmpz * p1  = A + shift;
-
-        fmpz * q2   = Q;
-        fmpz * q1   = Q + shift;
-        fmpz * dq1  = (fmpz *) A;
-        fmpz * d1q1 = (fmpz *) A + lenA;
-
-        /* 
-            XXX:  In this case, we expect A to be modifiable, and we 
-            expect an extra 2 lenB - 1 coefficients at the top of A 
-            which we can use as temporary space
-         */
-
-        /* 
-           Set q1 to p1 div B, a 2 lenB - 1 by lenB division, so q1 ends up 
-           being of length lenB; also set d1q1 = d1 q1 of length 2 lenB - 1, 
-           truncated to length lenB - 1
-         */
-
-        _fmpz_poly_divremlow_divconquer_recursive(q1, d1q1, p1, B, lenB);
-
-        /* 
-           We have dq1 = d1 q1 x^shift, of length lenA
-
-           Compute R = A - dq1;  the first lenB coefficients represent 
-           remainder terms (zero if division exact), leaving lenA - lenB 
-           significant terms which we use in the division
-         */
-
-        _fmpz_vec_sub(dq1 + shift, A + shift, d1q1, lenB - 1);
-
-        /*
-           Compute q2 = trunc(R) div B;  it is a smaller division than the 
-           original since len(trunc(R)) = lenA - lenB
-         */
-
-        __fmpz_poly_div_divconquer(q2, dq1, lenA - lenB, B, lenB);
-
-        /*
-           We have Q = q1 x^shift + q2;  Q has length lenB + shift, q2 has 
-           length shift since it is an lenA - lenB by lenB division
-         */
     }
     else  /* lenA = 2 lenB - 1 */
     {
@@ -110,9 +47,19 @@ __fmpz_poly_div_divconquer(fmpz * Q, const fmpz * A, long lenA,
     }
 }
 
+/* needed due to partial overlap */
+static void
+_fmpz_vec_sub_dec(fmpz * a, const fmpz * b, const fmpz * c, slong n)
+{
+    slong i;
+
+    for (i = n - 1; i >= 0; i--)
+        fmpz_sub(a + i, b + i, c + i);
+}
+
 void _fmpz_poly_div_divconquer(fmpz *Q, 
-                               const fmpz *A, long lenA, 
-                               const fmpz *B, long lenB)
+                               const fmpz *A, slong lenA, 
+                               const fmpz *B, slong lenB)
 {
     if (lenA <= 2 * lenB - 1)
     {
@@ -120,14 +67,31 @@ void _fmpz_poly_div_divconquer(fmpz *Q,
     }
     else  /* lenA > 2 * lenB - 1 */
     {
-        fmpz *S;
+        fmpz *S, *T;
+        slong shift, next, n = 2 * lenB - 1;
 
-        S = _fmpz_vec_init(lenA + (2 * lenB - 1));
-        _fmpz_vec_set(S, A, lenA);
+        S = _fmpz_vec_init(2 * n);
+        T = S + n;
 
-        __fmpz_poly_div_divconquer(Q, S, lenA, B, lenB);
+        /* To avoid copying all of A, we let S be a window of the
+           remainder, taking up to n coefficients at a time */
+        shift = lenA - n;
+        _fmpz_vec_set(S, A + shift, n);
 
-        _fmpz_vec_clear(S, lenA + (2 * lenB - 1));
+        while (lenA >= n)
+        {
+            shift = lenA - n;
+            _fmpz_poly_divremlow_divconquer_recursive(Q + shift, T, S, B, lenB);
+            next = FLINT_MIN(lenB, shift);
+            _fmpz_vec_sub_dec(S + next, S, T, lenB - 1);
+            _fmpz_vec_set(S, A + shift - next, next);
+            lenA -= lenB;
+        }
+
+        if (lenA >= lenB)
+            __fmpz_poly_div_divconquer(Q, S, lenA, B, lenB);
+
+        _fmpz_vec_clear(S, 2 * n);
     }
 }
 
@@ -135,15 +99,15 @@ void
 fmpz_poly_div_divconquer(fmpz_poly_t Q, 
                          const fmpz_poly_t A, const fmpz_poly_t B)
 {
-    const long lenA = A->length;
-    const long lenB = B->length;
+    const slong lenA = A->length;
+    const slong lenB = B->length;
     fmpz_poly_t t;
     fmpz *q;
 
     if (lenB == 0)
     {
-        printf("Exception: division by zero in fmpz_poly_div_divconquer\n");
-        abort();
+        flint_printf("Exception (fmpz_poly_div_divconquer). Division by zero.\n");
+        flint_abort();
     }
 
     if (lenA < lenB)

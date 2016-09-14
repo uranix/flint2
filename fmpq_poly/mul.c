@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -31,26 +17,34 @@
 #include "fmpq_poly.h"
 
 void _fmpq_poly_mul(fmpz * rpoly, fmpz_t rden, 
-                    const fmpz * poly1, const fmpz_t den1, long len1, 
-                    const fmpz * poly2, const fmpz_t den2, long len2)
+                    const fmpz * poly1, const fmpz_t den1, slong len1, 
+                    const fmpz * poly2, const fmpz_t den2, slong len2)
 {
     fmpz_t gcd1;  /* GCD( poly1, den2 ) */
     fmpz_t gcd2;  /* GCD( poly2, den1 ) */
+
+    if (poly1 == poly2 && len1 == len2)
+    {
+        _fmpz_poly_sqr(rpoly, poly1, len1);
+        fmpz_mul(rden, den1, den2);
+        return;
+    }
+
     fmpz_init(gcd1);
     fmpz_init(gcd2);
     fmpz_one(gcd1);
     fmpz_one(gcd2);
     
-    if (*den2 != 1L)
+    if (*den2 != WORD(1))
     {
         _fmpz_vec_content(gcd1, poly1, len1);
-        if (*gcd1 != 1L)
+        if (*gcd1 != WORD(1))
             fmpz_gcd(gcd1, gcd1, den2);
     }
-    if (*den1 != 1L)
+    if (*den1 != WORD(1))
     {
         _fmpz_vec_content(gcd2, poly2, len2);
-        if (*gcd2 != 1L)
+        if (*gcd2 != WORD(1))
             fmpz_gcd(gcd2, gcd2, den1);
     }
     
@@ -63,7 +57,7 @@ void _fmpq_poly_mul(fmpz * rpoly, fmpz_t rden,
     _fmpz_poly_mul(rpoly, poly1, len1, poly2, len2);
     fmpz_mul(rden, den1, den2);
 
-    if ((*gcd1 != 1L) | (*gcd2 != 1L))
+    if ((*gcd1 != WORD(1)) | (*gcd2 != WORD(1)))
     {
         fmpz_t g;
         fmpz_init(g);
@@ -79,7 +73,7 @@ void _fmpq_poly_mul(fmpz * rpoly, fmpz_t rden,
 
 void fmpq_poly_mul(fmpq_poly_t res, const fmpq_poly_t poly1, const fmpq_poly_t poly2)
 {
-    long len;
+    slong len;
     
     if (poly1->length == 0 || poly2->length == 0)
     {

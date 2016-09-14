@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include <mpfr.h>
 #include "flint.h"
 #include "fmpz.h"
@@ -106,32 +92,30 @@ static const ulong testdata[][2] =
 
 int main(void)
 {
-    flint_rand_t state;
-
     fmpz_t p;
     fmpz * v;
 
-    long i;
+    slong i;
 
-    printf("number_of_partitions....");
-    fflush(stdout);
+    FLINT_TEST_INIT(state);
 
-    flint_randinit(state);
+    flint_printf("number_of_partitions....");
+    fflush(stdout);    
 
     fmpz_init(p);
     v = _fmpz_vec_init(3000);
 
-    number_of_partitions_vec(v, 3000);
+    arith_number_of_partitions_vec(v, 3000);
 
     for (i = 0; i < 3000; i++)
     {
-        number_of_partitions(p, i);
+        arith_number_of_partitions(p, i);
         if (!fmpz_equal(p, v + i))
         {
-            printf("FAIL:\n");
-            printf("p(%ld) does not agree with power series\n", i);
-            printf("Computed p(%ld): ", i); fmpz_print(p); printf("\n");
-            printf("Expected: "); fmpz_print(v + i); printf("\n");
+            flint_printf("FAIL:\n");
+            flint_printf("p(%wd) does not agree with power series\n", i);
+            flint_printf("Computed p(%wd): ", i); fmpz_print(p); flint_printf("\n");
+            flint_printf("Expected: "); fmpz_print(v + i); flint_printf("\n");
             abort();
         }
     }
@@ -140,24 +124,23 @@ int main(void)
 
     for (i = 0; testdata[i][0] != 0; i++)
     {
-        number_of_partitions(p, testdata[i][0]);
+        arith_number_of_partitions(p, testdata[i][0]);
 
         if (fmpz_fdiv_ui(p, 1000000000) != testdata[i][1])
         {
-            printf("FAIL:\n");
-            printf("p(%ld) does not agree with known value mod 10^9\n",
+            flint_printf("FAIL:\n");
+            flint_printf("p(%wd) does not agree with known value mod 10^9\n",
                 testdata[i][0]);
-            printf("Computed: %lu\n", fmpz_fdiv_ui(p, 1000000000));
-            printf("Expected: %lu\n", testdata[i][1]);
+            flint_printf("Computed: %wu\n", fmpz_fdiv_ui(p, 1000000000));
+            flint_printf("Expected: %wu\n", testdata[i][1]);
             abort();
         }
     }
 
     fmpz_clear(p);
 
-    flint_randclear(state);
-    mpfr_free_cache();
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

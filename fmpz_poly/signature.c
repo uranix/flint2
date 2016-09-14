@@ -1,39 +1,25 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
-void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
+void _fmpz_poly_signature(slong * r1, slong * r2, const fmpz * poly, slong len)
 {
     fmpz *A, *B, *f, *g, *h, *w;
-    long lenA, lenB;
+    slong lenA, lenB;
     int s, t;
     
     if (len <= 2)
@@ -45,7 +31,7 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
     
     w = _fmpz_vec_init(2 * len + 2);
     A = w;
-	B = w + len;
+    B = w + len;
     lenA = len;
     lenB = lenA - 1;
     f = w + 2 * len - 1;
@@ -60,12 +46,12 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
     fmpz_one(h);
     
     s = 1;
-    t = (lenA & 1L) ? -s : s;
+    t = (lenA & WORD(1)) ? -s : s;
     *r1 = 1;
     
     while (1)
 	{
-        long delta = lenA - lenB;
+        slong delta = lenA - lenB;
         int sgnA;
 
         _fmpz_poly_pseudo_rem_cohen(A, A, lenA, B, lenB);
@@ -75,12 +61,12 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
 
 		if (lenA == 0)
 		{
-			printf("Exception: non-squarefree polynomial detected in fmpz_poly_signature\n");
+			flint_printf("Exception (fmpz_poly_signature). Non-squarefree polynomial detected.\n");
             _fmpz_vec_clear(w, 2 * len + 2);
-			abort();
+			flint_abort();
 		}
       
-        if ((fmpz_sgn(B + (lenB - 1)) > 0) || (delta & 1L))
+        if ((fmpz_sgn(B + (lenB - 1)) > 0) || (delta & WORD(1)))
             _fmpz_vec_neg(A, A, lenA);
 
         sgnA = fmpz_sgn(A + (lenA - 1));
@@ -89,7 +75,7 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
 			s = -s;
 			(*r1)--;
         }
-		if (sgnA != ((lenA & 1L) ? t : -t))
+		if (sgnA != ((lenA & WORD(1)) ? t : -t))
 		{
 			t = -t;
 			(*r1)++;
@@ -110,7 +96,7 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
                 B = temp;
             }
             {
-                long temp = lenA;
+                slong temp = lenA;
                 lenA = lenB;
                 lenB = temp;
             }
@@ -119,7 +105,7 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
             {
                 fmpz_mul(f, g, h);
                 _fmpz_vec_scalar_divexact_fmpz(B, B, lenB, f);
-                fmpz_set(g, A + (lenA - 1));
+                fmpz_abs(g, A + (lenA - 1));
                 fmpz_set(h, g);
             }
             else
@@ -129,14 +115,15 @@ void _fmpz_poly_signature(long * r1, long * r2, fmpz * poly, long len)
                 _fmpz_vec_scalar_divexact_fmpz(B, B, lenB, f);
                 fmpz_pow_ui(f, h, delta - 1);
                 fmpz_pow_ui(g, A + (lenA - 1), delta);
+                fmpz_abs(g, g);
                 fmpz_divexact(h, g, f);
-                fmpz_set(g, A + (lenA - 1));
+                fmpz_abs(g, A + (lenA - 1));
             }
 		}
 	}
 }
 
-void fmpz_poly_signature(long * r1, long * r2, fmpz_poly_t poly)
+void fmpz_poly_signature(slong * r1, slong * r2, const fmpz_poly_t poly)
 {
     _fmpz_poly_signature(r1, r2, poly->coeffs, poly->length);
 }

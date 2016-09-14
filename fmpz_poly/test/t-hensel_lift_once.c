@@ -1,36 +1,21 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
-#include "fmpz_poly_factor.h"
 #include "nmod_poly.h"
 #include "ulong_extras.h"
 
@@ -38,23 +23,21 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("hensel_lift_once....");
+    flint_printf("hensel_lift_once....");
     fflush(stdout);
-
-    flint_randinit(state);
    
     /* We check that lifting local factors of F yields factors */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t F, G, H, R;
         fmpz_poly_factor_t F_fac;
         nmod_poly_factor_t f_fac;
-        long bits, nbits, n, exp, j;
+        slong bits, nbits, n, exp, j;
 
         bits  = n_randint(state, 200) + 1;
-        nbits = n_randint(state,FLINT_BITS - 6) + 6;
+        nbits = n_randint(state, FLINT_BITS - 6) + 6;
 
         fmpz_poly_init(F);
         fmpz_poly_init(G);
@@ -110,12 +93,12 @@ main(void)
 
         if (!result) 
         {
-            printf("FAIL:\n");
-            printf("bits = %ld, n = %ld, exp = %ld\n", bits, n, exp);
-            fmpz_poly_print(F); printf("\n\n");
-            fmpz_poly_print(G); printf("\n\n");
-            fmpz_poly_print(H); printf("\n\n");
-            fmpz_poly_factor_print(F_fac); printf("\n\n");
+            flint_printf("FAIL:\n");
+            flint_printf("bits = %wd, n = %wd, exp = %wd\n", bits, n, exp);
+            fmpz_poly_print(F); flint_printf("\n\n");
+            fmpz_poly_print(G); flint_printf("\n\n");
+            fmpz_poly_print(H); flint_printf("\n\n");
+            fmpz_poly_factor_print(F_fac); flint_printf("\n\n");
             abort();
         } 
 
@@ -127,9 +110,9 @@ main(void)
         fmpz_poly_clear(R);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }
 

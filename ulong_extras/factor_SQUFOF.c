@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
@@ -32,7 +18,7 @@ mp_limb_t _ll_factor_SQUFOF(mp_limb_t n_hi, mp_limb_t n_lo, ulong max_iters)
     mp_limb_t n[2];
 	 mp_limb_t sqrt[2];
 	 mp_limb_t rem[2];
-	 mp_size_t num, sqroot, p, q;
+	 slong num, sqroot, p, q;
 
     mp_limb_t l, l2, iq, pnext;
     mp_limb_t qarr[50];
@@ -43,7 +29,7 @@ mp_limb_t _ll_factor_SQUFOF(mp_limb_t n_hi, mp_limb_t n_lo, ulong max_iters)
 	 n[1] = n_hi;
 
     if (n_hi) num = mpn_sqrtrem(sqrt, rem, n, 2);
-    else num = ((sqrt[0] = n_sqrtrem(rem, n_lo)) != 0UL);
+    else num = ((sqrt[0] = n_sqrtrem(rem, n_lo)) != UWORD(0));
 	
     sqroot = sqrt[0];
     p = sqroot;
@@ -65,16 +51,16 @@ mp_limb_t _ll_factor_SQUFOF(mp_limb_t n_hi, mp_limb_t n_lo, ulong max_iters)
         pnext = iq*q - p;
         if (q <= l) 
         {
-            if ((q & 1UL) == 0UL) 
+            if ((q & UWORD(1)) == UWORD(0)) 
             {
                 qarr[qupto] = q/2;
                 qupto++;
-                if (qupto >= 50UL) return 0UL;
+                if (qupto >= UWORD(50)) return UWORD(0);
             } else if (q <= l2)
             {
                 qarr[qupto] = q;
                 qupto++;
-                if (qupto >= 50UL) return 0UL;
+                if (qupto >= UWORD(50)) return UWORD(0);
             }
         }
 
@@ -85,15 +71,15 @@ mp_limb_t _ll_factor_SQUFOF(mp_limb_t n_hi, mp_limb_t n_lo, ulong max_iters)
         if ((i & 1) == 1) continue;
         if (!n_is_square(q)) continue;
         r = n_sqrt(q);
-        if (qupto == 0UL) break;
+        if (qupto == UWORD(0)) break;
         for (j = 0; j < qupto; j++)	
             if (r == qarr[j]) goto cont;
         break;
       cont: ;
-        if (r == 1UL) return 0UL;
+        if (r == UWORD(1)) return UWORD(0);
    }
    
-    if (i == max_iters) return 0UL;  /* taken too long, give up */
+    if (i == max_iters) return UWORD(0);  /* taken too much time, give up */
 
     qlast = r;
     p = p + r*((sqroot - p)/r);
@@ -123,16 +109,16 @@ mp_limb_t _ll_factor_SQUFOF(mp_limb_t n_hi, mp_limb_t n_lo, ulong max_iters)
         p = pnext;
     }
 
-    if (j == max_iters) return 0UL;  /* taken too long, give up */
+    if (j == max_iters) return UWORD(0);  /* taken too much time, give up */
 
-    if ((q & 1UL) == 0UL) q /= 2UL;
+    if ((q & UWORD(1)) == UWORD(0)) q /= UWORD(2);
 
     return q;
 }
 
 mp_limb_t n_factor_SQUFOF(mp_limb_t n, ulong iters)
 {
-    mp_limb_t factor = _ll_factor_SQUFOF(0UL, n, iters);
+    mp_limb_t factor = _ll_factor_SQUFOF(UWORD(0), n, iters);
     mp_limb_t multiplier;
     mp_limb_t quot, rem;
     ulong i;
@@ -149,11 +135,11 @@ mp_limb_t n_factor_SQUFOF(mp_limb_t n, ulong iters)
             quot = factor/multiplier;
             rem = factor - quot*multiplier;
             if (!rem) factor = quot;
-            if ((factor == 1UL) || (factor == n)) factor = 0UL;
+            if ((factor == UWORD(1)) || (factor == n)) factor = UWORD(0);
         }
     }
 
-    if (i == FLINT_NUM_PRIMES_SMALL) return 0UL;
+    if (i == FLINT_NUM_PRIMES_SMALL) return UWORD(0);
 
     return factor; 
 }

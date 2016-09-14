@@ -1,30 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -33,8 +19,8 @@
 
 void
 _fmpq_poly_compose_series_horner(fmpz * res, fmpz_t den, const fmpz * poly1,
-        const fmpz_t den1, long len1, const fmpz * poly2,
-        const fmpz_t den2, long len2, long n)
+        const fmpz_t den1, slong len1, const fmpz * poly2,
+        const fmpz_t den2, slong len2, slong n)
 {
     if (fmpz_is_one(den2))
     {
@@ -50,8 +36,8 @@ _fmpq_poly_compose_series_horner(fmpz * res, fmpz_t den, const fmpz * poly1,
     }
     else
     {
-        long i = len1 - 1;
-        long lenr;
+        slong i = len1 - 1;
+        slong lenr;
         fmpz_t tden;
         fmpz * t = _fmpz_vec_init(n);
         fmpz_init(tden);
@@ -93,17 +79,17 @@ _fmpq_poly_compose_series_horner(fmpz * res, fmpz_t den, const fmpz * poly1,
 
 void
 fmpq_poly_compose_series_horner(fmpq_poly_t res, 
-                    const fmpq_poly_t poly1, const fmpq_poly_t poly2, long n)
+                    const fmpq_poly_t poly1, const fmpq_poly_t poly2, slong n)
 {
-    long len1 = poly1->length;
-    long len2 = poly2->length;
-    long lenr;
+    slong len1 = poly1->length;
+    slong len2 = poly2->length;
+    slong lenr;
 
     if (len2 != 0 && !fmpz_is_zero(poly2->coeffs))
     {
-        printf("exception: fmpq_poly_compose_series_horner: inner polynomial "
-                "must have zero constant term\n");
-        abort();
+        flint_printf("Exception (fmpq_poly_compose_series_horner). Inner polynomial \n"
+               "must have zero constant term.\n");
+        flint_abort();
     }
 
     if (len1 == 0 || n == 0)

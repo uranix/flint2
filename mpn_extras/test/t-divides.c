@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "mpn_extras.h"
 #include "ulong_extras.h"
@@ -36,9 +22,9 @@ int main(void)
     mpz_t a, b, c, g, s;
     mp_ptr temp;
     gmp_randstate_t st;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
     
-    printf("divides....");
+    flint_printf("divides....");
     fflush(stdout);
 
     mpz_init(a);
@@ -47,7 +33,7 @@ int main(void)
     mpz_init(s);
     /* don't init g */
     gmp_randinit_default(st);
-    flint_randinit(state);
+    
 
     /* check if b divides a*b */
     for (i = 0; i < 10000; i++)
@@ -67,14 +53,14 @@ int main(void)
        g->_mp_d = flint_malloc((c->_mp_size - b->_mp_size + 1)*sizeof(mp_limb_t));
        temp = flint_malloc(b->_mp_size * sizeof(mp_limb_t));
 
-       result = mpn_divides(g->_mp_d, c->_mp_d, c->_mp_size, b->_mp_d, b->_mp_size, temp);
+       result = flint_mpn_divides(g->_mp_d, c->_mp_d, c->_mp_size, b->_mp_d, b->_mp_size, temp);
        g->_mp_size = c->_mp_size - b->_mp_size + 1;
        g->_mp_size -= (g->_mp_d[g->_mp_size - 1] == 0);
        
        result &= (mpz_cmp(g, a) == 0);
        if (!result)
        {
-          printf("FAIL:\n");
+          flint_printf("FAIL:\n");
           gmp_printf("%Zd\n", c);
           gmp_printf("%Zd\n", a);
           gmp_printf("%Zd\n", b);
@@ -107,11 +93,11 @@ int main(void)
        g->_mp_d = flint_malloc((c->_mp_size - b->_mp_size + 1)*sizeof(mp_limb_t));
        temp = flint_malloc(b->_mp_size * sizeof(mp_limb_t));
 
-       result = !mpn_divides(g->_mp_d, c->_mp_d, c->_mp_size, b->_mp_d, b->_mp_size, temp);
+       result = !flint_mpn_divides(g->_mp_d, c->_mp_d, c->_mp_size, b->_mp_d, b->_mp_size, temp);
        
        if (!result)
        {
-          printf("FAIL:\n");
+          flint_printf("FAIL:\n");
           gmp_printf("%Zd\n", c);
           gmp_printf("%Zd\n", a);
           gmp_printf("%Zd\n", b);
@@ -129,8 +115,8 @@ int main(void)
     mpz_clear(s);
     /* don't clear g */
     gmp_randclear(st);
-    flint_randclear(state);
-
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

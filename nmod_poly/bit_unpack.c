@@ -1,31 +1,17 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2007 David Howden
     Copyright (C) 2010 William Hart
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -33,10 +19,10 @@
 
 /* Assumes len > 0, bits > 0. */
 void
-_nmod_poly_bit_unpack(mp_ptr res, long len, mp_srcptr mpn, mp_bitcnt_t bits,
+_nmod_poly_bit_unpack(mp_ptr res, slong len, mp_srcptr mpn, mp_bitcnt_t bits,
                       nmod_t mod)
 {
-    long i;
+    slong i;
     ulong current_bit = 0, current_limb = 0;
     mp_limb_t temp_lower, temp_upper, temp_upper2;
 
@@ -44,7 +30,7 @@ _nmod_poly_bit_unpack(mp_ptr res, long len, mp_srcptr mpn, mp_bitcnt_t bits,
     {
         ulong boundary_limit_bit = FLINT_BITS - bits;
 
-        mp_limb_t mask = (1L << bits) - 1L;
+        mp_limb_t mask = (WORD(1) << bits) - WORD(1);
 
         for (i = 0; i < len; i++)
         {
@@ -94,7 +80,7 @@ _nmod_poly_bit_unpack(mp_ptr res, long len, mp_srcptr mpn, mp_bitcnt_t bits,
     {
         ulong double_boundary_limit_bit = 2 * FLINT_BITS - bits;
 
-        mp_limb_t mask = (1L << (bits - FLINT_BITS)) - 1L;
+        mp_limb_t mask = (WORD(1) << (bits - FLINT_BITS)) - WORD(1);
 
         for (i = 0; i < len; i++)
         {
@@ -150,7 +136,7 @@ _nmod_poly_bit_unpack(mp_ptr res, long len, mp_srcptr mpn, mp_bitcnt_t bits,
     {
         ulong double_boundary_limit_bit = 3 * FLINT_BITS - bits;
 
-        mp_limb_t mask = (1L << (bits - 2 * FLINT_BITS)) - 1L;
+        mp_limb_t mask = (WORD(1) << (bits - 2 * FLINT_BITS)) - WORD(1);
 
         for (i = 0; i < len; i++)
         {
@@ -215,13 +201,13 @@ _nmod_poly_bit_unpack(mp_ptr res, long len, mp_srcptr mpn, mp_bitcnt_t bits,
 void
 nmod_poly_bit_unpack(nmod_poly_t poly, const fmpz_t f, mp_bitcnt_t bit_size)
 {
-    long len;
+    slong len;
     mpz_t tmp;
 
     if (fmpz_sgn(f) < 0)
     {
-        printf("nmod_poly_bit_unpack: expected an unsigned value!\n");
-        abort();
+        flint_printf("Exception (nmod_poly_bit_unpack). f < 0.\n");
+        flint_abort();
     }
 
     if (bit_size == 0 || fmpz_is_zero(f))
@@ -233,7 +219,7 @@ nmod_poly_bit_unpack(nmod_poly_t poly, const fmpz_t f, mp_bitcnt_t bit_size)
     len = (fmpz_bits(f) + bit_size - 1) / bit_size;
 
     mpz_init2(tmp, bit_size*len);
-    mpn_zero(tmp->_mp_d, tmp->_mp_alloc);
+    flint_mpn_zero(tmp->_mp_d, tmp->_mp_alloc);
     fmpz_get_mpz(tmp, f);
 
     nmod_poly_fit_length(poly, len);

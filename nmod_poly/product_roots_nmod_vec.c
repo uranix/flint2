@@ -1,43 +1,29 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "nmod_poly.h"
 #include "ulong_extras.h"
 
 void
-_nmod_poly_product_roots_nmod_vec(mp_ptr poly, mp_srcptr xs, long n, nmod_t mod)
+_nmod_poly_product_roots_nmod_vec(mp_ptr poly, mp_srcptr xs, slong n, nmod_t mod)
 {
     if (n == 0)
     {
-        poly[0] = 1UL;
+        poly[0] = UWORD(1);
     }
     else if (n < 20)
     {
-        long i, j;
+        slong i, j;
 
-        poly[n] = 1UL;
+        poly[n] = UWORD(1);
         poly[n - 1] = nmod_neg(xs[0], mod);
 
         for (i = 1; i < n; i++)
@@ -57,7 +43,7 @@ _nmod_poly_product_roots_nmod_vec(mp_ptr poly, mp_srcptr xs, long n, nmod_t mod)
     }
     else
     {
-        const long m = (n + 1) / 2;
+        const slong m = (n + 1) / 2;
         mp_ptr tmp;
 
         tmp = _nmod_vec_init(n + 2);
@@ -71,7 +57,7 @@ _nmod_poly_product_roots_nmod_vec(mp_ptr poly, mp_srcptr xs, long n, nmod_t mod)
 }
 
 void
-nmod_poly_product_roots_nmod_vec(nmod_poly_t poly, mp_srcptr xs, long n)
+nmod_poly_product_roots_nmod_vec(nmod_poly_t poly, mp_srcptr xs, slong n)
 {
     nmod_poly_fit_length(poly, n + 1);
     _nmod_poly_product_roots_nmod_vec(poly->coeffs, xs, n, poly->mod);

@@ -1,38 +1,24 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "fmpz_vec.h"
 #include "fmpz_mod_poly.h"
 
-long _fmpz_mod_poly_gcd_euclidean_f(fmpz_t f, fmpz *G, 
-                                    const fmpz *A, long lenA, 
-                                    const fmpz *B, long lenB, const fmpz_t p)
+slong _fmpz_mod_poly_gcd_euclidean_f(fmpz_t f, fmpz *G, 
+                                    const fmpz *A, slong lenA, 
+                                    const fmpz *B, slong lenB, const fmpz_t p)
 {
-    long lenG = 0;
+    slong lenG = 0;
 
     if (lenB == 1)
     {
@@ -48,9 +34,9 @@ long _fmpz_mod_poly_gcd_euclidean_f(fmpz_t f, fmpz *G,
     }
     else  /* lenA >= lenB > 1 */
     {
-        const long lenW = FLINT_MAX(lenA - lenB + 1, lenB) + lenA + 2 * lenB;
+        const slong lenW = FLINT_MAX(lenA - lenB + 1, lenB) + lenA + 2 * lenB;
         fmpz *Q, *R1, *R2, *R3, *T, *W;
-        long lenR2, lenR3;
+        slong lenR2, lenR3;
 
         W  = _fmpz_vec_init(lenW);
         Q  = W;
@@ -104,67 +90,72 @@ void fmpz_mod_poly_gcd_euclidean_f(fmpz_t f, fmpz_mod_poly_t G,
                                    const fmpz_mod_poly_t A,
                                    const fmpz_mod_poly_t B)
 {
-    const long lenA = A->length, lenB = B->length;
-    long lenG;
-    fmpz *g;
+    if (A->length < B->length)
+    {
+        fmpz_mod_poly_gcd_euclidean_f(f, G, B, A);
+    }
+    else /* lenA >= lenB >= 0 */
+    {
+        const slong lenA = A->length, lenB = B->length;
+        slong lenG;
+        fmpz *g;
 
-    if (lenA == 0)
-    {
-        fmpz_mod_poly_make_monic(G, B);
-        fmpz_one(f);
-        return;
-    }
-    if (lenB == 0)
-    {
-        fmpz_mod_poly_make_monic(G, A);
-        fmpz_one(f);
-        return;
-    }
-
-    if (G == A || G == B)
-    {
-        g = _fmpz_vec_init(FLINT_MIN(lenA, lenB));
-    }
-    else
-    {
-        fmpz_mod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
-        g = G->coeffs;
-    }
-
-    if (lenA >= lenB)
-    {
-        lenG = _fmpz_mod_poly_gcd_euclidean_f(f, g, A->coeffs, lenA,
-                                                    B->coeffs, lenB, &(B->p));
-    }
-    else
-    {
-        lenG = _fmpz_mod_poly_gcd_euclidean_f(f, g, B->coeffs, lenB,
-                                                    A->coeffs, lenA, &(A->p));
-    }
-
-    if (fmpz_is_one(f))
-    {
-        if (G == A || G == B)
+        if (lenA == 0) /* lenA = lenB = 0 */
         {
-            _fmpz_vec_clear(G->coeffs, G->alloc);
-            G->coeffs = g;
-            G->alloc  = FLINT_MIN(lenA, lenB);
-            G->length = FLINT_MIN(lenA, lenB);
+            fmpz_mod_poly_zero(G);
+            fmpz_one(f);
         }
-        _fmpz_mod_poly_set_length(G, lenG);
-        if (lenG == 1)
-            fmpz_one(G->coeffs);
-        else
-            fmpz_mod_poly_make_monic(G, G);
-    }
-    else  /* Factor found, ensure G is normalised */
-    {
-        if (G == A || G == B)
-            _fmpz_vec_clear(g, FLINT_MIN(lenA, lenB));
-        else
+        else if (lenB == 0) /* lenA > lenB = 0 */
         {
-            _fmpz_vec_zero(G->coeffs, FLINT_MIN(lenA, lenB));
-            _fmpz_mod_poly_set_length(G, 0);
+            fmpz_t invA;
+            fmpz_init(invA);
+            fmpz_gcdinv(f, invA, A->coeffs + lenA - 1, &B->p);
+            if (fmpz_is_one(f))
+                fmpz_mod_poly_scalar_mul_fmpz(G, A, invA);
+            else
+                fmpz_mod_poly_zero(G);
+            fmpz_clear(invA);
+        }
+        else /* lenA >= lenB >= 1 */
+        {
+            if (G == A || G == B)
+            {
+                g = _fmpz_vec_init(FLINT_MIN(lenA, lenB));
+            }
+            else
+            {
+                fmpz_mod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
+                g = G->coeffs;
+            }
+
+            lenG = _fmpz_mod_poly_gcd_euclidean_f(f, g, A->coeffs, lenA,
+                                                    B->coeffs, lenB, &(B->p));
+
+            if (fmpz_is_one(f))
+            {
+                if (G == A || G == B)
+                {
+                    _fmpz_vec_clear(G->coeffs, G->alloc);
+                    G->coeffs = g;
+                    G->alloc  = FLINT_MIN(lenA, lenB);
+                    G->length = FLINT_MIN(lenA, lenB);
+                }
+                _fmpz_mod_poly_set_length(G, lenG);
+                if (lenG == 1)
+                    fmpz_one(G->coeffs);
+                else
+                    fmpz_mod_poly_make_monic(G, G);
+            }
+            else  /* Factor found, ensure G is normalised */
+            {
+                if (G == A || G == B)
+                    _fmpz_vec_clear(g, FLINT_MIN(lenA, lenB));
+                else
+                {
+                    _fmpz_vec_zero(G->coeffs, FLINT_MIN(lenA, lenB));
+                    _fmpz_mod_poly_set_length(G, 0);
+                }
+            }
         }
     }
 }

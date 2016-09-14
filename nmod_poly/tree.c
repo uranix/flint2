@@ -1,41 +1,27 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
-mp_ptr * _nmod_poly_tree_alloc(long len)
+mp_ptr * _nmod_poly_tree_alloc(slong len)
 {
     mp_ptr * tree = NULL;
 
     if (len)
     {
-        long i, height = FLINT_CLOG2(len);
+        slong i, height = FLINT_CLOG2(len);
 
         tree = flint_malloc(sizeof(mp_ptr) * (height + 1));
         for (i = 0; i <= height; i++)
@@ -45,11 +31,11 @@ mp_ptr * _nmod_poly_tree_alloc(long len)
     return tree;
 }
 
-void _nmod_poly_tree_free(mp_ptr * tree, long len)
+void _nmod_poly_tree_free(mp_ptr * tree, slong len)
 {
     if (len)
     {
-        long i, height = FLINT_CLOG2(len);
+        slong i, height = FLINT_CLOG2(len);
 
         for (i = 0; i <= height; i++)
             flint_free(tree[i]);
@@ -59,9 +45,9 @@ void _nmod_poly_tree_free(mp_ptr * tree, long len)
 }
 
 void
-_nmod_poly_tree_build(mp_ptr * tree, mp_srcptr roots, long len, nmod_t mod)
+_nmod_poly_tree_build(mp_ptr * tree, mp_srcptr roots, slong len, nmod_t mod)
 {
-    long height, pow, left, i;
+    slong height, pow, left, i;
     mp_ptr pa, pb;
 
     if (len == 0)
@@ -103,7 +89,7 @@ _nmod_poly_tree_build(mp_ptr * tree, mp_srcptr roots, long len, nmod_t mod)
     for (i = 1; i < height - 1; i++)
     {
         left = len;
-        pow = 1L << i;
+        pow = WORD(1) << i;
         pa = tree[i];
         pb = tree[i + 1];
 

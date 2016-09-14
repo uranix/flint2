@@ -1,33 +1,19 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "flint.h"
 #include "fmpz.h"
@@ -36,13 +22,13 @@
 static __inline__
 int is_varsymbol0(char c)
 {
-    return isalpha(c);
+    return isalpha((unsigned char) c);
 }
 
 static __inline__
 int is_varsymbol1(char c)
 {
-    return isalnum(c) || (c == '_');
+    return isalnum((unsigned char) c) || (c == '_');
 }
 
 #define next_event()                                                      \
@@ -54,11 +40,6 @@ do {                                                                      \
     if (i == N)                                                           \
     {                                                                     \
         buf = flint_realloc(buf, N = 2*N);                                \
-        if (buf == NULL)                                                  \
-        {                                                                 \
-            printf("ERROR (fmpz_poly_fread_pretty).  realloc failed.\n"); \
-            abort();                                                      \
-        }                                                                 \
     }                                                                     \
     buf[i++] = c;                                                         \
 } while (0)
@@ -78,7 +59,7 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
         var     - variable name
         buf     - buffer of size N, at write position i, with c == buf[i-1]
         z_coeff - mpz_t for the coefficient, f_coeff is the fmpz_t version
-        z_exp   - mpz_t for the exponent, exp is the long version
+        z_exp   - mpz_t for the exponent, exp is the slong version
         r       - return value
      */
 
@@ -89,23 +70,18 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     fmpz_t f_coeff;
     mpz_t z_coeff, z_exp;
-    long exp;
+    slong exp;
 
     int r = 0;
 
     fmpz_poly_zero(poly);
     if (poly->alloc)
-        mpn_zero((mp_ptr) poly->coeffs, poly->alloc);
+        flint_mpn_zero((mp_ptr) poly->coeffs, poly->alloc);
 
     i = 0;
     N = 80;
     buf = flint_malloc(N);
-    if (buf == NULL)
-    {
-        printf("ERROR (fmpz_poly_fread_pretty).  malloc failed.\n");
-        abort();
-    }
-
+    
     fmpz_init(f_coeff);
     mpz_init(z_coeff);
     mpz_init(z_exp);
@@ -116,11 +92,11 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     if (c == '-')
         goto s_1;
-    if (isdigit(c))
+    if (isdigit((unsigned char) c))
         goto s_2;
     if (is_varsymbol0(c))
     {
-        mpz_set_si(z_coeff, 1);
+        flint_mpz_set_si(z_coeff, 1);
         goto s_3;
     }
 
@@ -130,15 +106,15 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     next_event();
 
-    if (isdigit(c))
+    if (isdigit((unsigned char) c))
         goto s_2;
     if (is_varsymbol0(c))
     {
         if (i == 1)
-            mpz_set_si(z_coeff, 1);
+            flint_mpz_set_si(z_coeff, 1);
         else  /* i == 2 */
         {
-            mpz_set_si(z_coeff, -1);
+            flint_mpz_set_si(z_coeff, -1);
             buf[0] = c;
             i = 1;
         }
@@ -151,7 +127,7 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     next_event();
 
-    if (isdigit(c))
+    if (isdigit((unsigned char) c))
         goto s_2;
     if (c == '*')
     {
@@ -193,11 +169,6 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
         else
         {
             var = flint_malloc(i);
-            if (var == NULL)
-            {
-                printf("ERROR (fmpz_poly_fread_pretty).  malloc failed.\n");
-                abort();
-            }
             strcpy(var, buf);
         }
 
@@ -237,7 +208,7 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     next_event();
 
-    if (isdigit(c))
+    if (isdigit((unsigned char) c))
         goto s_6;
 
     goto s_parse_error;
@@ -246,7 +217,7 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
 
     next_event();
 
-    if (isdigit(c))
+    if (isdigit((unsigned char) c))
         goto s_6;
 
     {
@@ -256,7 +227,7 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
         {
             goto s_parse_error;
         }
-        exp = mpz_get_si(z_exp);
+        exp = flint_mpz_get_si(z_exp);
         add_coeff();
 
         if (c == '+' || c == '-')
@@ -289,11 +260,6 @@ int fmpz_poly_fread_pretty(FILE *file, fmpz_poly_t poly, char **x)
     else
     {
         *x = flint_malloc(1);
-        if (*x == NULL)
-        {
-            printf("ERROR (fmpz_poly_fread_pretty).  malloc failed.\n");
-            abort();
-        }
         **x = '\0';
     }
 

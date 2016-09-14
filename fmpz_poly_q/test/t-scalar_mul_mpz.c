@@ -1,6 +1,19 @@
+/*
+    Copyright (C) 2013 Fredrik Johansson
+    Copyright (C) 2013 William Hart
+    Copyright (C) 2011 Sebastian Pancratz
+
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "fmpz_poly_q.h"
 #include "long_extras.h"
@@ -10,15 +23,15 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("scalar_mul_mpz... ");
+    flint_printf("scalar_mul_mpz... ");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing of a and b */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a, b;
         fmpz_t x;
@@ -39,9 +52,9 @@ main(void)
         result = fmpz_poly_q_equal(a, b);
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpz_poly_q_print(a), printf("\n\n");
-            fmpz_poly_q_print(b), printf("\n\n");
+            flint_printf("FAIL:\n");
+            fmpz_poly_q_print(a), flint_printf("\n\n");
+            fmpz_poly_q_print(b), flint_printf("\n\n");
             abort();
         }
 
@@ -52,7 +65,7 @@ main(void)
     }
 
     /* Check that x (a + b) == x * a + x * b */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a, b, c, d;
         fmpz_t x;
@@ -80,11 +93,11 @@ main(void)
         result = fmpz_poly_q_equal(c, d) && fmpz_poly_q_is_canonical(c);
         if (!result)
         {
-            printf("FAIL:\n");
-            printf("a = "), fmpz_poly_q_print(a), printf("\n\n");
-            printf("b = "), fmpz_poly_q_print(b), printf("\n\n");
-            printf("c = "), fmpz_poly_q_print(c), printf("\n\n");
-            printf("d = "), fmpz_poly_q_print(d), printf("\n\n");
+            flint_printf("FAIL:\n");
+            flint_printf("a = "), fmpz_poly_q_print(a), flint_printf("\n\n");
+            flint_printf("b = "), fmpz_poly_q_print(b), flint_printf("\n\n");
+            flint_printf("c = "), fmpz_poly_q_print(c), flint_printf("\n\n");
+            flint_printf("d = "), fmpz_poly_q_print(d), flint_printf("\n\n");
             gmp_printf("y = %Zd\n\n", y);
             abort();
         }
@@ -97,8 +110,8 @@ main(void)
         mpz_clear(y);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return EXIT_SUCCESS;
 }

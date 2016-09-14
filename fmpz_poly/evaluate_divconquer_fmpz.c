@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "flint.h"
 #include "fmpz.h"
@@ -29,10 +15,10 @@
 #include "fmpz_poly.h"
 
 void 
-_fmpz_poly_evaluate_divconquer_fmpz(fmpz_t res, const fmpz * poly, long len, 
+_fmpz_poly_evaluate_divconquer_fmpz(fmpz_t res, const fmpz * poly, slong len, 
                                                 const fmpz_t x)
 {
-    long c, h, i, k = 1;
+    slong c, h, i, k = 1;
     fmpz *y, *T, *t = res, *u;
 
     h = FLINT_BIT_COUNT(len - 1);  /* 2^{h-1} < len <= 2^h */
@@ -57,7 +43,7 @@ _fmpz_poly_evaluate_divconquer_fmpz(fmpz_t res, const fmpz * poly, long len,
         }
         fmpz_swap(T + k, t);
     }
-    if (len & 1L)
+    if (len & WORD(1))
     {
         fmpz_set(t, poly + (len - 1));
         count_trailing_zeros(c, len + 1);
@@ -72,14 +58,14 @@ _fmpz_poly_evaluate_divconquer_fmpz(fmpz_t res, const fmpz * poly, long len,
 
     for ( ; k < h; k++)
     {
-        if ((len - 1) & (1L << k))
+        if ((len - 1) & (WORD(1) << k))
         {
             fmpz_mul(u, y + k, t);
             fmpz_add(t, T + k, u);
         }
     }
 
-    *y = 0L;
+    *y = WORD(0);
     _fmpz_vec_clear(y, 2 * h + 2);
 }
 

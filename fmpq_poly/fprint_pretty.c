@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010, 2012 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010, 2012 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -48,8 +34,14 @@ do {                               \
     }                              \
 } while (0)
 
+/* checks if x/y == 1, where (x, y) need not be in lowest terms */
+#define __fmpq_is_one(x,y) fmpz_equal((x), (y))
+
+/* checks if x/y == +/- 1, where (x, y) need not be in lowest terms */
+#define __fmpq_is_pm1(x,y) (fmpz_cmpabs((x),(y)) == 0)
+
 int _fmpq_poly_fprint_pretty(FILE * file, 
-                             const fmpz *poly, const fmpz_t den, long len, 
+                             const fmpz *poly, const fmpz_t den, slong len, 
                              const char * x)
 {
     fmpz_t n, d, g;
@@ -68,23 +60,23 @@ int _fmpq_poly_fprint_pretty(FILE * file,
     }
     else if (len == 2)
     {
-        if (poly[1] == 1L)
+        if (__fmpq_is_one(poly + 1, den))
         {
-            fprintf(file, "%s", x);
+            flint_fprintf(file, "%s", x);
         }
-        else if (poly[1] == -1L)
+        else if (__fmpq_is_pm1(poly + 1, den))
         {
-            fprintf(file, "-%s", x);
+            flint_fprintf(file, "-%s", x);
         }
         else
         {
             __fmpq_fprint(poly + 1, den);
-            fprintf(file, "*%s", x);
+            flint_fprintf(file, "*%s", x);
         }
         
         if (fmpz_sgn(poly + 0) > 0)
         {
-            fprintf(file, "+");
+            flint_fprintf(file, "+");
             __fmpq_fprint(poly + 0, den);
         }
         else if (fmpz_sgn(poly + 0) < 0)
@@ -94,16 +86,16 @@ int _fmpq_poly_fprint_pretty(FILE * file,
     }
     else  /* len >= 3 */
     {
-        long i = len - 1;  /* i >= 2 */
+        slong i = len - 1;  /* i >= 2 */
         {
-            if (poly[i] == 1L)
-               fprintf(file, "%s^%ld", x, i);
-            else if (poly[i] == -1L)
-               fprintf(file, "-%s^%ld", x, i);
+            if (__fmpq_is_one(poly + i, den))
+               flint_fprintf(file, "%s^%wd", x, i);
+            else if (__fmpq_is_pm1(poly + i, den))
+               flint_fprintf(file, "-%s^%wd", x, i);
             else
             {
                __fmpq_fprint(poly + i, den);
-               fprintf(file, "*%s^%ld", x, i);
+               flint_fprintf(file, "*%s^%wd", x, i);
             }
             --i;
         }
@@ -113,10 +105,10 @@ int _fmpq_poly_fprint_pretty(FILE * file,
             if (poly[i] == 0)
                 continue;
 
-            if (poly[i] == 1L)
-                fprintf(file, "+%s^%ld", x, i);
-            else if (poly[i] == -1L)
-                fprintf(file, "-%s^%ld", x, i);
+            if (__fmpq_is_one(poly + i, den))
+                flint_fprintf(file, "+%s^%wd", x, i);
+            else if (__fmpq_is_pm1(poly + i, den))
+                flint_fprintf(file, "-%s^%wd", x, i);
             else
             {
                 if (fmpz_sgn(poly + i) > 0)
@@ -124,18 +116,18 @@ int _fmpq_poly_fprint_pretty(FILE * file,
                     fputc('+', file);
                 }
                 __fmpq_fprint(poly + i, den);
-                fprintf(file, "*%s^%ld", x, i);
+                flint_fprintf(file, "*%s^%wd", x, i);
             }
         }
 
         if (poly[1])
         {
-            if (poly[1] == 1L)
+            if (__fmpq_is_one(poly + 1, den))
             {
                 fputc('+', file);
                 fputs(x, file);
             }
-            else if (poly[1] == -1L)
+            else if (__fmpq_is_pm1(poly + 1, den))
             {
                 fputc('-', file);
                 fputs(x, file);
@@ -157,7 +149,7 @@ int _fmpq_poly_fprint_pretty(FILE * file,
             {
                 fputc('+', file);
             }
-            fmpz_fprint(file, poly);
+            __fmpq_fprint(poly + 0, den);
         }
     }
 

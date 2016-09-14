@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_mat.h"
@@ -34,16 +20,16 @@
 int
 main(void)
 {
-    long m, n, rep;
-    flint_rand_t state;
+    slong m, n, rep;
+    FLINT_TEST_INIT(state);
 
-    printf("transpose....");
+    flint_printf("transpose....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Rectangular transpose */
-    for (rep = 0; rep < 1000; rep++)
+    for (rep = 0; rep < 100 * flint_test_multiplier(); rep++)
     {
         fmpz_mat_t A, B, C;
 
@@ -62,7 +48,7 @@ main(void)
 
         if (!fmpz_mat_equal(C, A))
         {
-            printf("FAIL: C != A\n");
+            flint_printf("FAIL: C != A\n");
             abort();
         }
 
@@ -83,10 +69,12 @@ main(void)
 
         fmpz_mat_randtest(A, state, 1+n_randint(state, 100));
         fmpz_mat_set(B, A);
+        fmpz_mat_transpose(B, B);
+        fmpz_mat_transpose(B, B);
 
         if (!fmpz_mat_equal(B, A))
         {
-            printf("FAIL: B != A\n");
+            flint_printf("FAIL: B != A\n");
             abort();
         }
 
@@ -94,8 +82,8 @@ main(void)
         fmpz_mat_clear(B);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

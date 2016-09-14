@@ -1,30 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -35,9 +21,9 @@
 #include "ulong_extras.h"
 
 static void
-_fmpq_mat_get_row(fmpz * rnum, fmpz_t den, fmpq_mat_t A, long i)
+_fmpq_mat_get_row(fmpz * rnum, fmpz_t den, fmpq_mat_t A, slong i)
 {
-    long j;
+    slong j;
     fmpz_t t;
     fmpz_init(t);
     fmpz_one(den);
@@ -57,13 +43,13 @@ _fmpq_mat_get_row(fmpz * rnum, fmpz_t den, fmpq_mat_t A, long i)
 
 void
 _fmpq_poly_compose_series_brent_kung(fmpz * res, fmpz_t den, const fmpz * poly1,
-        const fmpz_t den1, long len1, const fmpz * poly2,
-        const fmpz_t den2, long len2, long n)
+        const fmpz_t den1, slong len1, const fmpz * poly2,
+        const fmpz_t den2, slong len2, slong n)
 {
     fmpq_mat_t A, B, C;
     fmpz_t tden, uden, hden;
     fmpz *t, *u, *h, *swap;
-    long i, j, m;
+    slong i, j, m;
 
     if (fmpz_is_one(den2))
     {
@@ -103,7 +89,7 @@ _fmpq_poly_compose_series_brent_kung(fmpz * res, fmpz_t den, const fmpz * poly1,
     }
 
     /* Set rows of A to powers of poly2 */
-    fmpq_set_si(fmpq_mat_entry(A, 0, 0), 1L, 1L);
+    fmpq_set_si(fmpq_mat_entry(A, 0, 0), WORD(1), WORD(1));
 
     for (i = 0; i < len2; i++)
     {
@@ -167,17 +153,17 @@ _fmpq_poly_compose_series_brent_kung(fmpz * res, fmpz_t den, const fmpz * poly1,
 
 void
 fmpq_poly_compose_series_brent_kung(fmpq_poly_t res, 
-                    const fmpq_poly_t poly1, const fmpq_poly_t poly2, long n)
+                    const fmpq_poly_t poly1, const fmpq_poly_t poly2, slong n)
 {
-    long len1 = poly1->length;
-    long len2 = poly2->length;
-    long lenr;
+    slong len1 = poly1->length;
+    slong len2 = poly2->length;
+    slong lenr;
 
     if (len2 != 0 && !fmpz_is_zero(poly2->coeffs))
     {
-        printf("exception: fmpq_poly_compose_series_brent_kung: inner "
-                "polynomial must have zero constant term\n");
-        abort();
+        flint_printf("Exception (fmpq_poly_compose_series_brent_kung). \n"
+               "Inner polynomial must have zero constant term.\n");
+        flint_abort();
     }
 
     if (len1 == 0 || n == 0)

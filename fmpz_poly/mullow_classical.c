@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008, 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008, 2009 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -33,8 +19,8 @@
    Assumes poly1 and poly2 are not length 0 and 0 < n <= len1 + len2 - 1.
  */
 void
-_fmpz_poly_mullow_classical(fmpz * res, const fmpz * poly1, long len1, 
-                                        const fmpz * poly2, long len2, long n)
+_fmpz_poly_mullow_classical(fmpz * res, const fmpz * poly1, slong len1, 
+                                        const fmpz * poly2, slong len2, slong n)
 {
     if ((len1 == 1 && len2 == 1) || n == 1) /* Special case if the length of output is 1 */
     {
@@ -42,7 +28,7 @@ _fmpz_poly_mullow_classical(fmpz * res, const fmpz * poly1, long len1,
     }
     else                        /* Ordinary case */
     {
-        long i;
+        slong i;
 
         /* Set res[i] = poly1[i]*poly2[0] */
         _fmpz_vec_scalar_mul_fmpz(res, poly1, FLINT_MIN(len1, n), poly2);
@@ -62,9 +48,9 @@ _fmpz_poly_mullow_classical(fmpz * res, const fmpz * poly1, long len1,
 
 void
 fmpz_poly_mullow_classical(fmpz_poly_t res, const fmpz_poly_t poly1, 
-                                            const fmpz_poly_t poly2, long n)
+                                            const fmpz_poly_t poly2, slong n)
 {
-    long len_out;
+    slong len_out;
 
     if (poly1->length == 0 || poly2->length == 0 || n == 0)
     {

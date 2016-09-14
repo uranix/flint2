@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,12 +30,12 @@ void sample(void * arg, ulong count)
    mp_bitcnt_t bits = info->bits;
    int type = info->type;
    mp_size_t j;
-   long i;
-   flint_rand_t state;
-   flint_randinit(state);
+   slong i;
+   FLINT_TEST_INIT(state);
+   
    
    n = n_randbits(state, bits);
-   if (n == 0UL) n++;
+   if (n == UWORD(0)) n++;
       
    nmod_init(&mod, n);
 
@@ -117,7 +103,7 @@ int main(void)
 	  info.type = 3;
 	  prof_repeat(&min3, &max, sample, (void *) &info);
 
-      printf("bits %ld, add = %.1lf c/l, sub = %.1lf c/l, neg = %.1lf c/l\n", 
+      flint_printf("bits %wd, add = %.1lf c/l, sub = %.1lf c/l, neg = %.1lf c/l\n", 
          i, (min1/(double)FLINT_CLOCK_SCALE_FACTOR)/1000,
             (min2/(double)FLINT_CLOCK_SCALE_FACTOR)/1000,
             (min3/(double)FLINT_CLOCK_SCALE_FACTOR)/1000

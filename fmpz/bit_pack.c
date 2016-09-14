@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 William Hart
-   
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 
@@ -49,7 +35,7 @@ fmpz_bit_pack(mp_ptr arr, mp_bitcnt_t shift, mp_bitcnt_t bits,
 
             /* com remaining limbs */
             if (limbs > 1)
-                mpn_store(arr + 1, limbs - 1, ~(mp_limb_t) 0);
+                flint_mpn_store(arr + 1, limbs - 1, ~(mp_limb_t) 0);
 
             /* com remaining bits */
             if (limbs)
@@ -80,7 +66,7 @@ fmpz_bit_pack(mp_ptr arr, mp_bitcnt_t shift, mp_bitcnt_t bits,
         if (!COEFF_IS_MPZ(c))
         {
             /* compute d = -b - borrow */
-            mp_limb_t d = (c < 0L ? c - borrow : -c - borrow);
+            mp_limb_t d = (c < WORD(0) ? c - borrow : -c - borrow);
 
             /* store d << shift and add save back into place */
             arr[0] = (d << shift) + save;
@@ -126,7 +112,7 @@ fmpz_bit_pack(mp_ptr arr, mp_bitcnt_t shift, mp_bitcnt_t bits,
         {
             /* com any additional limbs */
             if (limbs > size)
-                mpn_store(arr + size, limbs - size, ~(mp_limb_t) 0);
+                flint_mpn_store(arr + size, limbs - size, ~(mp_limb_t) 0);
 
             /* com remaining bits */
             if (rem_bits)
@@ -145,7 +131,7 @@ fmpz_bit_pack(mp_ptr arr, mp_bitcnt_t shift, mp_bitcnt_t bits,
         if (!COEFF_IS_MPZ(c))
         {
             /* compute d = b - borrow */
-            mp_limb_t d = (c < 0L ? -c - borrow : c - borrow);
+            mp_limb_t d = (c < WORD(0) ? -c - borrow : c - borrow);
 
             /* store d<<shift and add save back into place */
             arr[0] = (d << shift) + save;
@@ -170,7 +156,7 @@ fmpz_bit_pack(mp_ptr arr, mp_bitcnt_t shift, mp_bitcnt_t bits,
                     arr[size++] = cy;
             }
             else
-                mpn_copyi(arr, ptr->_mp_d, size);
+                flint_mpn_copyi(arr, ptr->_mp_d, size);
 
             /* deal with - borrow */
             if (borrow)

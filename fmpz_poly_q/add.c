@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010, 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010, 2011 Sebastian Pancratz
-   
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "fmpq_poly.h"
 
@@ -50,8 +36,8 @@ void fmpz_poly_q_add_in_place(fmpz_poly_q_t rop, const fmpz_poly_q_t op)
     /* Polynomials? */
     if (fmpz_poly_length(rop->den) == 1 && fmpz_poly_length(op->den) == 1)
     {
-        const long len1 = fmpz_poly_length(rop->num);
-        const long len2 = fmpz_poly_length(op->num);
+        const slong len1 = fmpz_poly_length(rop->num);
+        const slong len2 = fmpz_poly_length(op->num);
 
         fmpz_poly_fit_length(rop->num, FLINT_MAX(len1, len2));
         _fmpq_poly_add(rop->num->coeffs, rop->den->coeffs, 
@@ -167,8 +153,8 @@ fmpz_poly_q_add(fmpz_poly_q_t rop,
     /* Polynomials? */
     if (fmpz_poly_length(op1->den) == 1 && fmpz_poly_length(op2->den) == 1)
     {
-        const long len1 = fmpz_poly_length(op1->num);
-        const long len2 = fmpz_poly_length(op2->num);
+        const slong len1 = fmpz_poly_length(op1->num);
+        const slong len2 = fmpz_poly_length(op2->num);
 
         fmpz_poly_fit_length(rop->num, FLINT_MAX(len1, len2));
         _fmpq_poly_add(rop->num->coeffs, rop->den->coeffs, 

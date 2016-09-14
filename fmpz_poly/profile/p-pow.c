@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mpir.h>
+#include <gmp.h>
 #include <float.h>
 #include "flint.h"
 #include "fmpz.h"
@@ -55,20 +41,20 @@ main(void)
     int k, exp;
     fmpz_poly_t f, g;
     
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
    
     fmpz_poly_init2(f, lenhi);
     fmpz_poly_init2(g, exphi * (lenhi - 1) + 1);
     
-    printf("Comparative timing for fmpz_poly_pow\n");
-    printf("\n");
-    printf("Length:    [%d..%d] with step size %d\n", lenlo, lenhi, lenh);
-    printf("Bit size:  [%d..%d] with step size %d\n", bitslo, bitshi, bitsh);
-    printf("Exponents: [%d..%d] with step size %d\n", explo, exphi, exph);
-    printf("\n");
-    printf("exp len bits (Binary exponentiation) Multinomials\n");
-    printf("\n");
+    flint_printf("Comparative timing for fmpz_poly_pow\n");
+    flint_printf("\n");
+    flint_printf("Length:    [%d..%d] with step size %d\n", lenlo, lenhi, lenh);
+    flint_printf("Bit size:  [%d..%d] with step size %d\n", bitslo, bitshi, bitsh);
+    flint_printf("Exponents: [%d..%d] with step size %d\n", explo, exphi, exph);
+    flint_printf("\n");
+    flint_printf("exp len bits (Binary exponentiation) Multinomials\n");
+    flint_printf("\n");
     
     for (exp = explo, k = 0; exp <= exphi; exp += exph, k++)
     {
@@ -81,17 +67,17 @@ main(void)
             
                 timeit_t t[2];
                 int l, loops = 1, r = 0;
-                long s[2] = {0L, 0L};
+                slong s[2] = {WORD(0), WORD(0)};
                 double T[2];
             
                 /*
                    Construct random polynomial f of length len
                  */
                 {
-                    long ell;
+                    slong ell;
                     for (ell = 0; ell < len; ell++)
                         fmpz_randbits(f->coeffs + ell, state, bits);
-                    if ((f->coeffs)[len - 1] == 0L)
+                    if ((f->coeffs)[len - 1] == WORD(0))
                         fmpz_randtest_not_zero(f->coeffs + (len - 1), state, bits);
                     f->length = len;
                 }
@@ -125,7 +111,7 @@ main(void)
                 T[0] = s[0] / (double) r;
                 T[1] = s[1] / (double) r;
                 
-                printf("%d %d %d %f %f\n", exp, len, bits, T[0], T[1]);
+                flint_printf("%d %d %d %f %f\n", exp, len, bits, T[0], T[1]);
                 fflush(stdout);
             }
         }

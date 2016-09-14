@@ -1,39 +1,25 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 
-int _fmpz_vec_fread(FILE * file, fmpz ** vec, long * len)
+int _fmpz_vec_fread(FILE * file, fmpz ** vec, slong * len)
 {
     int alloc, r;
-    long i;
+    slong i;
     mpz_t t;
 
     alloc = (*vec == NULL);
@@ -49,17 +35,17 @@ int _fmpz_vec_fread(FILE * file, fmpz ** vec, long * len)
     }
     if (!mpz_fits_slong_p(t))
     {
-        printf("ERROR (_fmpz_vec_fread).  Length does not fit into a long.\n");
-        abort();
+        flint_printf("Exception (_fmpz_vec_fread). Length does not fit into a slong.\n");
+        flint_abort();
     }
     if (alloc)
     {
-        *len = mpz_get_si(t);
+        *len = flint_mpz_get_si(t);
         *vec = _fmpz_vec_init(*len);
     }
     else
     {
-        if (*len != mpz_get_si(t))
+        if (*len != flint_mpz_get_si(t))
         {
             mpz_clear(t);
             return 0;

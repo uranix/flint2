@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "flint.h"
@@ -29,21 +15,20 @@
 #include "fmpz_poly.h"
 #include "fmpz_poly_mat.h"
 
-long
+slong
 fmpz_poly_mat_nullspace(fmpz_poly_mat_t res, const fmpz_poly_mat_t mat)
 {
-    long i, j, k, m, n, rank, nullity;
-    long * pivots;
-    long * nonpivots;
+    slong i, j, k, n, rank, nullity;
+    slong * pivots;
+    slong * nonpivots;
     fmpz_poly_mat_t tmp;
     fmpz_poly_t den;
 
-    m = mat->r;
     n = mat->c;
 
     fmpz_poly_init(den);
     fmpz_poly_mat_init_set(tmp, mat);
-    rank = fmpz_poly_mat_rref(tmp, den, NULL, tmp);
+    rank = fmpz_poly_mat_rref(tmp, den, tmp);
     nullity = n - rank;
 
     fmpz_poly_mat_zero(res);
@@ -51,12 +36,12 @@ fmpz_poly_mat_nullspace(fmpz_poly_mat_t res, const fmpz_poly_mat_t mat)
     if (rank == 0)
     {
         for (i = 0; i < nullity; i++)
-            fmpz_poly_set_ui(res->rows[i] + i, 1UL);
+            fmpz_poly_set_ui(res->rows[i] + i, UWORD(1));
     }
     else if (nullity)
     {
-        pivots = flint_malloc(rank * sizeof(long));
-        nonpivots = flint_malloc(nullity * sizeof(long));
+        pivots = flint_malloc(rank * sizeof(slong));
+        nonpivots = flint_malloc(nullity * sizeof(slong));
 
         for (i = j = k = 0; i < rank; i++)
         {

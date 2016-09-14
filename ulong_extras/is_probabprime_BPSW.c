@@ -1,42 +1,28 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008 Peter Shrimpton
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008 Peter Shrimpton
-    Copyright (C) 2009 William Hart
-   
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
 int
 n_is_probabprime_BPSW(mp_limb_t n)
 {
-    if (n <= 1UL)
+    if (n <= UWORD(1))
         return 0;
 
-    if ((n & 1UL) == 0UL)
+    if ((n & UWORD(1)) == UWORD(0))
     {
-        if (n == 2UL)
+        if (n == UWORD(2))
             return 1;
         return 0;
     }
@@ -52,20 +38,20 @@ n_is_probabprime_BPSW(mp_limb_t n)
     {
         mp_limb_t d;
 
-        d = n - 1UL;
-        while ((d & 1UL) == 0UL)
+        d = n - UWORD(1);
+        while ((d & UWORD(1)) == UWORD(0))
             d >>= 1;
 
         if (FLINT_BIT_COUNT(n) <= FLINT_D_BITS)
         {
             double npre = n_precompute_inverse(n);
-            if (n_is_strong_probabprime_precomp(n, npre, 2L, d) == 0)
+            if (n_is_strong_probabprime_precomp(n, npre, WORD(2), d) == 0)
                 return 0;
         }
         else
         {
             mp_limb_t ninv = n_preinvert_limb(n);
-            if (n_is_strong_probabprime2_preinv(n, ninv, 2L, d) == 0)
+            if (n_is_strong_probabprime2_preinv(n, ninv, WORD(2), d) == 0)
                 return 0;
         }
 

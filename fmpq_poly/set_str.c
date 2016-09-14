@@ -1,43 +1,29 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpq_poly.h"
 
-int 
+int
 _fmpq_poly_set_str(fmpz * poly, fmpz_t den, const char * str)
 {
     char * w;
-    long i, len;
+    slong i, len;
     mpq_t * a;
 
     len = atol(str);
@@ -51,15 +37,16 @@ _fmpq_poly_set_str(fmpz * poly, fmpz_t den, const char * str)
 
     a = (mpq_t *) flint_malloc(len * sizeof(mpq_t));
 
-    while (*str++ != ' ') ;
+    while (*str++ != ' ')
+        ;
 
     /* Find maximal gap between spaces and allocate w */
     {
         const char * s = str;
-        long max;
+        slong max;
         for (max = 0; *s != '\0';)
         {
-            long cur;
+            slong cur;
             for (s++, cur = 1; *s != ' ' && *s != '\0'; s++, cur++) ;
             if (max < cur)
                 max = cur;
@@ -72,13 +59,13 @@ _fmpq_poly_set_str(fmpz * poly, fmpz_t den, const char * str)
     {
         char * v;
         int ans;
-        
+
         for (str++, v = w; *str != ' ' && *str != '\0';)
             *v++ = *str++;
         *v = '\0';
         mpq_init(a[i]);
         ans = mpq_set_str(a[i], w, 10);
-        
+
         /* If the format is not correct, clear up and return -1 */
         if (ans)
         {
@@ -90,7 +77,7 @@ _fmpq_poly_set_str(fmpz * poly, fmpz_t den, const char * str)
             return -1;
         }
     }
-    
+
     _fmpq_poly_set_array_mpq(poly, den, (const mpq_t *) a, len);
 
     for (i = 0; i < len; i++)
@@ -105,7 +92,7 @@ int
 fmpq_poly_set_str(fmpq_poly_t poly, const char * str)
 {
     int ans;
-    long len;
+    slong len;
 
     len = atol(str);
     if (len < 0)

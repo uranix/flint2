@@ -1,31 +1,17 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -105,14 +91,14 @@ do {                                                        \
     }                                                       \
 } while (0)
 
-long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T, 
-                          mp_srcptr A, long lenA, mp_srcptr B, long lenB, 
+slong _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T, 
+                          mp_srcptr A, slong lenA, mp_srcptr B, slong lenB, 
                           nmod_t mod)
 {
-	const long cutoff = FLINT_BIT_COUNT(mod.n) <= 8 ? 
+	const slong cutoff = FLINT_BIT_COUNT(mod.n) <= 8 ? 
                         NMOD_POLY_SMALL_GCD_CUTOFF : NMOD_POLY_GCD_CUTOFF;
 
-    long lenG, lenS, lenT;
+    slong lenG, lenS, lenT;
 
     if (lenB == 1)
     {
@@ -127,7 +113,7 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
         mp_ptr q = _nmod_vec_init(lenA + lenB);
         mp_ptr r = q + lenA;
 
-        long lenq, lenr;
+        slong lenq, lenr;
 
         __divrem(q, lenq, r, lenr, A, lenA, B, lenB);
 
@@ -141,7 +127,7 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
         else
         {
             mp_ptr h, j, v, w, R[4], X;
-            long lenh, lenj, lenv, lenw, lenR[4];
+            slong lenh, lenj, lenv, lenw, lenR[4];
             int sgnR;
 
             lenh = lenj = lenB;
@@ -178,9 +164,9 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
                 __divrem(q, lenq, r, lenr, h, lenh, j, lenj);
                 __mul(v, lenv, q, lenq, T, lenT);
                 {
-                    long l;
+                    slong l;
                     _nmod_vec_swap(S, T, FLINT_MAX(lenS, lenT));
-                    l = lenS;lenS = lenT; lenT = l;
+                    l = lenS; lenS = lenT; lenT = l;
                 }
                 __sub(T, lenT, T, lenT, v, lenv);
 
@@ -193,7 +179,7 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
                 if (lenj < cutoff)
                 {
                     mp_ptr u0 = R[0], u1 = R[1];
-                    long lenu0 = lenr - 1, lenu1 = lenj - 1;
+                    slong lenu0 = lenr - 1, lenu1 = lenj - 1;
 
                     lenG = _nmod_poly_xgcd_euclidean(G, u0, u1, j, lenj, r, lenr, mod);
                     MPN_NORM(u0, lenu0);
@@ -218,7 +204,7 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
                     __sub(S, lenS, v, lenv, q, lenq);
 
                 __mul(q, lenq, T, lenT, R[0], lenR[0]);
-                if (sgnR > 0L)
+                if (sgnR > WORD(0))
                     __sub(T, lenT, q, lenq, w, lenw);
                 else
                     __sub(T, lenT, w, lenw, q, lenq);
@@ -235,115 +221,119 @@ long _nmod_poly_xgcd_hgcd(mp_ptr G, mp_ptr S, mp_ptr T,
         }
         _nmod_vec_clear(q);
     }
-    mpn_zero(S + lenS, lenB - 1 - lenS);
-    mpn_zero(T + lenT, lenA - 1 - lenT);
+    flint_mpn_zero(S + lenS, lenB - 1 - lenS);
+    flint_mpn_zero(T + lenT, lenA - 1 - lenT);
 
     return lenG;
 }
 
-void nmod_poly_xgcd_hgcd(nmod_poly_t G, nmod_poly_t S, nmod_poly_t T,
+void
+nmod_poly_xgcd_hgcd(nmod_poly_t G, nmod_poly_t S, nmod_poly_t T,
                          const nmod_poly_t A, const nmod_poly_t B)
 {
-    const long lenA = A->length, lenB = B->length;
-    mp_limb_t inv;
-
-    if (lenA == 0)
+    if (A->length < B->length)
     {
-        if (lenB == 0) 
+        nmod_poly_xgcd_hgcd(G, T, S, B, A);
+    }
+    else  /* lenA >= lenB >= 0 */
+    {
+        const slong lenA = A->length, lenB = B->length;
+        mp_limb_t inv;
+
+        if (lenA == 0)  /* lenA = lenB = 0 */
         {
             nmod_poly_zero(G);
             nmod_poly_zero(S);
             nmod_poly_zero(T);
         }
-        else 
+        else if (lenB == 0)  /* lenA > lenB = 0 */
         {
-            inv = n_invmod(B->coeffs[lenB - 1], B->mod.n);
-            nmod_poly_scalar_mul_nmod(G, B, inv);
-            nmod_poly_zero(S);
-            nmod_poly_set_coeff_ui(T, 0, inv);
+            inv = n_invmod(A->coeffs[lenA - 1], A->mod.n);
+            nmod_poly_scalar_mul_nmod(G, A, inv);
+            nmod_poly_zero(T);
+            nmod_poly_set_coeff_ui(S, 0, inv);
+            S->length = 1;
+        }
+        else if (lenB == 1)  /* lenA >= lenB = 1 */
+        {
+            nmod_poly_fit_length(T, 1);
             T->length = 1;
+            T->coeffs[0] = n_invmod(B->coeffs[0], A->mod.n);
+            nmod_poly_one(G);
+            nmod_poly_zero(S);
         }
-    } 
-    else if (lenB == 0)
-    {
-        inv = n_invmod(A->coeffs[lenA - 1], A->mod.n);
-        nmod_poly_scalar_mul_nmod(G, A, inv);
-        nmod_poly_zero(T);
-        nmod_poly_set_coeff_ui(S, 0, inv);
-        S->length = 1;
-    }
-    else
-    {
-        nmod_poly_t tG, tS, tT;
-        mp_ptr g, s, t;
-        long lenG;
+        else  /* lenA >= lenB >= 2 */
+        {
+            mp_ptr g, s, t;
+            slong lenG;
 
-        if (G == A || G == B)
-        {
-            nmod_poly_init2(tG, A->mod.n, FLINT_MIN(lenA, lenB));
-            g = tG->coeffs;
-        }
-        else
-        {
-            nmod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
-            g = G->coeffs;
-        }
-        if (S == A || S == B)
-        {
-            nmod_poly_init2(tS, A->mod.n, lenB - 1);
-            s = tS->coeffs;
-        }
-        else
-        {
-            nmod_poly_fit_length(S, lenB - 1);
-            s = S->coeffs;
-        }
-        if (T == A || T == B)
-        {
-            nmod_poly_init2(tT, A->mod.n, lenA - 1);
-            t = tT->coeffs;
-        }
-        else
-        {
-            nmod_poly_fit_length(T, lenA - 1);
-            t = T->coeffs;
-        }
+            if (G == A || G == B)
+            {
+                g = _nmod_vec_init(FLINT_MIN(lenA, lenB));
+            }
+            else
+            {
+                nmod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
+                g = G->coeffs;
+            }
+            if (S == A || S == B)
+            {
+                s = _nmod_vec_init(FLINT_MAX(lenB - 1, 2));
+            }
+            else
+            {
+                nmod_poly_fit_length(S, FLINT_MAX(lenB - 1, 2));
+                s = S->coeffs;
+            }
+            if (T == A || T == B)
+            {
+                t = _nmod_vec_init(FLINT_MAX(lenA - 1, 2));
+            }
+            else
+            {
+                nmod_poly_fit_length(T, FLINT_MAX(lenA - 1, 2));
+                t = T->coeffs;
+            }
 
-        if (lenA >= lenB)
-            lenG = _nmod_poly_xgcd_hgcd(g, s, t, A->coeffs, lenA,
-                                                 B->coeffs, lenB, A->mod);
-        else
-            lenG = _nmod_poly_xgcd_hgcd(g, t, s, B->coeffs, lenB,
-                                                 A->coeffs, lenA, A->mod);
+            if (lenA >= lenB)
+                lenG = _nmod_poly_xgcd_hgcd(g, s, t, A->coeffs, lenA,
+                                                          B->coeffs, lenB, A->mod);
+            else
+                lenG = _nmod_poly_xgcd_hgcd(g, t, s, B->coeffs, lenB,
+                                                          A->coeffs, lenA, A->mod);
 
-        if (G == A || G == B)
-        {
-            nmod_poly_swap(tG, G);
-            nmod_poly_clear(tG);
-        }
-        if (S == A || S == B)
-        {
-            nmod_poly_swap(tS, S);
-            nmod_poly_clear(tS);
-        }
-        if (T == A || T == B)
-        {
-            nmod_poly_swap(tT, T);
-            nmod_poly_clear(tT);
-        }
-        
-        G->length = lenG;
-        S->length = lenB - lenG;
-        T->length = lenA - lenG;
-        MPN_NORM(S->coeffs, S->length);
-        MPN_NORM(T->coeffs, T->length);
+            if (G == A || G == B)
+            {
+                flint_free(G->coeffs);
+                G->coeffs = g;
+                G->alloc  = FLINT_MIN(lenA, lenB);
+            }
+            if (S == A || S == B)
+            {
+                flint_free(S->coeffs);
+                S->coeffs = s;
+                S->alloc  = FLINT_MAX(lenB - 1, 2);
+            }
+            if (T == A || T == B)
+            {
+                flint_free(T->coeffs);
+                T->coeffs = t;
+                T->alloc  = FLINT_MAX(lenA - 1, 2);
+            }
 
-        if (G->coeffs[lenG - 1] != 1)
-        {
-            inv = n_invmod(G->coeffs[lenG - 1], A->mod.n);
-            nmod_poly_scalar_mul_nmod(G, G, inv);
-            nmod_poly_scalar_mul_nmod(S, S, inv);
-            nmod_poly_scalar_mul_nmod(T, T, inv);
+            G->length = lenG;
+            S->length = FLINT_MAX(lenB - lenG, 1);
+            T->length = FLINT_MAX(lenA - lenG, 1);
+            MPN_NORM(S->coeffs, S->length);
+            MPN_NORM(T->coeffs, T->length);
+
+            if (G->coeffs[lenG - 1] != 1)
+            {
+                inv = n_invmod(G->coeffs[lenG - 1], A->mod.n);
+                nmod_poly_scalar_mul_nmod(G, G, inv);
+                nmod_poly_scalar_mul_nmod(S, S, inv);
+                nmod_poly_scalar_mul_nmod(T, T, inv);
+            }
         }
     }
 }

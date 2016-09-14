@@ -1,41 +1,27 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010, 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010, 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq_poly.h"
 
-char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len, 
+char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, slong len, 
                                  const char *var)
 {
-    long i;
+    slong i;
     size_t j;
     size_t size;     /* Upper bound on the length          */
     size_t densize;  /* Size of the denominator in base 10 */
@@ -47,11 +33,6 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
     if (len == 0)  /* Zero polynomial */
     {
         str = flint_malloc(2);
-        if (!str)
-        {
-            printf("Exception: malloc failed in fmpq_poly_to_string_pretty\n");
-            abort();
-        }
         str[0] = '0';
         str[1] = '\0';
         return str;
@@ -62,7 +43,9 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
         fmpz_get_mpz(mpq_numref(q), poly);
         fmpz_get_mpz(mpq_denref(q), den);
         mpq_canonicalize(q);
-        str = mpq_get_str(NULL, 10, q);
+        str = flint_malloc(mpz_sizeinbase (mpq_numref(q), 10) +
+                           mpz_sizeinbase (mpq_denref(q), 10) + 3);
+        str = mpq_get_str(str, 10, q);
         mpq_clear(q);
         return str;
     }
@@ -87,13 +70,8 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
               + mpz_sizeinbase(mpq_denref(a1), 10) + 1;
         size  = size0 + 1 + strlen(var) + 1 + size1 + 1;
         str   = flint_malloc(size);
-        if (!str)
-        {
-            printf("Exception: malloc failed in fmpq_poly_to_string_pretty\n");
-            abort();
-        }
 
-        if (mpq_cmp_si(a1, 1, 1) == 0)
+        if (flint_mpq_cmp_si(a1, 1, 1) == 0)
         {
             if (mpq_sgn(a0) == 0)
                 gmp_sprintf(str, "%s", var);
@@ -102,7 +80,7 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
             else  /* mpq_sgn(a0) < 0 */
                 gmp_sprintf(str, "%s%Qd", var, a0);
         }
-        else if (mpq_cmp_si(a1, -1, 1) == 0)
+        else if (flint_mpq_cmp_si(a1, -1, 1) == 0)
         {
             if (mpq_sgn(a0) == 0)
                 gmp_sprintf(str, "-%s", var);
@@ -131,7 +109,7 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
     
     /* Copy the denominator into an mpz_t */
     mpz_init(z);
-    if (*den == 1L)
+    if (*den == WORD(1))
     {
         densize = 0;
     }
@@ -155,13 +133,7 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
     
     mpq_init(q);
     str = flint_malloc(size);
-    if (!str)
-    {
-        printf("Exception: malloc failed in fmpq_poly_to_string_pretty\n");
-        mpz_clear(z);
-        mpq_clear(q);
-        abort();
-    }
+    
     j = 0;
     
     /* Print the leading term */
@@ -169,9 +141,9 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
     fmpz_get_mpz(mpq_denref(q), den);
     mpq_canonicalize(q);
     
-    if (mpq_cmp_si(q, 1, 1) != 0)
+    if (flint_mpq_cmp_si(q, 1, 1) != 0)
     {
-        if (mpq_cmp_si(q, -1, 1) == 0)
+        if (flint_mpq_cmp_si(q, -1, 1) == 0)
             str[j++] = '-';
         else
         {
@@ -180,9 +152,9 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
             str[j++] = '*';
         }
     }
-    j += sprintf(str + j, "%s", var);
+    j += flint_sprintf(str + j, "%s", var);
     str[j++] = '^';
-    j += sprintf(str + j, "%li", len - 1);
+    j += flint_sprintf(str + j, "%li", len - 1);
     
     i = len - 1;
     while (i)
@@ -212,11 +184,11 @@ char * _fmpq_poly_get_str_pretty(const fmpz *poly, const fmpz_t den, long len,
         if (i > 0)
         {
             str[j++] = '*';
-            j += sprintf(str + j, "%s", var);
+            j += flint_sprintf(str + j, "%s", var);
             if (i > 1)
             {
                 str[j++] = '^';
-                j += sprintf(str + j, "%li", i);
+                j += flint_sprintf(str + j, "%li", i);
             }
         }
     }

@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,57 +15,57 @@
 #include "arith.h"
 #include "ulong_extras.h"
 
-void check_value(long n, char *ans)
+void check_value(slong n, char *ans)
 {
     fmpz_t x, y;
     fmpz_init(x);
     fmpz_init(y);
     fmpz_set_si(y, n);
-    fmpz_ramanujan_tau(x, y);
+    arith_ramanujan_tau(x, y);
     fmpz_set_str(y, ans, 10);
     if (!fmpz_equal(x,y))
     {
-          printf("FAIL:\n");
-          printf("tau(%ld) gave ", n);
+          flint_printf("FAIL:\n");
+          flint_printf("tau(%wd) gave ", n);
           fmpz_print(x);
-          printf(", expected %s\n", ans); 
+          flint_printf(", expected %s\n", ans); 
           abort();
     }
     fmpz_clear(x);
     fmpz_clear(y);
 }
 
-void consistency_check(long n)
+void consistency_check(slong n)
 {
     fmpz_poly_t p;
     fmpz_t x, y;
-    long k;
+    slong k;
 
     fmpz_poly_init(p);
     fmpz_init(x);
     fmpz_init(y);
 
-    fmpz_poly_ramanujan_tau(p, n);
+    arith_ramanujan_tau_series(p, n);
     if (p->length != n && !(n == 1 && p->length == 0))
     {
-        printf("FAIL:\n");
-        printf("wrong length of polynomial %ld\n", n);
+        flint_printf("FAIL:\n");
+        flint_printf("wrong length of polynomial %wd\n", n);
         abort();
     }
 
     for (k=0; k<n; k++)
     {
         fmpz_set_si(y, k);
-        fmpz_ramanujan_tau(x, y);
+        arith_ramanujan_tau(x, y);
         fmpz_poly_get_coeff_fmpz(y, p, k);
         if (!fmpz_equal(x,y))
         {
-            printf("FAIL:\n");
-            printf("different tau n=%ld, k=%ld\n", n, k);
+            flint_printf("FAIL:\n");
+            flint_printf("different tau n=%wd, k=%wd\n", n, k);
             fmpz_print(x);
-            printf("\n");
+            flint_printf("\n");
             fmpz_print(y);
-            printf("\n");
+            flint_printf("\n");
             abort();
         }
     }
@@ -90,7 +76,9 @@ void consistency_check(long n)
 
 int main(void)
 {
-    printf("ramanujan_tau....");
+    FLINT_TEST_INIT(state);
+
+    flint_printf("ramanujan_tau....");
     fflush(stdout);
 
     check_value(0, "0");
@@ -164,7 +152,7 @@ int main(void)
     consistency_check(11);
     consistency_check(100);
 
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

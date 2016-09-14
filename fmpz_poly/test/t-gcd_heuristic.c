@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2010 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -47,15 +33,15 @@ int
 main(void)
 {
     int i, result, d1, d2;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
     
-    printf("gcd_heuristic....");
+    flint_printf("gcd_heuristic....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing of a and b */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t a, b, c;
 
@@ -72,9 +58,9 @@ main(void)
                                            && _t_gcd_is_canonical(a)));
         if (!result)
         {
-            printf("FAIL (aliasing a and b):\n");
-            printf("a = "), fmpz_poly_print(a), printf("\n\n");
-            printf("b = "), fmpz_poly_print(b), printf("\n\n");
+            flint_printf("FAIL (aliasing a and b):\n");
+            flint_printf("a = "), fmpz_poly_print(a), flint_printf("\n\n");
+            flint_printf("b = "), fmpz_poly_print(b), flint_printf("\n\n");
             abort();
         }
 
@@ -84,7 +70,7 @@ main(void)
     }
 
     /* Check aliasing of a and c */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t a, b, c;
 
@@ -101,9 +87,9 @@ main(void)
                                            && _t_gcd_is_canonical(a)));
         if (!result)
         {
-            printf("FAIL (aliasing a and c):\n");
-            printf("a = "), fmpz_poly_print(a), printf("\n\n");
-            printf("c = "), fmpz_poly_print(c), printf("\n\n");
+            flint_printf("FAIL (aliasing a and c):\n");
+            flint_printf("a = "), fmpz_poly_print(a), flint_printf("\n\n");
+            flint_printf("c = "), fmpz_poly_print(c), flint_printf("\n\n");
             abort();
         }
 
@@ -113,7 +99,7 @@ main(void)
     }
 
     /* Check that a divides GCD(af, ag) */
-    for (i = 0; i < 3000; i++)
+    for (i = 0; i < 300 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t a, d, f, g, q, r;
 
@@ -138,11 +124,11 @@ main(void)
            result = fmpz_poly_is_zero(r) && _t_gcd_is_canonical(d);
            if (!result)
            {
-              printf("FAIL (check a | gcd(af, ag)):\n");
-              printf("f = "), fmpz_poly_print(f), printf("\n");
-              printf("g = "), fmpz_poly_print(g), printf("\n");
-              printf("a = "), fmpz_poly_print(a), printf("\n");
-              printf("d = "), fmpz_poly_print(d), printf("\n");
+              flint_printf("FAIL (check a | gcd(af, ag)):\n");
+              flint_printf("f = "), fmpz_poly_print(f), flint_printf("\n");
+              flint_printf("g = "), fmpz_poly_print(g), flint_printf("\n");
+              flint_printf("a = "), fmpz_poly_print(a), flint_printf("\n");
+              flint_printf("d = "), fmpz_poly_print(d), flint_printf("\n");
               abort();
            }
         }
@@ -156,7 +142,7 @@ main(void)
     }
 
     /* Check that a == GCD(af, ag) when GCD(f, g) = 1 */
-    for (i = 0; i < 3000; i++)
+    for (i = 0; i < 300 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t a, d, f, g, q, r;
 
@@ -184,14 +170,68 @@ main(void)
            result = fmpz_poly_equal(d, a) && _t_gcd_is_canonical(d);
            if (!result)
            {
-              printf("FAIL (check a == gcd(af, ag) when gcd(f, g) = 1):\n");
-              printf("f = "), fmpz_poly_print(f), printf("\n");
-              printf("g = "), fmpz_poly_print(g), printf("\n");
-              printf("a = "), fmpz_poly_print(a), printf("\n");
-              printf("d = "), fmpz_poly_print(d), printf("\n");
+              flint_printf("FAIL (check a == gcd(af, ag) when gcd(f, g) = 1):\n");
+              flint_printf("f = "), fmpz_poly_print(f), flint_printf("\n");
+              flint_printf("g = "), fmpz_poly_print(g), flint_printf("\n");
+              flint_printf("a = "), fmpz_poly_print(a), flint_printf("\n");
+              flint_printf("d = "), fmpz_poly_print(d), flint_printf("\n");
               abort();
            }
         } 
+
+        fmpz_poly_clear(a);
+        fmpz_poly_clear(d);
+        fmpz_poly_clear(f);
+        fmpz_poly_clear(g);
+        fmpz_poly_clear(q);
+        fmpz_poly_clear(r);
+    }
+
+    /* 
+	   Check that gcd(f, ga) divides f and ga for small generic f, g
+	   and a small linear factor a. Exercises a bug found by Anton Mellit.
+	*/
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
+    {
+        fmpz_poly_t a, d, f, g, q, r;
+        
+		fmpz_poly_init(d);
+        fmpz_poly_init(f);
+        fmpz_poly_init(g);
+        fmpz_poly_init(q);
+        fmpz_poly_init(r);
+        fmpz_poly_init(a);
+        fmpz_poly_randtest(f, state, n_randint(state, 10), 8);
+        fmpz_poly_randtest(g, state, n_randint(state, 10), 4);
+
+		/* multiply by small linear factor */
+		fmpz_poly_set_coeff_si(a, 0, n_randint(state, 2) ? 1 : -1);
+		fmpz_poly_set_coeff_si(a, 1, 1);
+		fmpz_poly_mul(g, g, a);
+		
+        d1 = fmpz_poly_gcd_heuristic(d, f, g);
+		
+        if (d1)
+        {
+           if (fmpz_poly_is_zero(d))
+		      result = fmpz_poly_is_zero(f) && fmpz_poly_is_zero(g);
+		   else
+		   {
+		      fmpz_poly_divrem_divconquer(q, r, f, d);
+              result = fmpz_poly_is_zero(r);
+              fmpz_poly_divrem_divconquer(q, r, g, d);
+              result &= fmpz_poly_is_zero(r);
+		   }
+		   
+           if (!result)
+           {
+              flint_printf("FAIL (gcd(f, g) | f and g):\n");
+              flint_printf("f = "), fmpz_poly_print(f), flint_printf("\n");
+              flint_printf("g = "), fmpz_poly_print(g), flint_printf("\n");
+              flint_printf("d = "), fmpz_poly_print(d), flint_printf("\n");
+              abort();
+           }
+        }
 
         fmpz_poly_clear(a);
         fmpz_poly_clear(d);
@@ -218,8 +258,8 @@ main(void)
        result = (d->length == 1 && fmpz_is_one(d->coeffs));
        if (!result)
        {
-          printf("FAIL (check 1 == gcd(x^2, 24*x - 32):\n");
-          fmpz_poly_print(d); printf("\n"); 
+          flint_printf("FAIL (check 1 == gcd(x^2, 24*x - 32):\n");
+          fmpz_poly_print(d); flint_printf("\n"); 
           abort();
        }
 
@@ -228,8 +268,40 @@ main(void)
        fmpz_poly_clear(d);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    /* Anton Mellit's test case */
+    {
+       fmpz_poly_t a, b, d;
+       int heuristic;
+	   
+       fmpz_poly_init(a);
+       fmpz_poly_init(b);
+       fmpz_poly_init(d);
+
+	   /* 
+	       b = 3*q^12 - 8*q^11 - 24*q^10 - 48*q^9 - 84*q^8 - 92*q^7 - 92*q^6 - 
+               70*q^5 - 50*q^4 - 27*q^3 - 13*q^2 - 4*q - 1
+		   a = q^13 - 2*q^12 + 2*q^10 - q^9
+	   */
+       fmpz_poly_set_str(b, "13  -1 -4 -13 -27 -50 -70 -92 -92 -84 -48 -24 -8 3");
+	   fmpz_poly_set_str(a, "14  0 0 0 0 0 0 0 0 0 -1 2 0 -2 1");
+	   
+       heuristic = fmpz_poly_gcd_heuristic(d, a, b);
+
+       result = (heuristic == 0 || (d->length == 1 && fmpz_is_one(d->coeffs)));
+       if (!result)
+       {
+          flint_printf("FAIL Mellit test case:\n");
+          fmpz_poly_print(d); flint_printf("\n"); 
+          abort();
+       }
+
+       fmpz_poly_clear(a);
+       fmpz_poly_clear(b);
+       fmpz_poly_clear(d);
+    }
+
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

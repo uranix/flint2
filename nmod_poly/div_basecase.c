@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -32,24 +18,24 @@
 
 void
 _nmod_poly_div_basecase_1(mp_ptr Q, mp_ptr W,
-                             mp_srcptr A, long A_len, mp_srcptr B, long B_len,
+                             mp_srcptr A, slong A_len, mp_srcptr B, slong B_len,
                              nmod_t mod)
 {
     mp_limb_t lead_inv = n_invmod(B[B_len - 1], mod.n);
-    long len, coeff = A_len - B_len;
+    slong len, coeff = A_len - B_len;
     
     mp_ptr R1 = W;
     mp_srcptr Btop = B + B_len - 1;
     
-    mpn_copyi(R1, A + B_len - 1, A_len - B_len + 1);
+    flint_mpn_copyi(R1, A + B_len - 1, A_len - B_len + 1);
 
     while (coeff >= 0)
     {
         R1[coeff] = n_mod2_preinv(R1[coeff], mod.n, mod.ninv);
 
-        while (coeff >= 0 && R1[coeff] == 0L)
+        while (coeff >= 0 && R1[coeff] == WORD(0))
         {
-            Q[coeff--] = 0L;
+            Q[coeff--] = WORD(0);
             if (coeff >= 0)
                 R1[coeff] = n_mod2_preinv(R1[coeff], mod.n, mod.ninv);
         }
@@ -75,10 +61,10 @@ _nmod_poly_div_basecase_1(mp_ptr Q, mp_ptr W,
 
 void
 _nmod_poly_div_basecase_2(mp_ptr Q, mp_ptr W,
-                             mp_srcptr A, long A_len, mp_srcptr B, long B_len,
+                             mp_srcptr A, slong A_len, mp_srcptr B, slong B_len,
                              nmod_t mod)
 {
-    long coeff, i, len;
+    slong coeff, i, len;
     mp_limb_t lead_inv = n_invmod(B[B_len - 1], mod.n);
     mp_ptr B2, R2;
     mp_srcptr Btop;
@@ -106,9 +92,9 @@ _nmod_poly_div_basecase_2(mp_ptr Q, mp_ptr W,
         r_coeff =
             n_ll_mod_preinv(R2[2 * coeff + 1], R2[2 * coeff], mod.n, mod.ninv);
 
-        while (coeff >= 0 && r_coeff == 0L)
+        while (coeff >= 0 && r_coeff == WORD(0))
         {
-            Q[coeff--] = 0L;
+            Q[coeff--] = WORD(0);
             if (coeff >= 0)
                 r_coeff =
                     n_ll_mod_preinv(R2[2 * coeff + 1], R2[2 * coeff], mod.n,
@@ -136,10 +122,10 @@ _nmod_poly_div_basecase_2(mp_ptr Q, mp_ptr W,
 
 void
 _nmod_poly_div_basecase_3(mp_ptr Q, mp_ptr W,
-                             mp_srcptr A, long A_len, mp_srcptr B, long B_len,
+                             mp_srcptr A, slong A_len, mp_srcptr B, slong B_len,
                              nmod_t mod)
 {
-    long coeff, i, len;
+    slong coeff, i, len;
     mp_limb_t lead_inv = n_invmod(B[B_len - 1], mod.n);
     mp_limb_t r_coeff;
     mp_ptr B3, R3;
@@ -170,9 +156,9 @@ _nmod_poly_div_basecase_3(mp_ptr Q, mp_ptr W,
             n_lll_mod_preinv(R3[3 * coeff + 2], R3[3 * coeff + 1],
                              R3[3 * coeff], mod.n, mod.ninv);
 
-        while (coeff >= 0 && r_coeff == 0L)
+        while (coeff >= 0 && r_coeff == WORD(0))
         {
-            Q[coeff--] = 0L;
+            Q[coeff--] = WORD(0);
             if (coeff >= 0)
                 r_coeff =
                     n_lll_mod_preinv(R3[3 * coeff + 2], R3[3 * coeff + 1],
@@ -200,10 +186,10 @@ _nmod_poly_div_basecase_3(mp_ptr Q, mp_ptr W,
 
 void
 _nmod_poly_div_basecase(mp_ptr Q, mp_ptr W,
-                           mp_srcptr A, long A_len, mp_srcptr B, long B_len,
+                           mp_srcptr A, slong A_len, mp_srcptr B, slong B_len,
                            nmod_t mod)
 {
-    long bits =
+    slong bits =
         2 * (FLINT_BITS - mod.norm) + FLINT_BIT_COUNT(A_len - B_len + 1);
 
     if (bits <= FLINT_BITS)
@@ -220,14 +206,15 @@ nmod_poly_div_basecase(nmod_poly_t Q, const nmod_poly_t A,
 {
     mp_ptr Q_coeffs, W;
     nmod_poly_t t1;
-    long Alen, Blen;
+    slong Alen, Blen;
+    TMP_INIT;
 
     Blen = B->length;
 
     if (Blen == 0)
     {
-        printf("Exception: division by zero in nmod_poly_div_basecase\n");
-        abort();
+        flint_printf("Exception (nmod_poly_div_base). Division by zero.\n");
+        flint_abort();
     }
 
     Alen = A->length;
@@ -251,7 +238,8 @@ nmod_poly_div_basecase(nmod_poly_t Q, const nmod_poly_t A,
         Q_coeffs = Q->coeffs;
     }
 
-    W = _nmod_vec_init(NMOD_DIV_BC_ITCH(Alen, Blen, A->mod));
+    TMP_START;
+    W = TMP_ALLOC(NMOD_DIV_BC_ITCH(Alen, Blen, A->mod)*sizeof(mp_limb_t));
     
     _nmod_poly_div_basecase(Q_coeffs, W, A->coeffs, Alen,
                                B->coeffs, Blen, B->mod);
@@ -264,6 +252,6 @@ nmod_poly_div_basecase(nmod_poly_t Q, const nmod_poly_t A,
     
     Q->length = Alen - Blen + 1;
 
-    _nmod_vec_clear(W);
+    TMP_END;
     _nmod_poly_normalise(Q);
 }

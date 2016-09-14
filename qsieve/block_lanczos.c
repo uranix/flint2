@@ -1,25 +1,16 @@
-/*============================================================================
+/*
     Copyright 2006 Jason Papadopoulos.    
     Copyright 2006, 2011 William Hart.
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-===============================================================================
-
+/*-------------------------------------------------------------------
 Optionally, please be nice and tell me if you find this source to be
 useful. Again optionally, if you add to the functionality present here
 please consider making those additions public too, so that others may 
@@ -33,13 +24,14 @@ The following modifications were made by William Hart:
 --------------------------------------------------------------------*/
 
 
-#undef ulong /* avoid clash with stdlib */
+#define ulong ulongxx /* interferes with system includes */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define ulong unsigned long 
+#undef ulong
+#define ulong mp_limb_t
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "qsieve.h"
@@ -58,7 +50,7 @@ static const uint64_t bitmask[64] = {
 };
 
 /*--------------------------------------------------------------------*/
-uint64_t get_null_entry(uint64_t * nullrows, long i, long l) {
+uint64_t get_null_entry(uint64_t * nullrows, slong i, slong l) {
    
    /* Returns true if the entry with indices i,l is 1 in the
       supplied 64xN matrix. This is used to read the nullspace
@@ -68,7 +60,7 @@ uint64_t get_null_entry(uint64_t * nullrows, long i, long l) {
 }
 
 /*--------------------------------------------------------------------*/
-void reduce_matrix(qs_t qs_inf, long *nrows, long *ncols, la_col_t *cols) {
+void reduce_matrix(qs_t qs_inf, slong *nrows, slong *ncols, la_col_t *cols) {
 
 	/* Perform light filtering on the nrows x ncols
 	   matrix specified by cols[]. The processing here is
@@ -84,15 +76,15 @@ void reduce_matrix(qs_t qs_inf, long *nrows, long *ncols, la_col_t *cols) {
 	   factorizations for which the matrix step will fail 
 	   outright  */
 
-	long r, c, i, j, k;
-	long passes;
-	long *counts;
-	long reduced_rows;
-	long reduced_cols;
+	slong r, c, i, j, k;
+	slong passes;
+	slong *counts;
+	slong reduced_rows;
+	slong reduced_cols;
 
 	/* count the number of nonzero entries in each row */
 
-	counts = (long *)flint_calloc((size_t)*nrows, sizeof(long));
+	counts = (slong *)flint_calloc((size_t)*nrows, sizeof(slong));
 	for (i = 0; i < *ncols; i++) {
 		for (j = 0; j < cols[i].weight; j++)
 			counts[cols[i].data[j]]++;
@@ -174,7 +166,7 @@ void reduce_matrix(qs_t qs_inf, long *nrows, long *ncols, la_col_t *cols) {
 	} while (r != reduced_rows);
 
 #if (QS_DEBUG & 128)
-	printf("reduce to %ld x %ld in %ld passes\n", 
+	flint_printf("reduce to %wd x %wd in %wd passes\n", 
 			reduced_rows, reduced_cols, passes);
 #endif
 
@@ -196,7 +188,7 @@ static void mul_64x64_64x64(uint64_t *a, uint64_t *b, uint64_t *c ) {
 
 	uint64_t ai, bj, accum;
 	uint64_t tmp[64];
-	unsigned long i, j;
+	ulong i, j;
 
 	for (i = 0; i < 64; i++) {
 		j = 0;
@@ -233,7 +225,7 @@ static void precompute_Nx64_64x64(uint64_t *x, uint64_t *c) {
 	   by x[][]. */
 
 	uint64_t accum, xk;
-	unsigned long i, j, k, index;
+	ulong i, j, k, index;
 
 	for (j = 0; j < 8; j++) {
 		for (i = 0; i < 256; i++) {
@@ -257,7 +249,7 @@ static void precompute_Nx64_64x64(uint64_t *x, uint64_t *c) {
 
 /*-------------------------------------------------------------------*/
 static void mul_Nx64_64x64_acc(uint64_t *v, uint64_t *x, uint64_t *c, 
-				uint64_t *y, long n) {
+				uint64_t *y, slong n) {
 
 	/* let v[][] be a n x 64 matrix with elements in GF(2), 
 	   represented as an array of n 64-bit words. Let c[][]
@@ -265,7 +257,7 @@ static void mul_Nx64_64x64_acc(uint64_t *v, uint64_t *x, uint64_t *c,
 	   This code multiplies v[][] by the 64x64 matrix 
 	   x[][], then XORs the n x 64 result into y[][] */
 
-    long i;
+    slong i;
 	uint64_t word;
 
 	precompute_Nx64_64x64(x, c);
@@ -285,13 +277,13 @@ static void mul_Nx64_64x64_acc(uint64_t *v, uint64_t *x, uint64_t *c,
 
 /*-------------------------------------------------------------------*/
 static void mul_64xN_Nx64(uint64_t *x, uint64_t *y,
-			   uint64_t *c, uint64_t *xy, long n) {
+			   uint64_t *c, uint64_t *xy, slong n) {
 
 	/* Let x and y be n x 64 matrices. This routine computes
 	   the 64 x 64 matrix xy[][] given by transpose(x) * y.
 	   c[][] is a 256 x 8 scratch matrix of 64-bit words. */
 
-	long i;
+	slong i;
 
 	memset(c, 0, 256 * 8 * sizeof(uint64_t));
 	memset(xy, 0, 64 * sizeof(uint64_t));
@@ -312,7 +304,7 @@ static void mul_64xN_Nx64(uint64_t *x, uint64_t *y,
 
 	for(i = 0; i < 8; i++) {
 
-		unsigned long j;
+		ulong j;
 		uint64_t a0, a1, a2, a3, a4, a5, a6, a7;
 
 		a0 = a1 = a2 = a3 = 0;
@@ -338,8 +330,8 @@ static void mul_64xN_Nx64(uint64_t *x, uint64_t *y,
 }
 
 /*-------------------------------------------------------------------*/
-static long find_nonsingular_sub(uint64_t *t, long *s, 
-				long *last_s, long last_dim, 
+static slong find_nonsingular_sub(uint64_t *t, slong *s, 
+				slong *last_s, slong last_dim, 
 				uint64_t *w) {
 
 	/* given a 64x64 matrix t[][] (i.e. sixty-four
@@ -350,9 +342,9 @@ static long find_nonsingular_sub(uint64_t *t, long *s,
 	     - invert it and copy to w[][]
 	     - enumerate in s[] the columns represented in w[][] */
 
-	long i, j;
-	long dim;
-	long cols[64];
+	slong i, j;
+	slong dim;
+	slong cols[64];
 	uint64_t M[64][2];
 	uint64_t mask, *row_i, *row_j;
 	uint64_t m0, m1;
@@ -437,7 +429,7 @@ static long find_nonsingular_sub(uint64_t *t, long *s,
 				
 		if (j == 64) {
 #if (QS_DEBUG & 128)
-			printf("lanczos error: submatrix "
+			flint_printf("lanczos error: submatrix "
 					"is not invertible\n");
 #endif
 			return 0;
@@ -476,7 +468,7 @@ static long find_nonsingular_sub(uint64_t *t, long *s,
 
 	if (mask != (uint64_t)(-1)) {
 #if (QS_DEBUG & 128)
-		printf("lanczos error: not all columns used\n");
+		flint_printf("lanczos error: not all columns used\n");
 #endif
 		return 0;
 	}
@@ -485,8 +477,8 @@ static long find_nonsingular_sub(uint64_t *t, long *s,
 }
 
 /*-------------------------------------------------------------------*/
-void mul_MxN_Nx64(long vsize, long dense_rows,
-		long ncols, la_col_t *A,
+void mul_MxN_Nx64(slong vsize, slong dense_rows,
+		slong ncols, la_col_t *A,
 		uint64_t *x, uint64_t *b) {
 
 	/* Multiply the vector x[] by the matrix A (stored
@@ -494,13 +486,13 @@ void mul_MxN_Nx64(long vsize, long dense_rows,
 	   refers to the number of uint64_t's allocated for
 	   x[] and b[]; vsize is probably different from ncols */
 
-	long i, j;
+	slong i, j;
 
 	memset(b, 0, vsize * sizeof(uint64_t));
 	
 	for (i = 0; i < ncols; i++) {
 		la_col_t *col = A + i;
-		long *row_entries = col->data;
+		slong *row_entries = col->data;
 		uint64_t tmp = x[i];
 
 		for (j = 0; j < col->weight; j++) {
@@ -511,12 +503,12 @@ void mul_MxN_Nx64(long vsize, long dense_rows,
 	if (dense_rows) {
 		for (i = 0; i < ncols; i++) {
 			la_col_t *col = A + i;
-			long *row_entries = col->data + col->weight;
+			slong *row_entries = col->data + col->weight;
 			uint64_t tmp = x[i];
 	
 			for (j = 0; j < dense_rows; j++) {
 				if (row_entries[j / 32] & 
-						((long)1 << (j % 32))) {
+						((slong)1 << (j % 32))) {
 					b[j] ^= tmp;
 				}
 			}
@@ -525,18 +517,18 @@ void mul_MxN_Nx64(long vsize, long dense_rows,
 }
 
 /*-------------------------------------------------------------------*/
-void mul_trans_MxN_Nx64(long dense_rows, long ncols,
+void mul_trans_MxN_Nx64(slong dense_rows, slong ncols,
 			la_col_t *A, uint64_t *x, uint64_t *b) {
 
 	/* Multiply the vector x[] by the transpose of the
 	   matrix A and put the result in b[]. Since A is stored
 	   by columns, this is just a matrix-vector product */
 
-	long i, j;
+	slong i, j;
 
 	for (i = 0; i < ncols; i++) {
 		la_col_t *col = A + i;
-		long *row_entries = col->data;
+		slong *row_entries = col->data;
 		uint64_t accum = 0;
 
 		for (j = 0; j < col->weight; j++) {
@@ -548,12 +540,12 @@ void mul_trans_MxN_Nx64(long dense_rows, long ncols,
 	if (dense_rows) {
 		for (i = 0; i < ncols; i++) {
 			la_col_t *col = A + i;
-			long *row_entries = col->data + col->weight;
+			slong *row_entries = col->data + col->weight;
 			uint64_t accum = b[i];
 	
 			for (j = 0; j < dense_rows; j++) {
 				if (row_entries[j / 32] &
-						((long)1 << (j % 32))) {
+						((slong)1 << (j % 32))) {
 					accum ^= x[j];
 				}
 			}
@@ -563,14 +555,14 @@ void mul_trans_MxN_Nx64(long dense_rows, long ncols,
 }
 
 /*-----------------------------------------------------------------------*/
-static void transpose_vector(long ncols, uint64_t *v, uint64_t **trans) {
+static void transpose_vector(slong ncols, uint64_t *v, uint64_t **trans) {
 
 	/* Hideously inefficent routine to transpose a
 	   vector v[] of 64-bit words into a 2-D array
 	   trans[][] of 64-bit words */
 
-	long i, j;
-	long col;
+	slong i, j;
+	slong col;
 	uint64_t mask, word;
 
 	for (i = 0; i < ncols; i++) {
@@ -588,7 +580,7 @@ static void transpose_vector(long ncols, uint64_t *v, uint64_t **trans) {
 }
 
 /*-----------------------------------------------------------------------*/
-void combine_cols(long ncols, 
+void combine_cols(slong ncols, 
 		uint64_t *x, uint64_t *v, 
 		uint64_t *ax, uint64_t *av) {
 
@@ -609,7 +601,7 @@ void combine_cols(long ncols,
 	   v[] and av[] can be NULL, in which case the elimination
 	   process assumes 64 dependencies instead of 128 */
 
-	long i, j, k, bitpos, col, col_words, num_deps;
+	slong i, j, k, bitpos, col, col_words, num_deps;
 	uint64_t mask;
 	uint64_t *matrix[128], *amatrix[128], *tmp;
 
@@ -705,8 +697,8 @@ void combine_cols(long ncols,
 }
 
 /*-----------------------------------------------------------------------*/
-uint64_t * block_lanczos(flint_rand_t state, long nrows, 
-			long dense_rows, long ncols, la_col_t *B) {
+uint64_t * block_lanczos(flint_rand_t state, slong nrows, 
+			slong dense_rows, slong ncols, la_col_t *B) {
 	
 	/* Solve Bx = 0 for some nonzero x; the computed
 	   solution, containing up to 64 of these nullspace
@@ -718,12 +710,12 @@ uint64_t * block_lanczos(flint_rand_t state, long nrows,
 	uint64_t *scratch;
 	uint64_t *d, *e, *f, *f2;
 	uint64_t *tmp;
-	long s[2][64];
-	long i, iter;
-	long n = ncols;
-	long dim0, dim1;
+	slong s[2][64];
+	slong i, iter;
+	slong n = ncols;
+	slong dim0, dim1;
 	uint64_t mask0, mask1;
-	long vsize;
+	slong vsize;
 
 	/* allocate all of the size-n variables. Note that because
 	   B has been preprocessed to ignore singleton rows, the
@@ -780,7 +772,11 @@ uint64_t * block_lanczos(flint_rand_t state, long nrows,
 	   of v[0] must be saved off separately */
 
 	for (i = 0; i < n; i++)
+#if FLINT_BITS==64
 		v[0][i] = (uint64_t) n_randlimb(state);
+#else
+		v[0][i] = (uint64_t) n_randlimb(state) + ((uint64_t) n_randlimb(state) << 32);
+#endif
 
 	memcpy(x, v[0], vsize * sizeof(uint64_t));
 	mul_MxN_Nx64(vsize, dense_rows, ncols, B, v[0], scratch);
@@ -896,13 +892,13 @@ uint64_t * block_lanczos(flint_rand_t state, long nrows,
 		
 		tmp = vt_a2_v[1]; vt_a2_v[1] = vt_a2_v[0]; vt_a2_v[0] = tmp;
 
-		memcpy(s[1], s[0], 64 * sizeof(long));
+		memcpy(s[1], s[0], 64 * sizeof(slong));
 		mask1 = mask0;
 		dim1 = dim0;
 	}
 
 #if (QS_DEBUG & 128)
-	printf("lanczos halted after %ld iterations\n", iter);
+	flint_printf("lanczos halted after %wd iterations\n", iter);
 #endif
 
 	/* free unneeded storage */
@@ -928,7 +924,7 @@ uint64_t * block_lanczos(flint_rand_t state, long nrows,
 
 	if (dim0 == 0) {
 #if (QS_DEBUG & 128)
-		printf("linear algebra failed; retrying...\n");
+		flint_printf("linear algebra failed; retrying...\n");
 #endif
 		flint_free(x);
 		flint_free(v[0]);
@@ -954,8 +950,8 @@ uint64_t * block_lanczos(flint_rand_t state, long nrows,
 			break;
 	}
 	if (i < ncols) {
-		printf("lanczos error: dependencies don't work %ld\n",i);
-		abort();
+		flint_printf("lanczos error: dependencies don't work %wd\n",i);
+		flint_abort();
 	}
 	
 	flint_free(v[0]);

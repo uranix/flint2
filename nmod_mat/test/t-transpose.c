@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_mat.h"
 #include "ulong_extras.h"
@@ -34,15 +20,15 @@
 int
 main(void)
 {
-    long m, n, mod, mod2, rep;
-    flint_rand_t state;
-    flint_randinit(state);
+    slong m, n, mod, mod2, rep;
+    FLINT_TEST_INIT(state);
+    
 
-    printf("transpose....");
+    flint_printf("transpose....");
     fflush(stdout);
 
     /* Rectangular transpose, same modulus */
-    for (rep = 0; rep < 1000; rep++)
+    for (rep = 0; rep < 100 * flint_test_multiplier(); rep++)
     {
         nmod_mat_t A, B, C;
 
@@ -63,7 +49,7 @@ main(void)
 
         if (!nmod_mat_equal(C, A))
         {
-            printf("FAIL: C != A\n");
+            flint_printf("FAIL: C != A\n");
             abort();
         }
 
@@ -73,7 +59,7 @@ main(void)
     }
 
     /* Rectangular transpose, different modulus */
-    for (rep = 0; rep < 1000; rep++)
+    for (rep = 0; rep < 100 * flint_test_multiplier(); rep++)
     {
         nmod_mat_t A, AT, B, BT, AT2;
 
@@ -99,7 +85,7 @@ main(void)
 
         if (!nmod_mat_equal(BT, AT2))
         {
-            printf("FAIL: AT != BT\n");
+            flint_printf("FAIL: AT != BT\n");
             abort();
         }
 
@@ -111,7 +97,7 @@ main(void)
     }
 
     /* Self-transpose */
-    for (rep = 0; rep < 1000; rep++)
+    for (rep = 0; rep < 100 * flint_test_multiplier(); rep++)
     {
         nmod_mat_t A, B;
 
@@ -124,9 +110,12 @@ main(void)
         nmod_mat_randtest(A, state);
         nmod_mat_set(B, A);
 
+        nmod_mat_transpose(B, B);
+        nmod_mat_transpose(B, B);
+
         if (!nmod_mat_equal(B, A))
         {
-            printf("FAIL: B != A\n");
+            flint_printf("FAIL: B != A\n");
             abort();
         }
 
@@ -134,8 +123,8 @@ main(void)
         nmod_mat_clear(B);
     }
 
-    flint_randclear(state);
-
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

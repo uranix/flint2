@@ -1,31 +1,21 @@
-/*=============================================================================
+/*
+    Copyright (C) 2007 William Hart and David Harvey
+    Copyright (C) 2013 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2007 William Hart and David Harvey
-
-******************************************************************************/
-
-#include "profiler.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <string.h>
+#include "profiler.h"
 
 /*
    clock_last[i] is the last read clock value for clock #i.
@@ -39,11 +29,11 @@ void
 prof_repeat(double *min, double *max, profile_target_t target, void *arg)
 {
     /* Number of timings that were at least DURATION_THRESHOLD microseconds */
-    unsigned long good_count = 0;
+    ulong good_count = 0;
     double max_time = DBL_MIN, min_time = DBL_MAX;
 
     /* First try one loop */
-    unsigned long num_trials = 4;
+    ulong num_trials = 4;
     double last_time;
     init_clock(0);
     target(arg, num_trials);
@@ -88,7 +78,7 @@ prof_repeat(double *min, double *max, profile_target_t target, void *arg)
                 adjust_ratio = 1.25;
             if (adjust_ratio < 0.75)
                 adjust_ratio = 0.75;
-            num_trials = (unsigned long) ceil(adjust_ratio * num_trials);
+            num_trials = (ulong) ceil(adjust_ratio * num_trials);
             /* Just to be safe */
             if (num_trials == 0)
                 num_trials = 1;
@@ -106,3 +96,40 @@ prof_repeat(double *min, double *max, profile_target_t target, void *arg)
     if (max)
         *max = max_time;
 }
+
+void get_memory_usage(meminfo_t meminfo)
+{
+    FILE * file = fopen("/proc/self/status", "r");
+
+    ulong result;
+    char line[128];
+
+    while (fgets(line, 128, file) != NULL)
+    {
+        result = 0;
+
+        if (strncmp(line, "VmSize:", 7) == 0)
+        {
+            flint_sscanf(line, "VmSize: %wu kB\n", &result);
+            meminfo->size = result;
+        }
+        else if (strncmp(line, "VmPeak:", 7) == 0)
+        {
+            flint_sscanf(line, "VmPeak: %wu kB\n", &result);
+            meminfo->peak = result;
+        }
+        else if (strncmp(line, "VmHWM:", 6) == 0)
+        {
+            flint_sscanf(line, "VmHWM: %wu kB\n", &result);
+            meminfo->hwm = result;
+        }
+        else if (strncmp(line, "VmRSS:", 6) == 0)
+        {
+            flint_sscanf(line, "VmRSS: %wu kB\n", &result);
+            meminfo->rss = result;
+        }
+    }
+
+    fclose(file);
+}
+

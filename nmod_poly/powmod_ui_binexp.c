@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2010 William Hart
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -34,19 +20,15 @@
 
 void
 _nmod_poly_powmod_ui_binexp(mp_ptr res, mp_srcptr poly, 
-                                ulong e, mp_srcptr f, long lenf, nmod_t mod)
+                                ulong e, mp_srcptr f, slong lenf, nmod_t mod)
 {
     mp_ptr T, Q;
-    long lenT, lenQ;
+    slong lenT, lenQ;
     int i;
 
     if (lenf == 2)
     {
-        /* XXX */
-        if (((mp_limb_signed_t) e) < 0)
-            _nmod_poly_pow_trunc(res, poly, e, 1, mod);
-        else
-            res[0] = n_powmod2_preinv(poly[0], e, mod.n, mod.ninv);
+        res[0] = n_powmod2_ui_preinv(poly[0], e, mod.n, mod.ninv);
         return;
     }
 
@@ -63,7 +45,7 @@ _nmod_poly_powmod_ui_binexp(mp_ptr res, mp_srcptr poly,
         _nmod_poly_mul(T, res, lenf - 1, res, lenf - 1, mod);
         _nmod_poly_divrem(Q, res, T, 2 * lenf - 3, f, lenf, mod);
 
-        if (e & (1UL << i))
+        if (e & (UWORD(1) << i))
         {
             _nmod_poly_mul(T, res, lenf - 1, poly, lenf - 1, mod);
             _nmod_poly_divrem(Q, res, T, 2 * lenf - 3, f, lenf, mod);
@@ -80,15 +62,15 @@ nmod_poly_powmod_ui_binexp(nmod_poly_t res,
                            const nmod_poly_t f)
 {
     mp_ptr p;
-    long len = poly->length;
-    long lenf = f->length;
-    long trunc = lenf - 1;
+    slong len = poly->length;
+    slong lenf = f->length;
+    slong trunc = lenf - 1;
     int pcopy = 0;
 
     if (lenf == 0)
     {
-        printf("Exception: nmod_poly_powmod: divide by zero\n");
-        abort();
+        flint_printf("Exception (nmod_poly_powmod). Divide by zero.\n");
+        flint_abort();
     }
 
     if (len >= lenf)
@@ -105,13 +87,13 @@ nmod_poly_powmod_ui_binexp(nmod_poly_t res,
 
     if (e <= 2)
     {
-        if (e == 0UL)
+        if (e == UWORD(0))
         {
             nmod_poly_fit_length(res, 1);
-            res->coeffs[0] = 1UL;
+            res->coeffs[0] = UWORD(1);
             res->length = 1;
         }
-        else if (e == 1UL)
+        else if (e == UWORD(1))
         {
             nmod_poly_set(res, poly);
         }
@@ -129,8 +111,8 @@ nmod_poly_powmod_ui_binexp(nmod_poly_t res,
     if (len < trunc)
     {
         p = _nmod_vec_init(trunc);
-        mpn_copyi(p, poly->coeffs, len);
-        mpn_zero(p + len, trunc - len);
+        flint_mpn_copyi(p, poly->coeffs, len);
+        flint_mpn_zero(p + len, trunc - len);
         pcopy = 1;
     } else
         p = poly->coeffs;

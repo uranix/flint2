@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2010 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -36,19 +22,17 @@ int
 main(void)
 {
     int i, j, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("signature....");
+    flint_printf("signature....");
     fflush(stdout);
 
-    flint_randinit(state);
-
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < 50 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t poly, linear, quadratic, rem;
         fmpz_t lhs, rhs;
-        long nreal, ncomplex, nreal_max, ncomplex_max, r1, r2;
-        long len = n_randint(state, 20) + 1;
+        slong nreal, ncomplex, nreal_max, ncomplex_max, r1, r2;
+        slong len = n_randint(state, 20) + 1;
         mp_bitcnt_t bits = n_randint(state, 50) + 1;
         
         fmpz_poly_init2(poly, len);
@@ -119,9 +103,9 @@ main(void)
         result = ((r1 == nreal) && (r2 == ncomplex));
         if (!result)
         {
-            printf("FAIL:\n");
-            printf("poly   = "), fmpz_poly_print(poly), printf("\n\n");
-            printf("r1 r2  = %ld %ld\n\n", r1, r2);
+            flint_printf("FAIL:\n");
+            flint_printf("poly   = "), fmpz_poly_print(poly), flint_printf("\n\n");
+            flint_printf("r1 r2  = %wd %wd\n\n", r1, r2);
             abort();
         }
 
@@ -135,23 +119,46 @@ main(void)
 
     {
         fmpz_poly_t poly;
-        long r1, r2;
+        slong r1, r2;
         fmpz_poly_init(poly);
         fmpz_poly_set_str(poly, "6  1 1 1 10 5 1");
         fmpz_poly_signature(&r1, &r2, poly);
         result = ((r1 == 1) && (r2 == 2));
         if (!result)
         {
-            printf("FAIL:\n");
-            printf("poly   = "), fmpz_poly_print(poly), printf("\n\n");
-            printf("r1 r2  = %ld %ld\n\n", r1, r2);
+            flint_printf("FAIL:\n");
+            flint_printf("poly   = "), fmpz_poly_print(poly), flint_printf("\n\n");
+            flint_printf("r1 r2  = %wd %wd\n\n", r1, r2);
             abort();
         }
         fmpz_poly_clear(poly);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    for (i = 0; i < 50; i++)
+    {
+        slong r, s;
+        fmpz_poly_t poly;
+
+        fmpz_poly_init(poly);
+ 
+        fmpz_poly_cyclotomic(poly, i + 3);
+
+        fmpz_poly_signature(&r, &s, poly);
+
+        result = (r == 0 && s == (fmpz_poly_length(poly) - 1)/2);
+        if (!result)
+        {
+            flint_printf("FAIL:\n");
+            flint_printf("Cyclotomic(%ld) has signature (%ld, %ld)\n", i + 3, r, s);
+            flint_printf("Expected signature (%ld, %ld)\n", 0, (fmpz_poly_length(poly) - 1)/2);
+            abort();
+        }
+        
+        fmpz_poly_clear(poly);
+    }
+    
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

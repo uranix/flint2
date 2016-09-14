@@ -1,54 +1,44 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_mat.h"
+#include "perm.h"
 
-long
-nmod_mat_rref(long * P, nmod_mat_t A)
+slong
+_nmod_mat_rref(nmod_mat_t A, slong * pivots_nonpivots, slong * P)
 {
-    long i, j, k, m, n, rank;
-    long * pivots;
-    long * nonpivots;
+    slong i, j, k, n, rank;
+    slong * pivots;
+    slong * nonpivots;
 
     nmod_mat_t U, V;
 
-    m = A->r;
     n = A->c;
 
     rank = nmod_mat_lu(P, A, 0);
 
     if (rank == 0)
+    {
+        for (i = 0; i < n; i++)
+            pivots_nonpivots[i] = i;
         return rank;
+    }
 
     /* Clear L */
     for (i = 0; i < A->r; i++)
         for (j = 0; j < FLINT_MIN(i, rank); j++)
-            nmod_mat_entry(A, i, j) = 0UL;
+            nmod_mat_entry(A, i, j) = UWORD(0);
 
     /* We now reorder U to proper upper triangular form U | V
        with U full-rank triangular, set V = U^(-1) V, and then
@@ -60,12 +50,12 @@ nmod_mat_rref(long * P, nmod_mat_t A)
     nmod_mat_init(U, rank, rank, A->mod.n);
     nmod_mat_init(V, rank, n - rank, A->mod.n);
 
-    pivots = flint_malloc(sizeof(long) * rank);
-    nonpivots = flint_malloc(sizeof(long) * (n - rank));
+    pivots = pivots_nonpivots;
+    nonpivots = pivots_nonpivots + rank;
 
     for (i = j = k = 0; i < rank; i++)
     {
-        while (nmod_mat_entry(A, i, j) == 0UL)
+        while (nmod_mat_entry(A, i, j) == UWORD(0))
         {
             nonpivots[k] = j;
             k++;
@@ -99,7 +89,7 @@ nmod_mat_rref(long * P, nmod_mat_t A)
     for (i = 0; i < rank; i++)
     {
         for (j = 0; j <= i; j++)
-            nmod_mat_entry(A, i, pivots[i]) = (i == j);
+            nmod_mat_entry(A, j, pivots[i]) = (i == j);
     }
 
     /* Write back the actual content */
@@ -112,8 +102,20 @@ nmod_mat_rref(long * P, nmod_mat_t A)
     nmod_mat_clear(U);
     nmod_mat_clear(V);
 
-    flint_free(pivots);
-    flint_free(nonpivots);
+    return rank;
+}
+
+slong
+nmod_mat_rref(nmod_mat_t A)
+{
+    slong rank, * pivots_nonpivots, * P;
+    pivots_nonpivots = flint_malloc(sizeof(slong) * A->c);
+    P = _perm_init(nmod_mat_nrows(A));
+
+    rank = _nmod_mat_rref(A, pivots_nonpivots, P);
+
+    flint_free(pivots_nonpivots);
+    _perm_clear(P);
 
     return rank;
 }

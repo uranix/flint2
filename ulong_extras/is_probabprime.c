@@ -1,106 +1,102 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
+    Copyright (C) 2014 Dana Jacobsen
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
+
+/*
+    This function is used by n_is_prime up to 2^64 and *must* therefore
+    act as a primality proof up to that limit. 
+
+    Currently it acts as such all the way up to 2^64.
+*/
 
 int n_is_probabprime(mp_limb_t n)
 {
     mp_limb_t d;
     unsigned int norm;
-	mp_limb_t ninv;
-
-    if (n <= 1UL) return 0;
-    if (n == 2UL) return 1;
-    if ((n & 1UL) == 0) return 0;
-
-    if (n_is_perfect_power235(n)) return 0;
-
+    int isprime;
 #if FLINT64
-    if (n >= 10000000000000000UL) return n_is_probabprime_BPSW(n);
+    double npre;
+#else
+    mp_limb_t ninv;
 #endif
 
+    if (n <= UWORD(1)) return 0;
+    if (n == UWORD(2)) return 1;
+    if ((n & UWORD(1)) == 0) return 0;
+
+    if (n < FLINT_ODDPRIME_SMALL_CUTOFF)
+        return n_is_oddprime_small(n);
+    if (n < FLINT_PRIMES_TAB_DEFAULT_CUTOFF)
+        return n_is_oddprime_binary(n);
+
+#if FLINT64
+    /* Avoid the unnecessary inverse */
+    if (n >= UWORD(1050535501))
+        return n_is_probabprime_BPSW(n);
+#endif
+
+    isprime = 0;
     d = n - 1;
     count_trailing_zeros(norm, d);
     d >>= norm;
 
-#if FLINT64
-    if (n < 1122004669633UL)
-#else
-    if (n < 2147483648UL)
-#endif  
+#if !FLINT64
+
+    /* For 32-bit, just the 2-base or 3-base Miller-Rabin is enough */
+    /* The preinv functions are faster on 32-bit, and work up to
+       2^32 (precomp only works up to 2^31) */
+    ninv = n_preinvert_limb(n);
+
+    if (n < UWORD(9080191))
     {
-        double npre;
-        if (n < FLINT_ODDPRIME_SMALL_CUTOFF)
-            return n_is_oddprime_small(n);
+        isprime = n_is_strong_probabprime2_preinv(n, ninv, UWORD(31), d)
+               && n_is_strong_probabprime2_preinv(n, ninv, UWORD(73), d);
+    }
+    else
+    {
+        isprime = n_is_strong_probabprime2_preinv(n, ninv, UWORD(2), d)
+               && n_is_strong_probabprime2_preinv(n, ninv, UWORD(7), d)
+               && n_is_strong_probabprime2_preinv(n, ninv, UWORD(61), d);
+    }
+#else
+    npre = n_precompute_inverse(n);
 
-        n_compute_primes(74000);
-        if (n < flint_primes_cutoff)
-            return n_is_oddprime_binary(n);
-      
-        npre = n_precompute_inverse(n);
-
-        if (n < 9080191UL) 
-        {
-            if (n_is_strong_probabprime_precomp(n, npre, 31UL, d)
-                && n_is_strong_probabprime_precomp(n, npre, 73UL, d)) return 1;
-            else return 0;
-        }
-
-#if FLINT64
-        if (n < 4759123141UL)
-        {
+    /* For 64-bit, BPSW seems to be a little bit faster than 3 bases. */
+    if (n < UWORD(341531))
+    {
+        isprime = n_is_strong_probabprime_precomp(n, npre, UWORD(9345883071009581737), d);
+    }
+    else if (n < UWORD(1050535501))
+    {
+        isprime = n_is_strong_probabprime_precomp(n, npre, UWORD(336781006125), d)
+               && n_is_strong_probabprime_precomp(n, npre, UWORD(9639812373923155), d);
+    }
+#if 0
+    else if (n < UWORD(350269456337))
+    {
+        isprime = n_is_strong_probabprime_precomp(n, npre, UWORD(4230279247111683200), d)
+               && n_is_strong_probabprime_precomp(n, npre, UWORD(14694767155120705706), d)
+               && n_is_strong_probabprime_precomp(n, npre, UWORD(16641139526367750375), d);
+    }
 #endif
-        if (n_is_strong_probabprime_precomp(n, npre, 2UL, d) 
-            && n_is_strong_probabprime_precomp(n, npre, 7UL, d) 
-            && n_is_strong_probabprime_precomp(n, npre, 61UL, d)) return 1;
-        else return 0;
-#if FLINT64
-        }
-
-        if (n_is_strong_probabprime_precomp(n, npre, 2UL, d) 
-            && n_is_strong_probabprime_precomp(n, npre, 13UL, d) 
-            && n_is_strong_probabprime_precomp(n, npre, 23UL, d) 
-            && n_is_strong_probabprime_precomp(n, npre, 1662803UL, d))
-            if (n != 46856248255981UL) return 1;
-        return 0;
-#endif
+    else
+    {
+        isprime = n_is_probabprime_BPSW(n);
     }
 
-	ninv = n_preinvert_limb(n);
-
-    if (n_is_strong_probabprime2_preinv(n, ninv, 2UL, d) 
-        && n_is_strong_probabprime2_preinv(n, ninv, 3UL, d) 
-        && n_is_strong_probabprime2_preinv(n, ninv, 7UL, d) 
-        && n_is_strong_probabprime2_preinv(n, ninv, 61UL, d) 
-        && n_is_strong_probabprime2_preinv(n, ninv, 24251UL, d))
-#if FLINT64
-        if (n != 46856248255981UL) 
 #endif
-        return 1;
 
-    return 0;
+    return isprime;
 }

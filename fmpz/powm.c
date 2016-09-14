@@ -1,30 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "ulong_extras.h"
@@ -33,8 +19,8 @@ void fmpz_powm(fmpz_t f, const fmpz_t g, const fmpz_t e, const fmpz_t m)
 {
     if (fmpz_sgn(m) <= 0)
     {
-        printf("Exception (fmpz_powm).  Modulus is less than 1.\n");
-        abort();
+        flint_printf("Exception (fmpz_powm). Modulus is less than 1.\n");
+        flint_abort();
     }
     else if (!COEFF_IS_MPZ(*e))  /* e is small */
     {
@@ -48,8 +34,8 @@ void fmpz_powm(fmpz_t f, const fmpz_t g, const fmpz_t e, const fmpz_t m)
             mpz_t g2, m2;
             __mpz_struct *mpz_ptr;
 
-            mpz_init_set_ui(g2, g1);
-            mpz_init_set_ui(m2, *m);
+            flint_mpz_init_set_ui(g2, g1);
+            flint_mpz_init_set_ui(m2, *m);
             mpz_ptr = _fmpz_promote(f);
 
             mpz_powm(mpz_ptr, g2, COEFF_TO_PTR(*e), m2);
@@ -65,7 +51,7 @@ void fmpz_powm(fmpz_t f, const fmpz_t g, const fmpz_t e, const fmpz_t m)
                 mpz_t g2;
                 __mpz_struct *mpz_ptr;
 
-                mpz_init_set_si(g2, *g);
+                flint_mpz_init_set_si(g2, *g);
                 mpz_ptr = _fmpz_promote(f);
 
                 mpz_powm(mpz_ptr, g2, COEFF_TO_PTR(*e), COEFF_TO_PTR(*m));

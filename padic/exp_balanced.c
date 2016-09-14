@@ -1,32 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2012 Sebastian Pancratz
     Copyright (C) 2012 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "padic.h"
-
-extern long _padic_exp_bound(long v, long N, const fmpz_t p);
 
 /*
     Computes the sum 
@@ -49,7 +33,7 @@ extern long _padic_exp_bound(long v, long N, const fmpz_t p);
 
 static void
 _padic_exp_bsplit_series(fmpz_t P, fmpz_t Q, fmpz_t T,
-                        const fmpz_t x, long a, long b)
+                        const fmpz_t x, slong a, slong b)
 {
     if (b - a == 1)
     {
@@ -67,7 +51,7 @@ _padic_exp_bsplit_series(fmpz_t P, fmpz_t Q, fmpz_t T,
     }
     else
     {
-        const long m = (a + b) / 2;
+        const slong m = (a + b) / 2;
 
         fmpz_t PR, QR, TR;
 
@@ -101,9 +85,9 @@ _padic_exp_bsplit_series(fmpz_t P, fmpz_t Q, fmpz_t T,
  */
 
 static void
-_padic_exp_bsplit(fmpz_t y, const fmpz_t x, long v, const fmpz_t p, long N)
+_padic_exp_bsplit(fmpz_t y, const fmpz_t x, slong v, const fmpz_t p, slong N)
 {
-    const long n = _padic_exp_bound(v, N, p);
+    const slong n = _padic_exp_bound(v, N, p);
 
     if (n == 1)
     {
@@ -134,86 +118,82 @@ _padic_exp_bsplit(fmpz_t y, const fmpz_t x, long v, const fmpz_t p, long N)
     }
 }
 
-void 
-_padic_exp_balanced_2(padic_t y, const padic_t x, const padic_ctx_t ctx)
+void _padic_exp_balanced_2(fmpz_t rop, const fmpz_t xu, slong xv, slong N)
 {
-    fmpz_t r, t, pv, pw, pN;
-    long v;
+    const fmpz_t p = {WORD(2)};
+
+    fmpz_t r, t;
+    slong w;
 
     fmpz_init(r);
     fmpz_init(t);
-    fmpz_init(pv);
-    fmpz_init(pw);
-    fmpz_init(pN);
 
-    fmpz_pow_ui(t, ctx->p, padic_val(x) - 2);
-    fmpz_mul(t, t, padic_unit(x));
+    w = 1;
 
-    fmpz_set_ui(pv, 4);
-    fmpz_set_ui(pw, 2);
-    fmpz_pow_ui(pN, ctx->p, ctx->N);
+    fmpz_mul_2exp(t, xu, xv);
+    fmpz_fdiv_r_2exp(t, t, N);
 
-    fmpz_one(padic_unit(y));
-    padic_val(y) = 0L;
+    fmpz_one(rop);
 
-    for (v = 3; v < (2 * ctx->N); v *= 2)
+    while (!fmpz_is_zero(t))
     {
-        fmpz_mul(pw, pw, pv);       /* pw = p^w, w = v - 1 */
-        fmpz_mul(pv, pv, pv);       /* pv = p^v            */
+        fmpz_fdiv_r_2exp(r, t, 2*w);
+        fmpz_sub(t, t, r);
 
-        fmpz_fdiv_qr(t, r, t, pv);  /* r = p^w (t % p^v)   */
-        fmpz_mul(r, r, pw);
+        if (!fmpz_is_zero(r))
+        {
+            _padic_exp_bsplit(r, r, w, p, N);
+            fmpz_mul(rop, rop, r);
+            fmpz_fdiv_r_2exp(rop, rop, N);
+        }
 
-        _padic_exp_bsplit(r, r, v - 1, ctx->p, ctx->N);
-        fmpz_mul(padic_unit(y), padic_unit(y), r);
-        fmpz_mod(padic_unit(y), padic_unit(y), pN);
+        w *= 2;
     }
 
     fmpz_clear(r);
     fmpz_clear(t);
-    fmpz_clear(pv);
-    fmpz_clear(pw);
-    fmpz_clear(pN);
 }
 
-void
-_padic_exp_balanced_p(padic_t y, const padic_t x, const padic_ctx_t ctx)
+void _padic_exp_balanced_p(fmpz_t rop, const fmpz_t xu, slong xv, 
+                                       const fmpz_t p, slong N)
 {
-    fmpz_t r, t, pv, pw, pN;
-    long v;
+    fmpz_t r, t, pw, pN;
+    slong w;
 
     fmpz_init(r);
     fmpz_init(t);
-    fmpz_init(pv);
     fmpz_init(pw);
     fmpz_init(pN);
 
-    fmpz_pow_ui(t, ctx->p, padic_val(x) - 1);
-    fmpz_mul(t, t, padic_unit(x));
+    fmpz_set(pw, p);
+    fmpz_pow_ui(pN, p, N);
+    w = 1;
 
-    fmpz_set(pv, ctx->p);
-    fmpz_one(pw);
-    fmpz_pow_ui(pN, ctx->p, ctx->N);
+    fmpz_pow_ui(t, p, xv);
+    fmpz_mul(t, t, xu);
+    fmpz_mod(t, t, pN);
 
-    fmpz_one(padic_unit(y));
-    padic_val(y) = 0L;
+    fmpz_one(rop);
 
-    for (v = 2; v < (2 * ctx->N); v *= 2)
+    while (!fmpz_is_zero(t))
     {
-        fmpz_mul(pw, pw, pv);       /* pw = p^w, w = v - 1 */
-        fmpz_mul(pv, pv, pv);       /* pv = p^v            */
+        fmpz_mul(pw, pw, pw);
 
-        fmpz_fdiv_qr(t, r, t, pv);  /* r = p^w (t % p^v)   */
-        fmpz_mul(r, r, pw);
+        fmpz_fdiv_r(r, t, pw);
+        fmpz_sub(t, t, r);
 
-        _padic_exp_bsplit(r, r, v - 1, ctx->p, ctx->N);
-        fmpz_mul(padic_unit(y), padic_unit(y), r);
-        fmpz_mod(padic_unit(y), padic_unit(y), pN);
+        if (!fmpz_is_zero(r))
+        {
+            _padic_exp_bsplit(r, r, w, p, N);
+            fmpz_mul(rop, rop, r);
+            fmpz_mod(rop, rop, pN);
+        }
+
+        w *= 2;
     }
 
     fmpz_clear(r);
     fmpz_clear(t);
-    fmpz_clear(pv);
     fmpz_clear(pw);
     fmpz_clear(pN);
 }
@@ -227,36 +207,43 @@ _padic_exp_balanced_p(padic_t y, const padic_t x, const padic_ctx_t ctx)
     TODO:  Take advantage of additional factors of $p$ in $x$.
  */
 
-void _padic_exp_balanced(padic_t rop, const padic_t op, const padic_ctx_t ctx)
+void _padic_exp_balanced(fmpz_t rop, const fmpz_t u, slong v, 
+                                     const fmpz_t p, slong N)
 {
-    if (*(ctx->p) == 2L)
-        _padic_exp_balanced_2(rop, op, ctx);
+    if (fmpz_equal_ui(p, 2))
+        _padic_exp_balanced_2(rop, u, v, N);
     else
-        _padic_exp_balanced_p(rop, op, ctx);
+        _padic_exp_balanced_p(rop, u, v, p, N);
 }
 
 int padic_exp_balanced(padic_t rop, const padic_t op, const padic_ctx_t ctx)
 {
-    const long N  = ctx->N;
-    const long v  = padic_val(op);
+    const slong N  = padic_prec(rop);
+    const slong v  = padic_val(op);
     const fmpz *p = ctx->p;
 
-    if (fmpz_is_zero(padic_unit(op)))
+    if (padic_is_zero(op))
     {
-        padic_one(rop, ctx);
+        padic_one(rop);
         return 1;
     }
 
-    if ((*p == 2L && v <= 1) || (v <= 0))
+    if ((fmpz_equal_ui(p, 2) && v <= 1) || (v <= 0))
     {
         return 0;
     }
     else
     {
         if (v < N)
-            _padic_exp_balanced(rop, op, ctx);
+        {
+            _padic_exp_balanced(padic_unit(rop), 
+                                padic_unit(op), padic_val(op), p, N);
+            padic_val(rop) = 0;
+        }
         else
-            padic_one(rop, ctx);
+        {
+            padic_one(rop);
+        }
         return 1;
     }
 }

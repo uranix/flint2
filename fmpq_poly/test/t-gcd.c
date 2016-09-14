@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq_poly.h"
@@ -35,15 +21,15 @@ int
 main(void)
 {
     int cflags = 0, i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
     
-    printf("gcd....");
+    flint_printf("gcd....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing of a and c */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c;
 
@@ -61,11 +47,11 @@ main(void)
         result = (fmpq_poly_equal(a, c) && !cflags);
         if (!result)
         {
-            printf("FAIL (aliasing a, c):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (aliasing a, c):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -75,7 +61,7 @@ main(void)
     }
 
     /* Check aliasing of b and c */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c;
 
@@ -93,11 +79,11 @@ main(void)
         result = (fmpq_poly_equal(b, c) && !cflags);
         if (!result)
         {
-            printf("FAIL (aliasing b, c):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (aliasing b, c):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -109,7 +95,7 @@ main(void)
     /* Generic case when a, b are most likely co-prime ***********************/
 
     /* Verify commutativity and that c is monic */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c;
 
@@ -128,11 +114,11 @@ main(void)
                   && (fmpq_poly_is_zero(c) || fmpq_poly_is_monic(c)));
         if (!result)
         {
-            printf("FAIL (commutativity #1):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (commutativity #1):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -142,7 +128,7 @@ main(void)
     }
 
     /* Verify that GCD(a, b) divides a, b */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c, r1, r2;
 
@@ -164,11 +150,11 @@ main(void)
         result = fmpq_poly_is_zero(r1) && fmpq_poly_is_zero(r2);
         if (!result)
         {
-            printf("FAIL (division #1):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (division #1):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -182,7 +168,7 @@ main(void)
     /* Case when a, b are not co-prime ***************************************/
 
     /* Verify commutativity and that c is monic */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c, t;
 
@@ -205,11 +191,11 @@ main(void)
                   && (fmpq_poly_is_zero(c) || fmpq_poly_is_monic(c)));
         if (!result)
         {
-            printf("FAIL (commutativity #2):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (commutativity #2):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -220,7 +206,7 @@ main(void)
     }
 
     /* Verify that GCD(a, b) divides a, b */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, b, c, r1, r2, t;
 
@@ -246,11 +232,11 @@ main(void)
         result = fmpq_poly_is_zero(r1) && fmpq_poly_is_zero(r2);
         if (!result)
         {
-            printf("FAIL (division #2):\n");
-            fmpq_poly_debug(a), printf("\n\n");
-            fmpq_poly_debug(b), printf("\n\n");
-            fmpq_poly_debug(c), printf("\n\n");
-            printf("cflags = %d\n\n", cflags);
+            flint_printf("FAIL (division #2):\n");
+            fmpq_poly_debug(a), flint_printf("\n\n");
+            fmpq_poly_debug(b), flint_printf("\n\n");
+            fmpq_poly_debug(c), flint_printf("\n\n");
+            flint_printf("cflags = %d\n\n", cflags);
             abort();
         }
 
@@ -262,9 +248,9 @@ main(void)
         fmpq_poly_clear(t);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }
 

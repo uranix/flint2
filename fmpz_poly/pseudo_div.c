@@ -1,53 +1,39 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
-void _fmpz_poly_pseudo_div(fmpz * Q, ulong * d, const fmpz * A, long lenA, 
-                                                const fmpz * B, long lenB)
+void _fmpz_poly_pseudo_div(fmpz * Q, ulong * d, const fmpz * A, slong lenA, 
+                          const fmpz * B, slong lenB, const fmpz_preinvn_t inv)
 {
     fmpz * R = _fmpz_vec_init(lenA);
-    _fmpz_poly_pseudo_divrem(Q, R, d, A, lenA, B, lenB);
+    _fmpz_poly_pseudo_divrem(Q, R, d, A, lenA, B, lenB, inv);
     _fmpz_vec_clear(R, lenA);
 }
 
 void fmpz_poly_pseudo_div(fmpz_poly_t Q, ulong * d, const fmpz_poly_t A, 
                                                     const fmpz_poly_t B)
 {
-    long lenq;
+    slong lenq;
     fmpz * q;
 
     if (B->length == 0)
     {
-        printf("Exception: division by zero in fmpz_poly_pseudo_div\n");
-        abort();
+        flint_printf("Exception (fmpz_poly_pseudo_div). Division by zero.\n");
+        flint_abort();
     }
     if (A->length < B->length)
     {
@@ -66,7 +52,7 @@ void fmpz_poly_pseudo_div(fmpz_poly_t Q, ulong * d, const fmpz_poly_t A,
     }
 
     _fmpz_poly_pseudo_div(q, d, A->coeffs, A->length, 
-                                B->coeffs, B->length);
+                                B->coeffs, B->length, NULL);
 
     if (Q == A || Q == B)
     {

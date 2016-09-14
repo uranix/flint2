@@ -1,41 +1,27 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
 int main(void)
 {
    int i, result;
-   flint_rand_t state;
-   flint_randinit(state);
+   FLINT_TEST_INIT(state);
+   
 
-   printf("add_ssaaaa....");
+   flint_printf("add_ssaaaa....");
    fflush(stdout);
 
    for (i = 0; i < 1000000; i++)
@@ -57,15 +43,15 @@ int main(void)
       result = ((sh2 == sh1) && (sl2 == sl1));
       if (!result)
       {
-         printf("FAIL:\n");
-         printf("ah1 = %lu, al1 = %lu, ah2 = %lu, al1 = %lu\n", ah1, al1, ah2, al1); 
-         printf("sh2 = %lu, sh1 = %lu, sl2 = %lu, sl1 = %lu\n", sh2, sh1, sl2, sl1);
-         abort();
+         flint_printf("FAIL:\n");
+         flint_printf("ah1 = %wu, al1 = %wu, ah2 = %wu, al1 = %wu\n", ah1, al1, ah2, al1); 
+         flint_printf("sh2 = %wu, sh1 = %wu, sl2 = %wu, sl1 = %wu\n", sh2, sh1, sl2, sl1);
+         flint_abort();
       }
    }
 
-   flint_randclear(state);
-
-   printf("PASS\n");
+   FLINT_TEST_CLEANUP(state);
+   
+   flint_printf("PASS\n");
    return 0;
 }

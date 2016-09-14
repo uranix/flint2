@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -32,7 +18,7 @@
 
 void 
 _fmpz_poly_mullow_kara_recursive(fmpz * out, const fmpz * pol1,
-                                 const fmpz * pol2, fmpz * temp, long len);
+                                 const fmpz * pol2, fmpz * temp, slong len);
 
 /*
    Multiplication using truncated karatsuba.
@@ -45,10 +31,10 @@ _fmpz_poly_mullow_kara_recursive(fmpz * out, const fmpz * pol1,
 
 void
 _fmpz_poly_mullow_kara_recursive(fmpz * out, const fmpz * pol1,
-                                 const fmpz * pol2, fmpz * temp, long len)
+                                 const fmpz * pol2, fmpz * temp, slong len)
 {
-    long m1 = len / 2;
-    long m2 = len - m1;
+    slong m1 = len / 2;
+    slong m2 = len - m1;
     int odd = (len & 1);
 
     if (len <= 6)
@@ -85,10 +71,10 @@ _fmpz_poly_mullow_kara_recursive(fmpz * out, const fmpz * pol1,
 /* Assumes poly1 and poly2 are not length 0. */
 void
 _fmpz_poly_mullow_karatsuba_n(fmpz * res, const fmpz * poly1,
-                              const fmpz * poly2, long n)
+                              const fmpz * poly2, slong n)
 {
     fmpz *temp;
-    long len, loglen = 0;
+    slong len, loglen = 0;
 
     if (n == 1)
     {
@@ -96,9 +82,9 @@ _fmpz_poly_mullow_karatsuba_n(fmpz * res, const fmpz * poly1,
         return;
     }
 
-    while ((1L << loglen) < n)
+    while ((WORD(1) << loglen) < n)
         loglen++;
-    len = (1L << loglen);
+    len = (WORD(1) << loglen);
 
     temp = _fmpz_vec_init(3 * len);
 
@@ -109,11 +95,11 @@ _fmpz_poly_mullow_karatsuba_n(fmpz * res, const fmpz * poly1,
 
 void
 fmpz_poly_mullow_karatsuba_n(fmpz_poly_t res, const fmpz_poly_t poly1, 
-                             const fmpz_poly_t poly2, long n)
+                             const fmpz_poly_t poly2, slong n)
 {
-    const long len1 = FLINT_MIN(poly1->length, n);
-    const long len2 = FLINT_MIN(poly2->length, n);
-    long i, lenr;
+    const slong len1 = FLINT_MIN(poly1->length, n);
+    const slong len2 = FLINT_MIN(poly2->length, n);
+    slong i, lenr;
 
     int clear = 0;
     fmpz *copy1, *copy2;
@@ -135,7 +121,7 @@ fmpz_poly_mullow_karatsuba_n(fmpz_poly_t res, const fmpz_poly_t poly1,
         copy1 = (fmpz *) flint_malloc(n * sizeof(fmpz));
         for (i = 0; i < len1; i++)
             copy1[i] = poly1->coeffs[i];
-        mpn_zero((mp_ptr) copy1 + len1, n - len1);
+        flint_mpn_zero((mp_ptr) copy1 + len1, n - len1);
         clear |= 1;
     }
 
@@ -146,7 +132,7 @@ fmpz_poly_mullow_karatsuba_n(fmpz_poly_t res, const fmpz_poly_t poly1,
         copy2 = (fmpz *) flint_malloc(n * sizeof(fmpz));
         for (i = 0; i < len2; i++)
             copy2[i] = poly2->coeffs[i];
-        mpn_zero((mp_ptr) copy2 + len2, n - len2);
+        flint_mpn_zero((mp_ptr) copy2 + len2, n - len2);
         clear |= 2;
     }
 

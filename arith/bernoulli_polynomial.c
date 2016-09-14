@@ -1,45 +1,25 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdio.h>
-#include <mpir.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_poly.h"
-#include "fmpq_poly.h"
 #include "arith.h"
 
-void bernoulli_polynomial(fmpq_poly_t poly, ulong n)
+void arith_bernoulli_polynomial(fmpq_poly_t poly, ulong n)
 {
     fmpz_t t;
     fmpz * den;
-    long k;
+    slong k;
 
     if (n == 0)
     {
-        fmpq_poly_set_ui(poly, 1UL);
+        fmpq_poly_set_ui(poly, UWORD(1));
         return;
     }
 
@@ -48,7 +28,7 @@ void bernoulli_polynomial(fmpq_poly_t poly, ulong n)
     fmpz_init(t);
     den = _fmpz_vec_init(n + 1);
 
-    _bernoulli_number_vec(poly->coeffs, den, n + 1);
+    _arith_bernoulli_number_vec(poly->coeffs, den, n + 1);
 
     /* Multiply the odd term by binomial(n,1) = n */
     fmpz_mul_ui(poly->coeffs + 1, poly->coeffs + 1, n);
@@ -63,7 +43,7 @@ void bernoulli_polynomial(fmpq_poly_t poly, ulong n)
     }
 
     /* Convert to common denominator */
-    fmpz_primorial(poly->den, n + 2);
+    arith_primorial(poly->den, n + 2);
     for (k = 0; k <= n; k++)
     {
         fmpz_mul(poly->coeffs + k, poly->coeffs+k, poly->den);

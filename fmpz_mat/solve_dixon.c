@@ -1,36 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "fmpz_mat.h"
-#include "nmod_mat.h"
-#include "ulong_extras.h"
-
 
 static mp_limb_t
 find_good_prime_and_invert(nmod_mat_t Ainv,
@@ -39,7 +18,7 @@ find_good_prime_and_invert(nmod_mat_t Ainv,
     mp_limb_t p;
     fmpz_t tested;
 
-    p = 1UL << NMOD_MAT_OPTIMAL_MODULUS_BITS;
+    p = UWORD(1) << NMOD_MAT_OPTIMAL_MODULUS_BITS;
     fmpz_init(tested);
     fmpz_one(tested);
 
@@ -64,17 +43,17 @@ find_good_prime_and_invert(nmod_mat_t Ainv,
 
 /* We need to perform several matrix-vector products Ay, and speed them
    up by using modular multiplication (this is only faster if we
-   precompute the modular matrices. Note: we assume that all
+   precompute the modular matrices). Note: we assume that all
    primes are >= p. This allows reusing y_mod as the right-hand
    side without reducing it. */
 
 #define USE_SLOW_MULTIPLICATION 0
 
-mp_limb_t * get_crt_primes(long * num_primes, const fmpz_mat_t A, mp_limb_t p)
+mp_limb_t * get_crt_primes(slong * num_primes, const fmpz_mat_t A, mp_limb_t p)
 {
     fmpz_t bound, prod;
     mp_limb_t * primes;
-    long i, j;
+    slong i, j;
 
     fmpz_init(bound);
     fmpz_init(prod);
@@ -84,9 +63,9 @@ mp_limb_t * get_crt_primes(long * num_primes, const fmpz_mat_t A, mp_limb_t p)
             if (fmpz_cmpabs(bound, fmpz_mat_entry(A, i, j)) < 0)
                 fmpz_abs(bound, fmpz_mat_entry(A, i, j));
 
-    fmpz_mul_ui(bound, bound, p - 1UL);
+    fmpz_mul_ui(bound, bound, p - UWORD(1));
     fmpz_mul_ui(bound, bound, A->r);
-    fmpz_mul_ui(bound, bound, 2UL);  /* signs */
+    fmpz_mul_ui(bound, bound, UWORD(2));  /* signs */
 
     primes = flint_malloc(sizeof(mp_limb_t) * (fmpz_bits(bound) /
                                             (FLINT_BIT_COUNT(p) - 1) + 2));
@@ -120,7 +99,7 @@ _fmpz_mat_solve_dixon(fmpz_mat_t X, fmpz_t mod,
     mp_limb_t * crt_primes;
     nmod_mat_t * A_mod;
     nmod_mat_t Ay_mod, d_mod, y_mod;
-    long i, n, cols, num_primes;
+    slong i, n, cols, num_primes;
 
     n = A->r;
     cols = B->c;
@@ -143,7 +122,7 @@ _fmpz_mat_solve_dixon(fmpz_mat_t X, fmpz_t mod,
         fmpz_mul(bound, D, D);
     else
         fmpz_mul(bound, N, N);
-    fmpz_mul_ui(bound, bound, 2UL);  /* signs */
+    fmpz_mul_ui(bound, bound, UWORD(2));  /* signs */
 
     crt_primes = get_crt_primes(&num_primes, A, p);
     A_mod = flint_malloc(sizeof(nmod_mat_t) * num_primes);
@@ -153,7 +132,7 @@ _fmpz_mat_solve_dixon(fmpz_mat_t X, fmpz_t mod,
         fmpz_mat_get_nmod_mat(A_mod[i], A);
     }
 
-    nmod_mat_init(Ay_mod, n, cols, 1UL);
+    nmod_mat_init(Ay_mod, n, cols, UWORD(1));
     nmod_mat_init(d_mod, n, cols, p);
     nmod_mat_init(y_mod, n, cols, p);
 
@@ -234,8 +213,8 @@ fmpz_mat_solve_dixon(fmpz_mat_t X, fmpz_t mod,
 
     if (!fmpz_mat_is_square(A))
     {
-        printf("fmpz_mat_solve_dixon: nonsquare system matrix");
-        abort();
+        flint_printf("Exception (fmpz_mat_solve_dixon). Non-square system matrix.\n");
+        flint_abort();
     }
 
     if (fmpz_mat_is_empty(A) || fmpz_mat_is_empty(B))

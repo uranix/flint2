@@ -1,31 +1,17 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010, 2011 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -33,21 +19,21 @@
 
 void
 _nmod_poly_divrem_basecase_1(mp_ptr Q, mp_ptr R, mp_ptr W,
-                             mp_srcptr A, long lenA, mp_srcptr B, long lenB,
+                             mp_srcptr A, slong lenA, mp_srcptr B, slong lenB,
                              nmod_t mod)
 {
     const mp_limb_t invL = n_invmod(B[lenB - 1], mod.n);
-    long iR;
+    slong iR;
     mp_ptr ptrQ = Q - lenB + 1;
     mp_ptr R1 = W;
     
-    mpn_copyi(R1, A, lenA);
+    flint_mpn_copyi(R1, A, lenA);
 
     for (iR = lenA - 1; iR >= lenB - 1; iR--)
     {
         if (R1[iR] == 0)
         {
-            ptrQ[iR] = 0L;
+            ptrQ[iR] = WORD(0);
         }
         else 
         {
@@ -67,11 +53,11 @@ _nmod_poly_divrem_basecase_1(mp_ptr Q, mp_ptr R, mp_ptr W,
 
 void
 _nmod_poly_divrem_basecase_2(mp_ptr Q, mp_ptr R, mp_ptr W,
-                             mp_srcptr A, long lenA, mp_srcptr B, long lenB,
+                             mp_srcptr A, slong lenA, mp_srcptr B, slong lenB,
                              nmod_t mod)
 {
     const mp_limb_t invL = n_invmod(B[lenB - 1], mod.n);
-    long iR, i;
+    slong iR, i;
     mp_ptr B2 = W, R2 = W + 2*(lenB - 1), ptrQ = Q - lenB + 1;
 
     for (i = 0; i < lenB - 1; i++)
@@ -90,9 +76,9 @@ _nmod_poly_divrem_basecase_2(mp_ptr Q, mp_ptr R, mp_ptr W,
         mp_limb_t r = 
             n_ll_mod_preinv(R2[2 * iR + 1], R2[2 * iR], mod.n, mod.ninv);
 
-        while ((iR + 1 >= lenB) && (r == 0L))
+        while ((iR + 1 >= lenB) && (r == WORD(0)))
         {
-            ptrQ[iR--] = 0L;
+            ptrQ[iR--] = WORD(0);
             if (iR + 1 >= lenB)
                 r = n_ll_mod_preinv(R2[2 * iR + 1], R2[2 * iR], mod.n,
                                     mod.ninv);
@@ -117,11 +103,11 @@ _nmod_poly_divrem_basecase_2(mp_ptr Q, mp_ptr R, mp_ptr W,
 
 void
 _nmod_poly_divrem_basecase_3(mp_ptr Q, mp_ptr R, mp_ptr W,
-                             mp_srcptr A, long lenA, mp_srcptr B, long lenB,
+                             mp_srcptr A, slong lenA, mp_srcptr B, slong lenB,
                              nmod_t mod)
 {
     const mp_limb_t invL = n_invmod(B[lenB - 1], mod.n);
-    long iR, i;
+    slong iR, i;
     mp_ptr B3 = W, R3 = W + 3*(lenB - 1), ptrQ = Q - lenB + 1;
 
     for (i = 0; i < lenB - 1; i++)
@@ -143,9 +129,9 @@ _nmod_poly_divrem_basecase_3(mp_ptr Q, mp_ptr R, mp_ptr W,
             n_lll_mod_preinv(R3[3 * iR + 2], R3[3 * iR + 1],
                              R3[3 * iR], mod.n, mod.ninv);
 
-        while ((iR + 1 >= lenB) && (r == 0L))
+        while ((iR + 1 >= lenB) && (r == WORD(0)))
         {
-            ptrQ[iR--] = 0L;
+            ptrQ[iR--] = WORD(0);
             if (iR + 1 >= lenB)
                 r = n_lll_mod_preinv(R3[3 * iR + 2], R3[3 * iR + 1],
                                      R3[3 * iR], mod.n, mod.ninv);
@@ -171,10 +157,10 @@ _nmod_poly_divrem_basecase_3(mp_ptr Q, mp_ptr R, mp_ptr W,
 
 void
 _nmod_poly_divrem_basecase(mp_ptr Q, mp_ptr R, mp_ptr W,
-                           mp_srcptr A, long lenA, mp_srcptr B, long lenB,
+                           mp_srcptr A, slong lenA, mp_srcptr B, slong lenB,
                            nmod_t mod)
 {
-    const long bits =
+    const slong bits =
         2 * (FLINT_BITS - mod.norm) + FLINT_BIT_COUNT(lenA - lenB + 1);
 
     if (bits <= FLINT_BITS)
@@ -189,14 +175,15 @@ void
 nmod_poly_divrem_basecase(nmod_poly_t Q, nmod_poly_t R, const nmod_poly_t A,
                           const nmod_poly_t B)
 {
-    const long lenA = A->length, lenB = B->length;
+    const slong lenA = A->length, lenB = B->length;
     mp_ptr Q_coeffs, R_coeffs, W;
     nmod_poly_t t1, t2;
+    TMP_INIT;
 
     if (lenB == 0)
     {
-        printf("Exception: division by zero in nmod_poly_divrem_basecase\n");
-        abort();
+        flint_printf("Exception (nmod_poly_divrem). Division by zero.\n");
+        flint_abort();
     }
 
     if (lenA < lenB)
@@ -228,7 +215,8 @@ nmod_poly_divrem_basecase(nmod_poly_t Q, nmod_poly_t R, const nmod_poly_t A,
         R_coeffs = R->coeffs;
     }
 
-    W = _nmod_vec_init(NMOD_DIVREM_BC_ITCH(lenA, lenB, A->mod));
+    TMP_START;
+    W = TMP_ALLOC(NMOD_DIVREM_BC_ITCH(lenA, lenB, A->mod)*sizeof(mp_limb_t));
     
     _nmod_poly_divrem_basecase(Q_coeffs, R_coeffs, W, A->coeffs, lenA,
                                B->coeffs, lenB, B->mod);
@@ -246,6 +234,6 @@ nmod_poly_divrem_basecase(nmod_poly_t Q, nmod_poly_t R, const nmod_poly_t A,
     Q->length = lenA - lenB + 1;
     R->length = lenB - 1;
 
-    _nmod_vec_clear(W);
+    TMP_END;
     _nmod_poly_normalise(R);
 }

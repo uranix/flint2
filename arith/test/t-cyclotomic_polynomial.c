@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "arith.h"
 #include "fmpz.h"
@@ -35,11 +21,11 @@
 void cyclotomic_naive(fmpz_poly_t poly, ulong n)
 {
     fmpz_poly_t t;
-    long d;
+    slong d;
 
     fmpz_poly_init(t);
 
-    fmpz_poly_set_ui(poly, 1UL);
+    fmpz_poly_set_ui(poly, UWORD(1));
     for (d = 1; d <= n; d++)
     {
         if (n % d == 0)
@@ -74,9 +60,11 @@ void cyclotomic_naive(fmpz_poly_t poly, ulong n)
 int main()
 {
     fmpz_poly_t A, B;
-    long n;
+    slong n;
 
-    printf("cyclotomic_polynomial....");
+    FLINT_TEST_INIT(state);
+
+    flint_printf("cyclotomic_polynomial....");
     fflush(stdout);
 
     for (n = 0; n <= 1000; n++)
@@ -84,17 +72,17 @@ int main()
         fmpz_poly_init(A);
         fmpz_poly_init(B);
 
-        cyclotomic_polynomial(A, n);
-        cyclotomic_polynomial(B, n);
+        arith_cyclotomic_polynomial(A, n);
+        cyclotomic_naive(B, n);
 
         if (!fmpz_poly_equal(A, B))
         {
-            printf("FAIL: wrong value of Phi_%ld(x)\n", n);
-            printf("Computed:\n");
+            flint_printf("FAIL: wrong value of Phi_%wd(x)\n", n);
+            flint_printf("Computed:\n");
             fmpz_poly_print_pretty(A, "x");
-            printf("\n\nExpected:\n");
+            flint_printf("\n\nExpected:\n");
             fmpz_poly_print_pretty(B, "x");
-            printf("\n\n");
+            flint_printf("\n\n");
             abort();
         }
 
@@ -109,8 +97,8 @@ int main()
     {
         fmpz_t h, ref;
 
-        const ulong nn = 10163195UL;
-        /* const ulong nn = 169828113UL;  64-bit case */
+        const ulong nn = UWORD(10163195);
+        /* const ulong nn = UWORD(169828113);  64-bit case */
 
         fmpz_init(h);
         fmpz_init(ref);
@@ -118,17 +106,17 @@ int main()
         /* fmpz_set_str(ref, "31484567640915734941", 10);  64-bit case */
 
         fmpz_poly_init(A);
-        cyclotomic_polynomial(A, 10163195UL);
+        arith_cyclotomic_polynomial(A, UWORD(10163195));
         fmpz_poly_height(h, A);
 
         if (!fmpz_equal(h, ref))
         {
-            printf("Bad computation of Phi_%ld(x)\n", nn);
-            printf("Computed height:\n");
+            flint_printf("Bad computation of Phi_%wd(x)\n", nn);
+            flint_printf("Computed height:\n");
             fmpz_print(h);
-            printf("\nExpected height:\n");
+            flint_printf("\nExpected height:\n");
             fmpz_print(ref);
-            printf("\n\n");
+            flint_printf("\n\n");
             abort();
         }
 
@@ -137,7 +125,7 @@ int main()
         fmpz_clear(ref);
     }
 
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

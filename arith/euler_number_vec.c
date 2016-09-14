@@ -1,45 +1,23 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdio.h>
 #include <math.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "arith.h"
-#include "nmod_poly.h"
-#include "nmod_vec.h"
-#include "ulong_extras.h"
-
 
 /* Computes length-m vector containing |E_{2k}| */
 static void
-__euler_number_vec_mod_p(mp_ptr res, mp_ptr tmp, long m, nmod_t mod)
+__euler_number_vec_mod_p(mp_ptr res, mp_ptr tmp, slong m, nmod_t mod)
 {
     mp_limb_t fac, c;
-    long k;
+    slong k;
 
     /* Divide by factorials */
     fac = n_factorial_mod2_preinv(2*(m-1), mod.n, mod.ninv);
@@ -50,10 +28,10 @@ __euler_number_vec_mod_p(mp_ptr res, mp_ptr tmp, long m, nmod_t mod)
         c = n_mulmod2_preinv(c, (2*k)*(2*k-1), mod.n, mod.ninv);
     }
 
-    _nmod_poly_inv_series(res, tmp, m, mod);
+    _nmod_poly_inv_series(res, tmp, m, m, mod);
 
     /* Multiply by factorials */
-    c = 1UL;
+    c = UWORD(1);
     for (k = 0; k < m; k++)
     {
         res[k] = n_mulmod2_preinv(res[k], c, mod.n, mod.ninv);
@@ -64,7 +42,7 @@ __euler_number_vec_mod_p(mp_ptr res, mp_ptr tmp, long m, nmod_t mod)
 
 #define CRT_MAX_RESOLUTION 16
 
-void __euler_number_vec_multi_mod(fmpz * res, long n)
+void __euler_number_vec_multi_mod(fmpz * res, slong n)
 {
     fmpz_comb_t comb[CRT_MAX_RESOLUTION];
     fmpz_comb_temp_t temp[CRT_MAX_RESOLUTION];
@@ -73,7 +51,8 @@ void __euler_number_vec_multi_mod(fmpz * res, long n)
     mp_ptr * polys;
     mp_ptr temppoly;
     nmod_t mod;
-    long i, j, k, m, size, prime_bits, num_primes, num_primes_k, resolution;
+    slong i, j, k, m, num_primes, num_primes_k, resolution;
+    mp_bitcnt_t size, prime_bits;
 
     if (n < 1)
         return;
@@ -83,7 +62,7 @@ void __euler_number_vec_multi_mod(fmpz * res, long n)
 
     resolution = FLINT_MAX(1, FLINT_MIN(CRT_MAX_RESOLUTION, m / 16));
 
-    size = euler_number_size(n);
+    size = arith_euler_number_size(n);
     prime_bits = FLINT_BITS - 1;
     num_primes = (size + prime_bits - 1) / prime_bits;
 
@@ -92,7 +71,7 @@ void __euler_number_vec_multi_mod(fmpz * res, long n)
     polys = flint_malloc(num_primes * sizeof(mp_ptr));
 
     /* Compute Euler numbers mod p */
-    primes[0] = n_nextprime(1UL<<prime_bits, 0);
+    primes[0] = n_nextprime(UWORD(1)<<prime_bits, 0);
     for (k = 1; k < num_primes; k++)
         primes[k] = n_nextprime(primes[k-1], 0);
     temppoly = _nmod_vec_init(m);
@@ -117,7 +96,7 @@ void __euler_number_vec_multi_mod(fmpz * res, long n)
     /* Reconstruction */
     for (k = 0; k < n; k += 2)
     {
-        size = euler_number_size(k);
+        size = arith_euler_number_size(k);
         /* Use only as large a comb as needed */
         num_primes_k = (size + prime_bits - 1) / prime_bits;
         for (i = 0; i < resolution; i++)
@@ -148,7 +127,7 @@ void __euler_number_vec_multi_mod(fmpz * res, long n)
     flint_free(polys);
 }
 
-void euler_number_vec(fmpz * res, long n)
+void arith_euler_number_vec(fmpz * res, slong n)
 {
     __euler_number_vec_multi_mod(res, n);
 }

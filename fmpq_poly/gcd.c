@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "flint.h"
@@ -31,7 +17,7 @@
 #include "fmpq_poly.h"
 
 void _fmpq_poly_gcd(fmpz *G, fmpz_t denG, 
-                    const fmpz *A, long lenA, const fmpz *B, long lenB)
+                    const fmpz *A, slong lenA, const fmpz *B, slong lenB)
 {
     if (lenA == 1)  /* lenA == lenB == 1 */
     {
@@ -42,7 +28,7 @@ void _fmpq_poly_gcd(fmpz *G, fmpz_t denG,
     {
         fmpz *primA, *primB;
         fmpz_t s, t;
-        long lenG;
+        slong lenG;
 
         fmpz_init(s);
         fmpz_init(t);
@@ -67,7 +53,7 @@ void _fmpq_poly_gcd(fmpz *G, fmpz_t denG,
         }
         else
         {
-            if (fmpz_is_one(s))
+            if (fmpz_is_one(t))
             {
                 primA = _fmpz_vec_init(lenA);
                 primB = (fmpz *) B;
@@ -101,47 +87,46 @@ void _fmpq_poly_gcd(fmpz *G, fmpz_t denG,
 
 void fmpq_poly_gcd(fmpq_poly_t G, const fmpq_poly_t A, const fmpq_poly_t B)
 {
-    long lenA = A->length, lenB = B->length, lenG = FLINT_MIN(lenA, lenB);
-
-    if (lenA == 0)
+    if (A->length < B->length)
     {
-        if (lenB == 0)
-            fmpq_poly_zero(G);
-        else
-            fmpq_poly_make_monic(G, B);
-        return;
-    }
-    else if (lenB == 0)
-    {
-        fmpq_poly_make_monic(G, A);
-        return;
-    }
-
-    if (G == A || G == B)
-    {
-        fmpq_poly_t t;
-        fmpq_poly_init2(t, lenG);
-        if (lenA >= lenB)
-            _fmpq_poly_gcd(t->coeffs, t->den, A->coeffs, A->length, 
-                                              B->coeffs, B->length);
-        else
-            _fmpq_poly_gcd(t->coeffs, t->den, B->coeffs, B->length, 
-                                              A->coeffs, A->length);
-        fmpq_poly_swap(t, G);
-        fmpq_poly_clear(t);
+        fmpq_poly_gcd(G, B, A);
     }
     else
     {
-        fmpq_poly_fit_length(G, lenG);
-        if (lenA >= lenB)
-            _fmpq_poly_gcd(G->coeffs, G->den, A->coeffs, A->length, 
-                                              B->coeffs, B->length);
-        else
-            _fmpq_poly_gcd(G->coeffs, G->den, B->coeffs, B->length, 
-                                              A->coeffs, A->length);
-    }
+        slong lenA = A->length, lenB = B->length;
 
-    _fmpq_poly_set_length(G, lenG);
-    _fmpq_poly_normalise(G);
+        if (lenA == 0) /* lenA = lenB = 0 */
+        {
+            fmpq_poly_zero(G);
+        }
+        else if (lenB == 0) /* lenA > lenB = 0 */
+        {
+            fmpq_poly_make_monic(G, A);
+        }
+        else /* lenA >= lenB >= 1 */
+        {
+            if (G == A || G == B)
+            {
+                fmpq_poly_t t;
+                fmpq_poly_init2(t, lenB);
+                
+                _fmpq_poly_gcd(t->coeffs, t->den, A->coeffs, A->length, 
+                                              B->coeffs, B->length);
+            
+                fmpq_poly_swap(t, G);
+                fmpq_poly_clear(t);
+            }
+            else
+            {
+                fmpq_poly_fit_length(G, lenB);
+                 
+                _fmpq_poly_gcd(G->coeffs, G->den, A->coeffs, A->length, 
+                                              B->coeffs, B->length);
+            }
+
+            _fmpq_poly_set_length(G, lenB);
+            _fmpq_poly_normalise(G);
+        }
+    }
 }
 

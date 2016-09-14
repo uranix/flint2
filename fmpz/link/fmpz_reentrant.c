@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 
@@ -39,6 +25,10 @@ void _fmpz_clear_mpz(fmpz f)
 {
     mpz_clear(COEFF_TO_PTR(f));
     flint_free(COEFF_TO_PTR(f));  
+}
+
+void _fmpz_cleanup_mpz_content(void)
+{
 }
 
 void _fmpz_cleanup(void)
@@ -64,7 +54,7 @@ __mpz_struct * _fmpz_promote_val(fmpz_t f)
     {
         __mpz_struct * mpz_ptr = _fmpz_new_mpz();
         *f = PTR_TO_COEFF(mpz_ptr);
-        mpz_set_si(mpz_ptr, c);
+        flint_mpz_set_si(mpz_ptr, c);
         return mpz_ptr;
     }
     else  /* f is large already, just return the pointer */
@@ -95,3 +85,13 @@ void _fmpz_demote_val(fmpz_t f)
     /* don't do anything if value has to be multi precision */
 }
 
+void _fmpz_init_readonly_mpz(fmpz_t f, const mpz_t z)
+{
+   __mpz_struct * mpz_ptr = (__mpz_struct *) flint_malloc(sizeof(__mpz_struct));
+    *f = PTR_TO_COEFF(mpz_ptr);
+    *mpz_ptr = *z;
+}
+
+void _fmpz_clear_readonly_mpz(mpz_t z)
+{
+}

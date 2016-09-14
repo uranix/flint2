@@ -1,34 +1,22 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011, 2012 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
- 
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <limits.h>
 
 #include "padic.h"
 
-int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
+int _padic_fprint(FILE * file, const fmpz_t u, slong v, const padic_ctx_t ctx)
 {
+    const fmpz *p = ctx->p;
+
     if (fmpz_is_zero(u))
     {
         fputc('0', file);
@@ -46,7 +34,7 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
             fmpz_t t;
 
             fmpz_init(t);
-            fmpz_pow_ui(t, ctx->p, v);
+            fmpz_pow_ui(t, p, v);
             fmpz_mul(t, t, u);
             fmpz_fprint(file, t);
             fmpz_clear(t);
@@ -56,7 +44,7 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
             fmpz_t t;
 
             fmpz_init(t);
-            fmpz_pow_ui(t, ctx->p, -v);
+            fmpz_pow_ui(t, p, -v);
             _fmpq_fprint(file, u, t);
             fmpz_clear(t);
         }
@@ -65,13 +53,7 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
     {
         fmpz_t x;
         fmpz_t d;
-        long j;
-
-        if (fmpz_sgn(u) < 0)
-        {
-            printf("ERROR (__padic_fprint).  u < 0 in SERIES mode.\n");
-            abort();
-        }
+        slong j;
 
         fmpz_init(d);
         fmpz_init(x);
@@ -81,9 +63,9 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
         /* Unroll first step */
         j = 0;
         {
-            fmpz_mod(d, x, ctx->p);       /* d = u mod p^{j+1} */
-            fmpz_sub(x, x, d);            /* x = x - d */
-            fmpz_divexact(x, x, ctx->p);  /* x = x / p */
+            fmpz_mod(d, x, p);       /* d = u mod p^{j+1} */
+            fmpz_sub(x, x, d);       /* x = x - d */
+            fmpz_divexact(x, x, p);  /* x = x / p */
 
             if (!fmpz_is_zero(d))
             {
@@ -91,8 +73,8 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
                 {
                     fmpz_fprint(file, d);
                     fputc('*', file);
-                    fmpz_fprint(file, ctx->p);
-                    fprintf(file, "^%ld", j + v);
+                    fmpz_fprint(file, p);
+                    flint_fprintf(file, "^%wd", j + v);
                 }
                 else
                 {
@@ -105,23 +87,23 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
 
         for ( ; !fmpz_is_zero(x); j++)
         {
-            fmpz_mod(d, x, ctx->p);       /* d = u mod p^{j+1} */
-            fmpz_sub(x, x, d);            /* x = x - d */
-            fmpz_divexact(x, x, ctx->p);  /* x = x / p */
+            fmpz_mod(d, x, p);       /* d = u mod p^{j+1} */
+            fmpz_sub(x, x, d);       /* x = x - d */
+            fmpz_divexact(x, x, p);  /* x = x / p */
 
             if (!fmpz_is_zero(d))
             {
                 if (j + v != 0)
                 {
-                    fprintf(file, " + ");
+                    flint_fprintf(file, " + ");
                     fmpz_fprint(file, d);
                     fputc('*', file);
-                    fmpz_fprint(file, ctx->p);
-                    fprintf(file, "^%ld", j + v);
+                    fmpz_fprint(file, p);
+                    flint_fprintf(file, "^%wd", j + v);
                 }
                 else
                 {
-                    fprintf(file, " + ");
+                    flint_fprintf(file, " + ");
                     fmpz_fprint(file, d);
                 }
             }
@@ -140,43 +122,27 @@ int __padic_fprint(FILE * file, const fmpz_t u, long v, const padic_ctx_t ctx)
         {
             fmpz_fprint(file, u);
             fputc('*', file);
-            fmpz_fprint(file, ctx->p);
+            fmpz_fprint(file, p);
         }
         else 
         {
             fmpz_fprint(file, u);
             fputc('*', file);
-            fmpz_fprint(file, ctx->p);
-            fprintf(file, "^%ld", v);
+            fmpz_fprint(file, p);
+            flint_fprintf(file, "^%wd", v);
         }
     }
     else
     {
-        printf("Exception (__padic_fprint).  Unknown print mode.\n");
-        abort();
+        flint_printf("Exception (_padic_fprint).  Unknown print mode.\n");
+        flint_abort();
     }
 
     return 1;
 }
 
-int _padic_fprint(FILE * file, const padic_t op, const padic_ctx_t ctx)
-{
-    return __padic_fprint(file, padic_unit(op), padic_val(op), ctx);
-}
-
 int padic_fprint(FILE * file, const padic_t op, const padic_ctx_t ctx)
 {
-    long ans;
-    padic_t t;
-
-    _padic_init(t);
-    padic_set(t, op, ctx);
-    ans = _padic_fprint(file, op, ctx);
-    fprintf(file, " + O(");
-    fmpz_fprint(file, ctx->p);
-    fprintf(file, "^%ld)", ctx->N);
-    _padic_clear(t);
-
-    return ans;
+    return _padic_fprint(file, padic_unit(op), padic_val(op), ctx);
 }
 

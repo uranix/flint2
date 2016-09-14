@@ -1,39 +1,25 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2007, 2008 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "mpn_extras.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
 mp_limb_t 
-_nmod_poly_resultant_euclidean(mp_srcptr poly1, long len1, 
-                               mp_srcptr poly2, long len2, nmod_t mod)
+_nmod_poly_resultant_euclidean(mp_srcptr poly1, slong len1, 
+                               mp_srcptr poly2, slong len2, nmod_t mod)
 {
     if (poly1 == poly2)
     {
@@ -51,7 +37,7 @@ _nmod_poly_resultant_euclidean(mp_srcptr poly1, long len1,
         }
         else
         {
-            return n_powmod2_preinv(poly2[0], len1 - 1, mod.n, mod.ninv);
+            return n_powmod2_ui_preinv(poly2[0], len1 - 1, mod.n, mod.ninv);
         }
     }
     else  /* len1 >= len2 >= 2 */
@@ -59,7 +45,7 @@ _nmod_poly_resultant_euclidean(mp_srcptr poly1, long len1,
         mp_limb_t res = 1;
 
         mp_ptr u, v, r, t, w;
-        long l0, l1, l2;
+        slong l0, l1, l2;
         mp_limb_t lc;
 
         w = _nmod_vec_init(3 * len1);
@@ -122,8 +108,8 @@ _nmod_poly_resultant_euclidean(mp_srcptr poly1, long len1,
 mp_limb_t 
 nmod_poly_resultant_euclidean(const nmod_poly_t f, const nmod_poly_t g)
 {
-    const long len1 = f->length;
-    const long len2 = g->length;
+    const slong len1 = f->length;
+    const slong len2 = g->length;
     mp_limb_t r;
 
     if (len1 == 0 || len2 == 0)
@@ -142,7 +128,7 @@ nmod_poly_resultant_euclidean(const nmod_poly_t f, const nmod_poly_t g)
             r = _nmod_poly_resultant_euclidean(g->coeffs, len2, 
                                                f->coeffs, len1, f->mod);
 
-            if (((len1 | len2) & 1L) == 0L)
+            if (((len1 | len2) & WORD(1)) == WORD(0))
                 r = nmod_neg(r, f->mod);
         }
     }

@@ -1,40 +1,26 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
-void _nmod_poly_mulmod(mp_ptr res, mp_srcptr poly1, long len1, 
-                             mp_srcptr poly2, long len2, mp_srcptr f,
-                            long lenf, nmod_t mod)
+void _nmod_poly_mulmod(mp_ptr res, mp_srcptr poly1, slong len1, 
+                             mp_srcptr poly2, slong len2, mp_srcptr f,
+                            slong lenf, nmod_t mod)
 {
     mp_ptr T, Q;
-    long lenT, lenQ;
+    slong lenT, lenQ;
 
     lenT = len1 + len2 - 1;
     lenQ = lenT - lenf + 1;
@@ -55,7 +41,7 @@ void
 nmod_poly_mulmod(nmod_poly_t res,
     const nmod_poly_t poly1, const nmod_poly_t poly2, const nmod_poly_t f)
 {
-    long len1, len2, lenf;
+    slong len1, len2, lenf;
     mp_ptr fcoeffs;
 
     lenf = f->length;
@@ -64,8 +50,8 @@ nmod_poly_mulmod(nmod_poly_t res,
 
     if (lenf == 0)
     {
-        printf("Exception: nmod_poly_mulmod: divide by zero\n");
-        abort();
+        flint_printf("Exception (nmod_poly_mulmod). Divide by zero.\n");
+        flint_abort();
     }
 
     if (lenf == 1 || len1 == 0 || len2 == 0)

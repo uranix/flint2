@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "flint.h"
 #include "fmpz.h"
@@ -37,7 +23,7 @@ mp_limb_signed_t z_randtest(flint_rand_t state)
 
     m = n_randlimb(state);
 
-    if (m & 7UL)
+    if (m & UWORD(7))
     {
         z = n_randbits(state, n_randint(state, FLINT_BITS));
     }
@@ -45,15 +31,15 @@ mp_limb_signed_t z_randtest(flint_rand_t state)
     {
         m >>= 3;
 
-        switch (m % 7UL)
+        switch (m % UWORD(7))
         {
             case 0:  z = 0;         break;
             case 1:  z = 1;         break;
             case 2:  z = -1;        break;
             case 3:  z = COEFF_MAX; break;
             case 4:  z = COEFF_MIN; break;
-            case 5:  z = LONG_MAX;  break;
-            case 6:  z = LONG_MIN;  break;
+            case 5:  z = WORD_MAX;  break;
+            case 6:  z = WORD_MIN;  break;
             default: z = 0;
         }
     }

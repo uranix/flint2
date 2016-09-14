@@ -1,41 +1,30 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 William Hart
     Copyright (C) 2010 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
 void
-_nmod_poly_mullow_KS(mp_ptr out, mp_srcptr in1, long len1,
-            mp_srcptr in2, long len2, mp_bitcnt_t bits, long n, nmod_t mod)
+_nmod_poly_mullow_KS(mp_ptr out, mp_srcptr in1, slong len1,
+            mp_srcptr in2, slong len2, mp_bitcnt_t bits, slong n, nmod_t mod)
 {
-    long limbs1, limbs2;
+    slong limbs1, limbs2;
     mp_ptr mpn1, mpn2, res;
+
+    len1 = FLINT_MIN(len1, n);
+    len2 = FLINT_MIN(len2, n);
 
     if (bits == 0)
     {
@@ -59,10 +48,7 @@ _nmod_poly_mullow_KS(mp_ptr out, mp_srcptr in1, long len1,
 
     res = (mp_ptr) flint_malloc(sizeof(mp_limb_t) * (limbs1 + limbs2));
 
-    if (in1 != in2)
-        mpn_mul(res, mpn1, limbs1, mpn2, limbs2);
-    else
-        mpn_mul_n(res, mpn1, mpn1, limbs1);
+    mpn_mul(res, mpn1, limbs1, mpn2, limbs2);
 
     _nmod_poly_bit_unpack(out, n, res, bits, mod);
     
@@ -76,11 +62,11 @@ _nmod_poly_mullow_KS(mp_ptr out, mp_srcptr in1, long len1,
 void
 nmod_poly_mullow_KS(nmod_poly_t res,
                  const nmod_poly_t poly1, const nmod_poly_t poly2,
-                 mp_bitcnt_t bits, long n)
+                 mp_bitcnt_t bits, slong n)
 {
-    long len_out;
+    slong len_out;
 
-    if ((poly1->length == 0) || (poly2->length == 0))
+    if ((poly1->length == 0) || (poly2->length == 0) || n == 0)
     {
         nmod_poly_zero(res);
         return;

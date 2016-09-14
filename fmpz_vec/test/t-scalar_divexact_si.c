@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -36,19 +22,19 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("scalar_divexact_si....");
+    flint_printf("scalar_divexact_si....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing of a and b */
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpz *a, *b;
-        long len = n_randint(state, 100);
-        long n;
+        slong len = n_randint(state, 100);
+        slong n;
 
         n = z_randtest_not_zero(state);
 
@@ -63,9 +49,9 @@ main(void)
         result = (_fmpz_vec_equal(a, b, len));
         if (!result)
         {
-            printf("FAIL:\n");
-            _fmpz_vec_print(a, len), printf("\n\n");
-            _fmpz_vec_print(b, len), printf("\n\n");
+            flint_printf("FAIL:\n");
+            _fmpz_vec_print(a, len), flint_printf("\n\n");
+            _fmpz_vec_print(b, len), flint_printf("\n\n");
             abort();
         }
 
@@ -74,11 +60,11 @@ main(void)
     }
 
     /* Check that a * n / n == a */
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpz *a, *b;
-        long len = n_randint(state, 100);
-        long n;
+        slong len = n_randint(state, 100);
+        slong n;
 
         n = z_randtest_not_zero(state);
 
@@ -93,9 +79,9 @@ main(void)
         result = (_fmpz_vec_equal(a, b, len));
         if (!result)
         {
-            printf("FAIL:\n");
-            _fmpz_vec_print(a, len), printf("\n\n");
-            _fmpz_vec_print(b, len), printf("\n\n");
+            flint_printf("FAIL:\n");
+            _fmpz_vec_print(a, len), flint_printf("\n\n");
+            _fmpz_vec_print(b, len), flint_printf("\n\n");
             abort();
         }
 
@@ -103,8 +89,8 @@ main(void)
         _fmpz_vec_clear(b, len);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

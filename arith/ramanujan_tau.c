@@ -1,42 +1,20 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include <mpir.h>
-#include "flint.h"
 #include "fmpz.h"
-#include "fmpz_poly.h"
-#include "fmpz_vec.h"
-#include "fmpz_factor.h"
 #include "arith.h"
-#include "ulong_extras.h"
 
-
-void fmpz_poly_ramanujan_tau(fmpz_poly_t res, long n)
+void arith_ramanujan_tau_series(fmpz_poly_t res, slong n)
 {
-    long j, k, jv, kv;
+    slong j, k, jv, kv;
     fmpz_t tmp;
     fmpz_poly_fit_length(res, n);
     _fmpz_vec_zero(res->coeffs, n);
@@ -59,14 +37,14 @@ void fmpz_poly_ramanujan_tau(fmpz_poly_t res, long n)
     fmpz_clear(tmp);
 }
 
-void _fmpz_ramanujan_tau(fmpz_t res, fmpz_factor_t factors)
+void _arith_ramanujan_tau(fmpz_t res, fmpz_factor_t factors)
 {
     fmpz_poly_t poly;
     fmpz_t tau_p, p_11, next, this, prev;
-    long k, r;
+    slong k, r;
     ulong max_prime;
 
-    max_prime = 1UL;
+    max_prime = UWORD(1);
     for (k = 0; k < factors->num; k++)
     {
         /* TODO: handle overflow properly */
@@ -74,7 +52,7 @@ void _fmpz_ramanujan_tau(fmpz_t res, fmpz_factor_t factors)
     }
 
     fmpz_poly_init(poly);
-    fmpz_poly_ramanujan_tau(poly, max_prime + 1);
+    arith_ramanujan_tau_series(poly, max_prime + 1);
 
     fmpz_one(res);
     fmpz_init(tau_p);
@@ -93,7 +71,7 @@ void _fmpz_ramanujan_tau(fmpz_t res, fmpz_factor_t factors)
         fmpz_one(prev);
         fmpz_set(this, tau_p);
 
-        for (r = 1; r < fmpz_get_ui(factors->exp + k); r++)
+        for (r = 1; r < factors->exp[k]; r++)
         {
             fmpz_mul(next, tau_p, this);
             fmpz_submul(next, p_11, prev);
@@ -111,7 +89,7 @@ void _fmpz_ramanujan_tau(fmpz_t res, fmpz_factor_t factors)
     fmpz_poly_clear(poly);
 }
 
-void fmpz_ramanujan_tau(fmpz_t res, const fmpz_t n)
+void arith_ramanujan_tau(fmpz_t res, const fmpz_t n)
 {
     fmpz_factor_t factors;
 
@@ -123,6 +101,6 @@ void fmpz_ramanujan_tau(fmpz_t res, const fmpz_t n)
 
     fmpz_factor_init(factors);
     fmpz_factor(factors, n);
-    _fmpz_ramanujan_tau(res, factors);
+    _arith_ramanujan_tau(res, factors);
     fmpz_factor_clear(factors);
 }

@@ -1,28 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright 2009 William Hart
     Copyright 2010,2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,25 +20,25 @@
 
 typedef struct
 {
-    long m;
-    long n;
-    long k;
+    slong m;
+    slong n;
+    slong k;
     int algorithm;
-    long bits;
+    slong bits;
 } mat_mul_t;
 
 
 void sample(void * arg, ulong count)
 {
     mat_mul_t * params = (mat_mul_t *) arg;
-    long i, m = params->m, n = params->n, k = params->k;
-    long bits = params->bits;
+    slong i, m = params->m, n = params->n, k = params->k;
+    slong bits = params->bits;
     int algorithm = params->algorithm;
 
     flint_rand_t rnd;
     fmpz_mat_t A, B, C;
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
 
     fmpz_mat_init(A, m, n);
     fmpz_mat_init(B, n, k);
@@ -75,6 +61,9 @@ void sample(void * arg, ulong count)
     else if (algorithm == 3)
         for (i = 0; i < count; i++)
             fmpz_mat_mul_multi_mod(C, A, B);
+    else if (algorithm == 4)
+	for (i = 0; i < count; i++)
+	    fmpz_mat_mul_strassen(C, A, B);
 
     prof_stop();
 
@@ -87,17 +76,17 @@ void sample(void * arg, ulong count)
 
 int main(void)
 {
-    double min_default, min_classical, min_inline, min_multi_mod, max;
+    double min_default, min_classical, min_inline, min_multi_mod, min_strassen, max;
     mat_mul_t params;
-    long bits, dim;
+    slong bits, dim;
 
-    for (bits = 1; bits <= 2000; bits = (long) ((double) bits * 1.3) + 1)
+    for (bits = 1; bits <= 2000; bits = (slong) ((double) bits * 1.3) + 1)
     {
         params.bits = bits;
 
-        printf("fmpz_mat_mul (bits = %ld):\n", params.bits);
+        flint_printf("fmpz_mat_mul (bits = %wd):\n", params.bits);
 
-        for (dim = 1; dim <= 512; dim = (long) ((double) dim * 1.3) + 1)
+        for (dim = 1; dim <= 512; dim = (slong) ((double) dim * 1.3) + 1)
         {
             params.m = dim;
             params.n = dim;
@@ -114,15 +103,21 @@ int main(void)
 
             params.algorithm = 3;
             prof_repeat(&min_multi_mod, &max, sample, &params);
+            
+            params.algorithm = 4;
+            prof_repeat(&min_strassen, &max, sample, &params);
 
-            printf("dim = %ld default/classical/inline/multi_mod %.2f %.2f %.2f %.2f (us)\n", 
-                dim, min_default, min_classical, min_inline, min_multi_mod);
+            flint_printf("dim = %wd default/classical/inline/multi_mod/strassen %.2f %.2f %.2f %.2f %.2f (us)\n", 
+                dim, min_default, min_classical, min_inline, min_multi_mod, min_strassen);
 
             if (min_multi_mod < 0.6*min_default)
-                printf("BAD!\n");
+                flint_printf("BAD!\n");
 
             if (min_inline < 0.6*min_default)
-                printf("BAD!\n");
+                flint_printf("BAD!\n");
+                
+            if (min_strassen < 0.7*min_default)
+                flint_printf("BAD!\n");
 
             if (min_multi_mod < 0.7*min_inline)
                 break;

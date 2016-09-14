@@ -1,31 +1,17 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 William Hart
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -33,7 +19,7 @@
 
 
 void
-_nmod_poly_sqrt_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
+_nmod_poly_sqrt_series(mp_ptr g, mp_srcptr h, slong n, nmod_t mod)
 {
     mp_ptr t = _nmod_vec_init(n);
     _nmod_poly_invsqrt_series(t, h, n, mod);
@@ -42,32 +28,31 @@ _nmod_poly_sqrt_series(mp_ptr g, mp_srcptr h, long n, nmod_t mod)
 }
 
 void
-nmod_poly_sqrt_series(nmod_poly_t g, 
-                                 const nmod_poly_t h, long n)
+nmod_poly_sqrt_series(nmod_poly_t g, const nmod_poly_t h, slong n)
 {
     mp_ptr g_coeffs, h_coeffs;
     nmod_poly_t t1;
-    long hlen;
+    slong hlen;
     
     hlen = h->length;
 
     if (n == 0)
     {
-        printf("Exception: division by zero in nmod_poly_sqrt_series\n");
-        abort();
+        flint_printf("Exception (nmod_poly_sqrt_series). Division by zero.\n");
+        flint_abort();
     }
 
-    if (h->length == 0 || h->coeffs[0] != 1UL)
+    if (h->length == 0 || h->coeffs[0] != UWORD(1))
     {
-        printf("Exception: nmod_poly_sqrt_series requires constant term 1\n");
-        abort();
+        flint_printf("Exception (nmod_poly_sqrt_series). Requires constant term 1.\n");
+        flint_abort();
     }
 
     if (hlen < n)
     {
         h_coeffs = _nmod_vec_init(n);
-        mpn_copyi(h_coeffs, h->coeffs, hlen);
-        mpn_zero(h_coeffs + hlen, n - hlen);
+        flint_mpn_copyi(h_coeffs, h->coeffs, hlen);
+        flint_mpn_zero(h_coeffs + hlen, n - hlen);
     }
     else
         h_coeffs = h->coeffs;

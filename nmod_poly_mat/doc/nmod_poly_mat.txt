@@ -1,28 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 *******************************************************************************
 
@@ -30,7 +15,7 @@
 
 *******************************************************************************
 
-void nmod_poly_mat_init(nmod_poly_mat_t mat, long rows, long cols, mp_limb_t n)
+void nmod_poly_mat_init(nmod_poly_mat_t mat, slong rows, slong cols, mp_limb_t n)
 
     Initialises a matrix with the given number of rows and columns for use.
     The modulus is set to $n$.
@@ -51,11 +36,11 @@ void nmod_poly_mat_clear(nmod_poly_mat_t mat)
 
 *******************************************************************************
 
-long nmod_poly_mat_nrows(const nmod_poly_mat_t mat)
+slong nmod_poly_mat_nrows(const nmod_poly_mat_t mat)
 
     Returns the number of rows in \code{mat}.
 
-long nmod_poly_mat_ncols(const nmod_poly_mat_t mat)
+slong nmod_poly_mat_ncols(const nmod_poly_mat_t mat)
 
     Returns the number of columns in \code{mat}.
 
@@ -69,7 +54,8 @@ mp_limb_t nmod_poly_mat_modulus(const nmod_poly_mat_t mat)
 
 *******************************************************************************
 
-MACRO nmod_poly_mat_entry(mat,i,j)
+nmod_poly_struct * nmod_poly_mat_entry(const nmod_poly_mat_t mat, 
+                                                              slong i, slong j)
 
     Gives a reference to the entry at row \code{i} and column \code{j}.
     The reference can be passed as an input or output variable to any
@@ -102,13 +88,13 @@ void nmod_poly_mat_print(const nmod_poly_mat_t mat, const char * x)
 
 *******************************************************************************
 
-void nmod_poly_mat_randtest(nmod_poly_mat_t mat, flint_rand_t state, long len)
+void nmod_poly_mat_randtest(nmod_poly_mat_t mat, flint_rand_t state, slong len)
 
     This is equivalent to applying \code{nmod_poly_randtest} to all entries
     in the matrix.
 
 void nmod_poly_mat_randtest_sparse(nmod_poly_mat_t A, flint_rand_t state,
-        long len, float density)
+        slong len, float density)
 
     Creates a random matrix with the amount of nonzero entries given
     approximately by the \code{density} variable, which should be a fraction
@@ -172,7 +158,7 @@ int nmod_poly_mat_is_square(const nmod_poly_mat_t mat)
 
 *******************************************************************************
 
-long nmod_poly_mat_max_length(const nmod_poly_mat_t A)
+slong nmod_poly_mat_max_length(const nmod_poly_mat_t A)
 
     Returns the maximum polynomial length among all the entries in \code{A}.
 
@@ -292,8 +278,8 @@ void nmod_poly_mat_pow(nmod_poly_mat_t B, const nmod_poly_mat_t A, ulong exp)
 
 *******************************************************************************
 
-long nmod_poly_mat_find_pivot_any(const nmod_poly_mat_t mat,
-                                    long start_row, long end_row, long c)
+slong nmod_poly_mat_find_pivot_any(const nmod_poly_mat_t mat,
+                                    slong start_row, slong end_row, slong c)
 
     Attempts to find a pivot entry for row reduction.
     Returns a row index $r$ between \code{start_row} (inclusive) and
@@ -305,8 +291,8 @@ long nmod_poly_mat_find_pivot_any(const nmod_poly_mat_t mat,
     entries in the matrix have roughly the same size, but can lead to
     unnecessary coefficient growth if the entries vary in size.
 
-long nmod_poly_mat_find_pivot_partial(const nmod_poly_mat_t mat,
-                                    long start_row, long end_row, long c)
+slong nmod_poly_mat_find_pivot_partial(const nmod_poly_mat_t mat,
+                                    slong start_row, slong end_row, slong c)
 
     Attempts to find a pivot entry for row reduction.
     Returns a row index $r$ between \code{start_row} (inclusive) and
@@ -318,7 +304,7 @@ long nmod_poly_mat_find_pivot_partial(const nmod_poly_mat_t mat,
     typically reduces coefficient growth when the matrix entries
     vary in size.
 
-long nmod_poly_mat_fflu(nmod_poly_mat_t B, nmod_poly_t den, long * perm,
+slong nmod_poly_mat_fflu(nmod_poly_mat_t B, nmod_poly_t den, slong * perm,
                             const nmod_poly_mat_t A, int rank_check)
 
     Uses fraction-free Gaussian elimination to set (\code{B}, \code{den}) to a
@@ -337,20 +323,15 @@ long nmod_poly_mat_fflu(nmod_poly_mat_t B, nmod_poly_t den, long * perm,
     the sign is decided by the parity of the permutation. Note that the
     determinant is not generally the minimal denominator.
 
-long nmod_poly_mat_rref(nmod_poly_mat_t B, nmod_poly_t den, long * perm,
+slong nmod_poly_mat_rref(nmod_poly_mat_t B, nmod_poly_t den,
                             const nmod_poly_mat_t A)
 
-    Uses fraction-free Gauss-Jordan elimination to set (\code{B}, \code{den})
-    to the reduced row echelon form of \code{A} and returns the
-    rank of \code{A}. Aliasing of \code{A} and \code{B} is allowed.
+    Sets (\code{B}, \code{den}) to the reduced row echelon form of \code{A}
+    and returns the rank of \code{A}.
+    Aliasing of \code{A} and \code{B} is allowed.
 
-    Pivot elements are chosen with \code{nmod_poly_mat_find_pivot_partial}.
-    If \code{perm} is non-\code{NULL}, the permutation of
-    rows in the matrix will also be applied to \code{perm}.
-
-    The denominator \code{den} is set to $\pm \operatorname{det}(A)$, where
-    the sign is decided by the parity of the permutation. Note that the
-    determinant is not generally the minimal denominator.
+    The denominator \code{den} is set to $\pm \operatorname{det}(A)$.
+    Note that the determinant is not generally the minimal denominator.
 
 *******************************************************************************
 
@@ -389,10 +370,10 @@ void nmod_poly_mat_det_interpolate(nmod_poly_t det, const nmod_poly_mat_t A)
     of each coefficient matrix, and forming the interpolating polynomial.
 
     If the coefficient ring does not contain $n$ distinct points (that is,
-    if working over $\mathbb{Z}/p\mathbb{Z}$ where $p < n$),
+    if working over $\mathbf{Z}/p\mathbf{Z}$ where $p < n$),
     this function automatically falls back to \code{nmod_poly_mat_det_fflu}.
 
-long nmod_poly_mat_rank(const nmod_poly_mat_t A)
+slong nmod_poly_mat_rank(const nmod_poly_mat_t A)
 
     Returns the rank of \code{A}. Performs fraction-free LU decomposition
     on a copy of \code{A}.
@@ -425,7 +406,7 @@ int nmod_poly_mat_inv(nmod_poly_mat_t Ainv, nmod_poly_t den,
 
 *******************************************************************************
 
-long nmod_poly_mat_nullspace(nmod_poly_mat_t res, const nmod_poly_mat_t mat)
+slong nmod_poly_mat_nullspace(nmod_poly_mat_t res, const nmod_poly_mat_t mat)
 
     Computes the right rational nullspace of the matrix \code{mat} and
     returns the nullity.
@@ -469,7 +450,7 @@ int nmod_poly_mat_solve_fflu(nmod_poly_mat_t X, nmod_poly_t den,
     forward and back substitution.
 
 void nmod_poly_mat_solve_fflu_precomp(nmod_poly_mat_t X,
-                    const long * perm,
+                    const slong * perm,
                     const nmod_poly_mat_t FFLU, const nmod_poly_mat_t B);
 
     Performs fraction-free forward and back substitution given a precomputed

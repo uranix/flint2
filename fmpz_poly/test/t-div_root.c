@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -34,19 +20,19 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("div_root....");
+    flint_printf("div_root....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Compare with standard divrem */
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t P, Q, D, DQ;
         fmpz_t c;
-        long n, b;
+        slong n, b;
 
         n = n_randint(state, 100);
         b = n_randint(state, 200);
@@ -64,7 +50,7 @@ main(void)
 
         fmpz_poly_set_coeff_fmpz(D, 0, c);
         fmpz_poly_neg(D, D);
-        fmpz_poly_set_coeff_ui(D, 1, 1UL);
+        fmpz_poly_set_coeff_ui(D, 1, UWORD(1));
 
         fmpz_poly_div_basecase(DQ, P, D);
 
@@ -72,11 +58,11 @@ main(void)
 
         if (!result)
         {
-            printf("FAIL!\n");
-            printf("P:\n"); fmpz_poly_print(P); printf("\n\n");
-            printf("Q:\n"); fmpz_poly_print(Q); printf("\n\n");
-            printf("D:\n"); fmpz_poly_print(D); printf("\n\n");
-            printf("DQ:\n"); fmpz_poly_print(DQ); printf("\n\n");
+            flint_printf("FAIL!\n");
+            flint_printf("P:\n"); fmpz_poly_print(P); flint_printf("\n\n");
+            flint_printf("Q:\n"); fmpz_poly_print(Q); flint_printf("\n\n");
+            flint_printf("D:\n"); fmpz_poly_print(D); flint_printf("\n\n");
+            flint_printf("DQ:\n"); fmpz_poly_print(DQ); flint_printf("\n\n");
             abort();
         }
 
@@ -88,11 +74,11 @@ main(void)
     }
 
     /* Check aliasing */
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t P, Q1, Q2;
         fmpz_t c;
-        long n, b;
+        slong n, b;
 
         n = n_randint(state, 100);
         b = n_randint(state, 200);
@@ -113,10 +99,10 @@ main(void)
 
         if (!result)
         {
-            printf("FAIL (aliasing)!\n");
-            printf("P:\n"); fmpz_poly_print(P); printf("\n\n");
-            printf("Q1:\n"); fmpz_poly_print(Q1); printf("\n\n");
-            printf("Q2:\n"); fmpz_poly_print(Q2); printf("\n\n");
+            flint_printf("FAIL (aliasing)!\n");
+            flint_printf("P:\n"); fmpz_poly_print(P); flint_printf("\n\n");
+            flint_printf("Q1:\n"); fmpz_poly_print(Q1); flint_printf("\n\n");
+            flint_printf("Q2:\n"); fmpz_poly_print(Q2); flint_printf("\n\n");
             abort();
         }
 
@@ -126,8 +112,8 @@ main(void)
         fmpz_poly_clear(Q2);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

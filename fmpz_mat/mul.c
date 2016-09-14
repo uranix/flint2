@@ -1,38 +1,21 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010,2011 Fredrik Johansson
+    Copyright (C) 2016 Aaditya Thakkar
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010,2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
-
 
 void
 fmpz_mat_mul(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B)
 {
-    long dim, m, n, k;
+    slong dim, m, n, k;
 
     m = A->r;
     n = A->c;
@@ -60,7 +43,7 @@ fmpz_mat_mul(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B)
     }
     else
     {
-        long ab, bb, bits;
+        slong ab, bb, bits;
 
         ab = fmpz_mat_max_bits(A);
         bb = fmpz_mat_max_bits(B);
@@ -72,7 +55,21 @@ fmpz_mat_mul(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B)
 
         if (5*(ab + bb) > dim * dim || (bits > FLINT_BITS - 3 && dim < 60))
         {
-            fmpz_mat_mul_classical_inline(C, A, B);
+            if ((ab + bb) * dim < 17000)
+            {
+                fmpz_mat_mul_classical_inline(C, A, B);
+            }
+            else
+            {
+                if (dim > 75 && (ab + bb) > 650)
+                {
+                    _fmpz_mat_mul_multi_mod(C, A, B, bits);
+                }
+                else
+                {
+                    fmpz_mat_mul_strassen(C, A, B);
+                }
+            }
         }
         else
         {

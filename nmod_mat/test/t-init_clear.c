@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_mat.h"
 #include "ulong_extras.h"
@@ -34,14 +20,14 @@
 int
 main(void)
 {
-    long m, n, mod, i, j, rep;
-    flint_rand_t state;
-    flint_randinit(state);
+    slong m, n, mod, i, j, rep;
+    FLINT_TEST_INIT(state);
+    
 
-    printf("init/clear....");
+    flint_printf("init/clear....");
     fflush(stdout);
 
-    for (rep = 0; rep < 1000; rep++)
+    for (rep = 0; rep < 100 * flint_test_multiplier(); rep++)
     {
         nmod_mat_t A;
 
@@ -55,9 +41,9 @@ main(void)
         {
             for (j = 0; j < n; j++)
             {
-                if (A->rows[i][j] != 0UL)
+                if (A->rows[i][j] != UWORD(0))
                 {
-                    printf("FAIL: entries not zero!\n");
+                    flint_printf("FAIL: entries not zero!\n");
                     abort();
                 }
             }
@@ -65,15 +51,15 @@ main(void)
 
         if (A->mod.n != mod)
         {
-            printf("FAIL: bad modulus\n");
+            flint_printf("FAIL: bad modulus\n");
             abort();
         }
 
         nmod_mat_clear(A);
     }
 
-    flint_randclear(state);
-
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

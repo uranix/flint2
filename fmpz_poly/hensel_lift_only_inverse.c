@@ -1,30 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 Andy Novocin
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -64,15 +50,15 @@ do {                                                                  \
 } while (0)
 
 void _fmpz_poly_hensel_lift_only_inverse(fmpz *A, fmpz *B, 
-    const fmpz *G, long lenG, const fmpz *H, long lenH, 
-    const fmpz *a, long lenA, const fmpz *b, long lenB, 
+    const fmpz *G, slong lenG, const fmpz *H, slong lenH, 
+    const fmpz *a, slong lenA, const fmpz *b, slong lenB, 
     const fmpz_t p, const fmpz_t p1)
 {
-    const fmpz one[1] = {1L};
-    const long lenC = FLINT_MAX(lenA + lenG - 1, lenB + lenH - 1);
-    const long lenM = FLINT_MAX(lenG, lenH);
-    const long lenE = FLINT_MAX(lenG + lenB - 2, lenH + lenA - 2);
-    const long lenD = FLINT_MAX(lenC, lenE);
+    const fmpz one[1] = {WORD(1)};
+    const slong lenC = FLINT_MAX(lenA + lenG - 1, lenB + lenH - 1);
+    const slong lenM = FLINT_MAX(lenG, lenH);
+    const slong lenE = FLINT_MAX(lenG + lenB - 2, lenH + lenA - 2);
+    const slong lenD = FLINT_MAX(lenC, lenE);
     fmpz *C, *D, *E, *M;
 
     C = _fmpz_vec_init(lenC + lenD + lenD + lenM);

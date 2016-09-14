@@ -1,40 +1,26 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
-void _fmpz_poly_pow_addchains(fmpz * res, const fmpz * poly, long len, 
+void _fmpz_poly_pow_addchains(fmpz * res, const fmpz * poly, slong len, 
                                                           const int * a, int n)
 {
     int *b;
-    long lenm1 = len - 1, lenv;
+    slong lenm1 = len - 1, lenv;
     fmpz *v;
 
     /*
@@ -108,11 +94,11 @@ void _fmpz_poly_pow_addchains(fmpz * res, const fmpz * poly, long len,
 
 void fmpz_poly_pow_addchains(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
 {
-    const long len = poly->length;
+    const slong len = poly->length;
     
-    if ((len < 2) | (e < 3UL))
+    if ((len < 2) | (e < UWORD(3)))
     {
-        if (e == 0UL)
+        if (e == UWORD(0))
             fmpz_poly_set_ui(res, 1);
         else if (len == 0)
             fmpz_poly_zero(res);
@@ -122,14 +108,14 @@ void fmpz_poly_pow_addchains(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
             fmpz_pow_ui(res->coeffs, poly->coeffs, e);
             _fmpz_poly_set_length(res, 1);
         }
-        else if (e == 1UL)
+        else if (e == UWORD(1))
             fmpz_poly_set(res, poly);
-        else  /* e == 2UL */
+        else  /* e == UWORD(2) */
             fmpz_poly_sqr(res, poly);
         return;
     }
     
-    if (e <= 148UL)
+    if (e <= UWORD(148))
     {
         /*
            An array storing a tree with shortest addition chains (star chains, 
@@ -168,7 +154,7 @@ void fmpz_poly_pow_addchains(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
         };
         
         int a[11], i = 11, n = (int) e;
-        long rlen = (long) e * (len - 1) + 1;
+        slong rlen = (slong) e * (len - 1) + 1;
 
         /*
            Copy the addition chain into 1 = a[0] < a[1] < ... < a[n]
@@ -196,7 +182,7 @@ void fmpz_poly_pow_addchains(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
     }
     else
     {
-        printf("Exception: powering via chains not implemented for e > 148\n");
-        abort();
+        flint_printf("Exception (fmpz_poly_addchains). Powering via chains not implemented for e > 148.\n");
+        flint_abort();
     }
 }

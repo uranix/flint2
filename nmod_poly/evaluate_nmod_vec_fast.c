@@ -1,36 +1,22 @@
-/*=============================================================================
+/*
+    Copyright (C) 2012 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2012 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "nmod_poly.h"
 
 /* This gives some speedup for small lengths. */
-static __inline__ void _nmod_poly_rem_2(mp_ptr r, mp_srcptr a, long al,
-    mp_srcptr b, long bl, nmod_t mod)
+static __inline__ void _nmod_poly_rem_2(mp_ptr r, mp_srcptr a, slong al,
+    mp_srcptr b, slong bl, nmod_t mod)
 {
     if (al == 2)
         r[0] = nmod_sub(a[0], nmod_mul(a[1], b[0], mod), mod);
@@ -40,11 +26,11 @@ static __inline__ void _nmod_poly_rem_2(mp_ptr r, mp_srcptr a, long al,
 
 void
 _nmod_poly_evaluate_nmod_vec_fast_precomp(mp_ptr vs, mp_srcptr poly,
-    long plen, mp_ptr * tree, long len, nmod_t mod)
+    slong plen, const mp_ptr * tree, slong len, nmod_t mod)
 {
-    long height, i, j, pow, left;
-    long tree_height;
-    long tlen;
+    slong height, i, j, pow, left;
+    slong tree_height;
+    slong tlen;
     mp_ptr t, u, swap, pa, pb, pc;
 
     /* avoid worrying about some degenerate cases */
@@ -72,7 +58,7 @@ _nmod_poly_evaluate_nmod_vec_fast_precomp(mp_ptr vs, mp_srcptr poly,
     tree_height = FLINT_CLOG2(len);
     while (height >= tree_height)
         height--;
-    pow = 1L << height;
+    pow = WORD(1) << height;
 
     for (i = j = 0; i < len; i += pow, j += (pow + 1))
     {
@@ -82,7 +68,7 @@ _nmod_poly_evaluate_nmod_vec_fast_precomp(mp_ptr vs, mp_srcptr poly,
 
     for (i = height - 1; i >= 0; i--)
     {
-        pow = 1L << i;
+        pow = WORD(1) << i;
         left = len;
         pa = tree[i];
         pb = t;
@@ -117,8 +103,8 @@ _nmod_poly_evaluate_nmod_vec_fast_precomp(mp_ptr vs, mp_srcptr poly,
     _nmod_vec_clear(u);
 }
 
-void _nmod_poly_evaluate_nmod_vec_fast(mp_ptr ys, mp_srcptr poly, long plen,
-    mp_srcptr xs, long n, nmod_t mod)
+void _nmod_poly_evaluate_nmod_vec_fast(mp_ptr ys, mp_srcptr poly, slong plen,
+    mp_srcptr xs, slong n, nmod_t mod)
 {
     mp_ptr * tree;
 
@@ -130,7 +116,7 @@ void _nmod_poly_evaluate_nmod_vec_fast(mp_ptr ys, mp_srcptr poly, long plen,
 
 void
 nmod_poly_evaluate_nmod_vec_fast(mp_ptr ys,
-        const nmod_poly_t poly, mp_srcptr xs, long n)
+        const nmod_poly_t poly, mp_srcptr xs, slong n)
 {
     _nmod_poly_evaluate_nmod_vec_fast(ys, poly->coeffs,
                                         poly->length, xs, n, poly->mod);

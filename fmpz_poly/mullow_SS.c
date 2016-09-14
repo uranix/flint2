@@ -1,48 +1,39 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008-2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008-2011 William Hart
-    
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "fmpz_poly.h"
 #include "fft.h"
 #include "fft_tuning.h"
 
-void _fmpz_poly_mullow_SS(fmpz * output, const fmpz * input1, long len1, 
-               const fmpz * input2, long len2, long trunc)
+void _fmpz_poly_mullow_SS(fmpz * output, const fmpz * input1, slong len1, 
+               const fmpz * input2, slong len2, slong trunc)
 {
-    long len_out = len1 + len2 - 1;
-    long loglen  = FLINT_CLOG2(len_out);
-    long loglen2 = FLINT_CLOG2(len2);
-    long n = (1L << (loglen - 2));
-
-    long output_bits, limbs, size, i;
+    slong len_out, loglen, loglen2, n;
+    slong output_bits, limbs, size, i;
     mp_limb_t * ptr, * t1, * t2, * tt, * s1, ** ii, ** jj;
-    long bits1, bits2;
+    slong bits1, bits2;
+    ulong size1, size2;
     int sign = 0;
 
-    ulong size1 = _fmpz_vec_max_limbs(input1, len1); 
-    ulong size2 = _fmpz_vec_max_limbs(input2, len2);
+    len1 = FLINT_MIN(len1, trunc);
+    len2 = FLINT_MIN(len2, trunc);
+
+    len_out = len1 + len2 - 1;
+    loglen  = FLINT_CLOG2(len_out);
+    loglen2 = FLINT_CLOG2(len2);
+    n = (WORD(1) << (loglen - 2));
+
+    size1 = _fmpz_vec_max_limbs(input1, len1); 
+    size2 = _fmpz_vec_max_limbs(input2, len2);
 
     /* Start with an upper bound on the number of bits needed */
     output_bits = FLINT_BITS * (size1 + size2) + loglen2 + 1; 
@@ -52,7 +43,7 @@ void _fmpz_poly_mullow_SS(fmpz * output, const fmpz * input1, long len1,
 
     limbs = (output_bits - 1) / FLINT_BITS + 1; /* initial size of FFT coeffs */
     if (limbs > FFT_MULMOD_2EXPP1_CUTOFF) /* can't be worse than next power of 2 limbs */
-        limbs = (1L << FLINT_CLOG2(limbs));
+        limbs = (WORD(1) << FLINT_CLOG2(limbs));
     size = limbs + 1;
 
     /* allocate space for ffts */
@@ -74,17 +65,17 @@ void _fmpz_poly_mullow_SS(fmpz * output, const fmpz * input1, long len1,
     /* put coefficients into FFT vecs */
     bits1 = _fmpz_vec_get_fft(ii, input1, limbs, len1);
     for (i = len1; i < 4*n; i++)
-        mpn_zero(ii[i], limbs + 1);
+        flint_mpn_zero(ii[i], limbs + 1);
 
     if (input1 != input2) 
     {
         bits2 = _fmpz_vec_get_fft(jj, input2, limbs, len2);
         for (i = len2; i < 4*n; i++)
-            mpn_zero(jj[i], limbs + 1);
+            flint_mpn_zero(jj[i], limbs + 1);
     }
     else bits2 = bits1;
 
-    if (bits1 < 0L || bits2 < 0L) 
+    if (bits1 < WORD(0) || bits2 < WORD(0)) 
     {
         sign = 1;  
         bits1 = FLINT_ABS(bits1);
@@ -111,10 +102,10 @@ void _fmpz_poly_mullow_SS(fmpz * output, const fmpz * input1, long len1,
 
 void
 fmpz_poly_mullow_SS(fmpz_poly_t res,
-                    const fmpz_poly_t poly1, const fmpz_poly_t poly2, long n)
+                    const fmpz_poly_t poly1, const fmpz_poly_t poly2, slong n)
 {
-    const long len1 = poly1->length;
-    const long len2 = poly2->length;
+    const slong len1 = poly1->length;
+    const slong len2 = poly2->length;
 
     if (len1 == 0 || len2 == 0 || n == 0)
     {
@@ -122,12 +113,13 @@ fmpz_poly_mullow_SS(fmpz_poly_t res,
         return;
     }
 
-    if (len1 == 1 || len2 == 1)
+    if (len1 <= 2 || len2 <= 2 || n <= 2)
     {
         fmpz_poly_mullow_classical(res, poly1, poly2, n);
         return;
     }
 
+    n = FLINT_MIN(n, len1 + len2 - 1);
     fmpz_poly_fit_length(res, n);
 
     if (len1 >= len2)

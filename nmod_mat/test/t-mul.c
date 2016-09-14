@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_mat.h"
 #include "ulong_extras.h"
@@ -34,7 +20,7 @@
 void
 nmod_mat_mul_check(nmod_mat_t C, const nmod_mat_t A, const nmod_mat_t B)
 {
-    long i, j, k;
+    slong i, j, k;
 
     mp_limb_t s0, s1, s2;
     mp_limb_t t0, t1;
@@ -43,7 +29,7 @@ nmod_mat_mul_check(nmod_mat_t C, const nmod_mat_t A, const nmod_mat_t B)
     {
         for (j = 0; j < B->c; j++)
         {
-            s0 = s1 = s2 = 0UL;
+            s0 = s1 = s2 = UWORD(0);
 
             for (k = 0; k < A->c; k++)
             {
@@ -61,19 +47,19 @@ nmod_mat_mul_check(nmod_mat_t C, const nmod_mat_t A, const nmod_mat_t B)
 int
 main(void)
 {
-    long i;
-    flint_rand_t state;
-    flint_randinit(state);
+    slong i;
+    FLINT_TEST_INIT(state);
 
-    printf("mul....");
+
+    flint_printf("mul....");
     fflush(stdout);
 
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         nmod_mat_t A, B, C, D;
         mp_limb_t mod;
 
-        long m, k, n;
+        slong m, k, n;
 
         m = n_randint(state, 50);
         k = n_randint(state, 50);
@@ -87,11 +73,11 @@ main(void)
                 mod = n_randtest_not_zero(state);
                 break;
             case 1:
-                mod = ULONG_MAX/2 + 1 - n_randbits(state, 4);
+                mod = UWORD_MAX/2 + 1 - n_randbits(state, 4);
                 break;
             case 2:
             default:
-                mod = ULONG_MAX - n_randbits(state, 4);
+                mod = UWORD_MAX - n_randbits(state, 4);
                 break;
         }
 
@@ -117,7 +103,7 @@ main(void)
 
         if (!nmod_mat_equal(C, D))
         {
-            printf("FAIL: results not equal\n");
+            flint_printf("FAIL: results not equal\n");
             nmod_mat_print_pretty(A);
             nmod_mat_print_pretty(B);
             nmod_mat_print_pretty(C);
@@ -131,8 +117,8 @@ main(void)
         nmod_mat_clear(D);
     }
 
-    flint_randclear(state);
+    FLINT_TEST_CLEANUP(state);
 
-    printf("PASS\n");
+    flint_printf("PASS\n");
     return 0;
 }

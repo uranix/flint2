@@ -1,28 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 William Hart
     Copyright (C) 2011, 2012 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "nmod_poly.h"
@@ -55,16 +41,16 @@ do {                                                        \
     nmod_poly_gcd_hgcd() should rely on this.
  */
 
-long _nmod_poly_gcd_hgcd(mp_ptr G, mp_srcptr A, long lenA, 
-                                   mp_srcptr B, long lenB, nmod_t mod)
+slong _nmod_poly_gcd_hgcd(mp_ptr G, mp_srcptr A, slong lenA, 
+                                   mp_srcptr B, slong lenB, nmod_t mod)
 {
-    const long cutoff = FLINT_BIT_COUNT(mod.n) <= 8 ? 
+    const slong cutoff = FLINT_BIT_COUNT(mod.n) <= 8 ? 
                         NMOD_POLY_SMALL_GCD_CUTOFF : NMOD_POLY_GCD_CUTOFF;
 
     mp_ptr J = _nmod_vec_init(2 * lenB);
     mp_ptr R = J + lenB;
 
-    long lenG, lenJ, lenR;
+    slong lenG, lenJ, lenR;
 
     __rem(R, lenR, A, lenA, B, lenB);
 
@@ -99,33 +85,55 @@ long _nmod_poly_gcd_hgcd(mp_ptr G, mp_srcptr A, long lenA,
     return lenG;
 }
 
-void nmod_poly_gcd_hgcd(nmod_poly_t G, const nmod_poly_t A, const nmod_poly_t B)
+void nmod_poly_gcd_hgcd(nmod_poly_t G, 
+                             const nmod_poly_t A, const nmod_poly_t B)
 {
-    const long lenA = A->length, lenB = B->length;
-
-    if (lenA == 0)
+    if (A->length < B->length)
     {
-        if (lenB == 0) 
+        nmod_poly_gcd_hgcd(G, B, A);
+    }
+    else /* lenA >= lenB >= 0 */
+    {
+        slong lenA = A->length, lenB = B->length, lenG;
+        nmod_poly_t tG;
+        mp_ptr g;
+
+        if (lenA == 0) /* lenA = lenB = 0 */
+        {
             nmod_poly_zero(G);
-        else 
-            nmod_poly_make_monic(G, B);
-    }
-    else if (lenB == 0)
-    {
-        nmod_poly_make_monic(G, A);
-    }
-    else
-    {
-        nmod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
+        } 
+        else if (lenB == 0) /* lenA > lenB = 0 */
+        {
+            nmod_poly_make_monic(G, A);
+        }
+        else /* lenA >= lenB >= 1 */
+        {
+            if (G == A || G == B)
+            {
+                nmod_poly_init2(tG, A->mod.n, FLINT_MIN(lenA, lenB));
+                g = tG->coeffs;
+            }
+            else
+            {
+                nmod_poly_fit_length(G, FLINT_MIN(lenA, lenB));
+                g = G->coeffs;
+            }
 
-        if (lenA >= lenB)
-            G->length = _nmod_poly_gcd_hgcd(G->coeffs, A->coeffs, A->length, 
-                                                       B->coeffs, B->length, A->mod);
-        else
-            G->length = _nmod_poly_gcd_hgcd(G->coeffs, B->coeffs, B->length, 
-                                                       A->coeffs, A->length, A->mod);
+            lenG = _nmod_poly_gcd_hgcd(g, A->coeffs, lenA,
+                                               B->coeffs, lenB, A->mod);
 
-        _nmod_poly_make_monic(G->coeffs, G->coeffs, G->length, G->mod);
+            if (G == A || G == B)
+            {
+                nmod_poly_swap(tG, G);
+                nmod_poly_clear(tG);
+            }
+            G->length = lenG;
+
+            if (G->length == 1)
+                G->coeffs[0] = 1;
+            else
+                nmod_poly_make_monic(G, G);
+        }
     }
 }
 

@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +19,7 @@
 typedef struct
 {
    mp_bitcnt_t bits;
-   long length;
+   slong length;
 } info_t;
 
 void sample(void * arg, ulong count)
@@ -42,17 +28,17 @@ void sample(void * arg, ulong count)
    nmod_t mod;
    info_t * info = (info_t *) arg;
    mp_bitcnt_t bits = info->bits;
-   long length = info->length;
-   long i, j;
+   slong length = info->length;
+   slong i, j;
    mp_ptr vec = _nmod_vec_init(length);
    mp_ptr vec2 = _nmod_vec_init(length);
-   flint_rand_t state;
-   flint_randinit(state);
+   FLINT_TEST_INIT(state);
+   
     
    for (i = 0; i < count; i++)
    {
       n = n_randbits(state, bits);
-      if (n == 0UL) n++;
+      if (n == UWORD(0)) n++;
       c = n_randint(state, n);
       for (j = 0; j < length; j++)
          vec[j] = n_randint(state, n);
@@ -86,7 +72,7 @@ int main(void)
 	  info.length = 65536;
 	  prof_repeat(&min2, &max, sample, (void *) &info);
 
-      printf("bits %ld, length 128 %.1lf c/l, length 65536 %.1lf c/l\n", 
+      flint_printf("bits %wd, length 128 %.1lf c/l, length 65536 %.1lf c/l\n", 
          i, (min1/(double)FLINT_CLOCK_SCALE_FACTOR)/(1024*30),
 		 (min2/(double)FLINT_CLOCK_SCALE_FACTOR)/(65536*30)
 	  );

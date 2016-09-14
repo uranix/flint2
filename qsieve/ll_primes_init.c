@@ -1,40 +1,26 @@
-/*=============================================================================
+/*
+    Copyright (C) 2006, 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2006, 2011 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "qsieve.h"
 
-prime_t * compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, long num_primes)
+prime_t * compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, slong num_primes)
 {
     mp_limb_t p, nmod, nmod2;
     mp_limb_t pinv;
     mp_limb_t k = qs_inf->k;
-    long num = qs_inf->num_primes;
-    long fb_prime = 2;
+    slong num = qs_inf->num_primes;
+    slong fb_prime = 2;
     prime_t * factor_base;
     int * sqrts;
     int kron;
@@ -105,8 +91,8 @@ prime_t * compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, long num_pr
 
 mp_limb_t qsieve_ll_primes_init(qs_t qs_inf)
 {
-    long num_primes;
-    long i, s, min, fact, span;
+    slong num_primes;
+    slong i, s, min, fact, span;
     mp_limb_t fact_approx;
     fmpz_t temp;
     mp_limb_t k = qs_inf->k;
@@ -165,7 +151,7 @@ mp_limb_t qsieve_ll_primes_init(qs_t qs_inf)
         if (min + span <= num_primes - 2) /* we have enough primes */
             break;
 
-        num_primes = (long) (1.1 * (double) num_primes);
+        num_primes = (slong) (1.1 * (double) num_primes);
         factor_base = compute_factor_base(&small_factor, qs_inf, num_primes); /* increase size of FB */
         if (small_factor)
             return small_factor;
@@ -181,8 +167,8 @@ mp_limb_t qsieve_ll_primes_init(qs_t qs_inf)
     qs_inf->high = qs_inf->mid + qs_inf->span / s;
    
 #if (QS_DEBUG & 2)
-    printf("Using %ld factor base primes\n", qs_inf->num_primes);
-    printf("min = FB[%ld], span = %ld, number of A factors = %ld, target A = %ld\n", 
+    flint_printf("Using %wd factor base primes\n", qs_inf->num_primes);
+    flint_printf("min = FB[%wd], span = %wd, number of A factors = %wd, target A = %wd\n", 
            min, span, s, qs_inf->target_A);
 #endif
    

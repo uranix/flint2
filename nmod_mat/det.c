@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,20 +22,20 @@ mp_limb_t
 _nmod_mat_det(nmod_mat_t A)
 {
     mp_limb_t det;
-    long * P;
+    slong * P;
 
-    long m = A->r;
-    long rank;
-    long i;
+    slong m = A->r;
+    slong rank;
+    slong i;
 
-    P = flint_malloc(sizeof(long) * m);
+    P = flint_malloc(sizeof(slong) * m);
     rank = nmod_mat_lu(P, A, 1);
 
-    det = 0UL;
+    det = UWORD(0);
 
     if (rank == m)
     {
-        det = 1UL;
+        det = UWORD(1);
         for (i = 0; i < m; i++)
             det = n_mulmod2_preinv(det, nmod_mat_entry(A, i, i),
                 A->mod.n, A->mod.ninv);
@@ -67,15 +53,15 @@ nmod_mat_det(const nmod_mat_t A)
 {
     nmod_mat_t tmp;
     mp_limb_t det;
-    long dim = A->r;
+    slong dim = A->r;
 
     if (dim != A->c)
     {
-        printf("nmod_mat_det: nonsquare matrix");
-        abort();
+        flint_printf("Exception (nmod_mat_det). Non-square matrix.\n");
+        flint_abort();
     }
 
-    if (dim == 0) return 1UL;
+    if (dim == 0) return UWORD(1);
     if (dim == 1) return nmod_mat_entry(A, 0, 0);
 
     nmod_mat_init_set(tmp, A);

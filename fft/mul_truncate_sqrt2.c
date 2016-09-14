@@ -1,41 +1,23 @@
 /* 
+    Copyright (C) 2009, 2011 William Hart
 
-Copyright 2009, 2011 William Hart. All rights reserved.
+    This file is part of FLINT.
 
-Redistribution and use in source and binary forms, with or without modification, are
-permitted provided that the following conditions are met:
-
-   1. Redistributions of source code must retain the above copyright notice, this list of
-      conditions and the following disclaimer.
-
-   2. Redistributions in binary form must reproduce the above copyright notice, this list
-      of conditions and the following disclaimer in the documentation and/or other materials
-      provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY William Hart ``AS IS'' AND ANY EXPRESS OR IMPLIED
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL William Hart OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-The views and conclusions contained in the software and documentation are those of the
-authors and should not be interpreted as representing official policies, either expressed
-or implied, of William Hart.
-
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
 */
 
-#include "mpir.h"
+#include "gmp.h"
 #include "flint.h"
 #include "fft.h"
-      
-void mul_truncate_sqrt2(mp_limb_t * r1, mp_limb_t * i1, mp_size_t n1, 
-                        mp_limb_t * i2, mp_size_t n2, mp_bitcnt_t depth, mp_bitcnt_t w)
+#include "mpn_extras.h"
+
+void mul_truncate_sqrt2(mp_ptr r1, mp_srcptr i1, mp_size_t n1, 
+                        mp_srcptr i2, mp_size_t n2, mp_bitcnt_t depth, mp_bitcnt_t w)
 {
-   mp_size_t n = (1UL<<depth);
+   mp_size_t n = (UWORD(1)<<depth);
    mp_bitcnt_t bits1 = (n*w - (depth+1))/2; 
    
    mp_size_t r_limbs = n1 + n2;
@@ -76,7 +58,7 @@ void mul_truncate_sqrt2(mp_limb_t * r1, mp_limb_t * i1, mp_size_t n1,
 
    j1 = fft_split_bits(ii, i1, n1, bits1, limbs);
    for (j = j1 ; j < 4*n; j++)
-      mpn_zero(ii[j], limbs + 1);
+      flint_mpn_zero(ii[j], limbs + 1);
    
    fft_truncate_sqrt2(ii, n, w, &t1, &t2, &s1, trunc);
     
@@ -84,7 +66,7 @@ void mul_truncate_sqrt2(mp_limb_t * r1, mp_limb_t * i1, mp_size_t n1,
    {
       j2 = fft_split_bits(jj, i2, n2, bits1, limbs);
       for (j = j2 ; j < 4*n; j++)
-         mpn_zero(jj[j], limbs + 1);
+         flint_mpn_zero(jj[j], limbs + 1);
       fft_truncate_sqrt2(jj, n, w, &t1, &t2, &s1, trunc);      
    } else j2 = j1;
 
@@ -93,7 +75,7 @@ void mul_truncate_sqrt2(mp_limb_t * r1, mp_limb_t * i1, mp_size_t n1,
       mpn_normmod_2expp1(ii[j], limbs);
       if (i1 != i2) mpn_normmod_2expp1(jj[j], limbs);
       c = 2*ii[j][limbs] + jj[j][limbs];
-      ii[j][limbs] = mpn_mulmod_2expp1(ii[j], ii[j], jj[j], c, n*w, tt);
+      ii[j][limbs] = flint_mpn_mulmod_2expp1_basecase(ii[j], ii[j], jj[j], c, n*w, tt);
    }
 
    ifft_truncate_sqrt2(ii, n, w, &t1, &t2, &s1, trunc);
@@ -103,9 +85,10 @@ void mul_truncate_sqrt2(mp_limb_t * r1, mp_limb_t * i1, mp_size_t n1,
       mpn_normmod_2expp1(ii[j], limbs);
    }
    
-   mpn_zero(r1, r_limbs);
+   flint_mpn_zero(r1, r_limbs);
    fft_combine_bits(r1, ii, j1 + j2 - 1, bits1, limbs, r_limbs);
      
    flint_free(ii);
    if (i1 != i2) flint_free(jj);
 }
+

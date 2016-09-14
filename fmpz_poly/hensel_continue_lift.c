@@ -1,38 +1,24 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 Andy Novocin
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include "fmpz_poly_factor.h"
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-long _fmpz_poly_hensel_continue_lift(fmpz_poly_factor_t lifted_fac, 
-    long *link, fmpz_poly_t *v, fmpz_poly_t *w, const fmpz_poly_t f, 
-    long prev, long curr, long N, const fmpz_t p)
+#include "fmpz_poly.h"
+
+slong _fmpz_poly_hensel_continue_lift(fmpz_poly_factor_t lifted_fac, 
+    slong *link, fmpz_poly_t *v, fmpz_poly_t *w, const fmpz_poly_t f, 
+    slong prev, slong curr, slong N, const fmpz_t p)
 {
-    const long r = lifted_fac->num;
+    const slong r = lifted_fac->num;
 
-    long i, new_prev;
+    slong i, new_prev;
 
     fmpz_t P;
     fmpz_poly_t monic_f;
@@ -58,8 +44,8 @@ long _fmpz_poly_hensel_continue_lift(fmpz_poly_factor_t lifted_fac,
 
         if (fmpz_invmod(t, t, P) == 0)
         {
-            printf("Exception in fmpz_poly_continue_hensel_lift.\n");
-            abort();
+            flint_printf("Exception (fmpz_poly_continue_hensel_lift).\n");
+            flint_abort();
         }
 
         fmpz_poly_scalar_mul_fmpz(monic_f, f, t);
@@ -68,9 +54,9 @@ long _fmpz_poly_hensel_continue_lift(fmpz_poly_factor_t lifted_fac,
     }
 
     {
-        long *e, n = 3 + FLINT_FLOG2(N - prev);
+        slong *e, n = 3 + FLINT_FLOG2(N - prev);
 
-        e = flint_malloc(n * sizeof(long));
+        e = flint_malloc(n * sizeof(slong));
 
         for (e[i = 0] = N; e[i] > curr; i++)
             e[i + 1] = (e[i] + 1) / 2;
@@ -101,7 +87,7 @@ long _fmpz_poly_hensel_continue_lift(fmpz_poly_factor_t lifted_fac,
         if (link[i] < 0)
         {
             fmpz_poly_scalar_smod_fmpz(lifted_fac->p + (- link[i] - 1), v[i], P);
-            lifted_fac->exp[- link[i] - 1] = 1L; 
+            lifted_fac->exp[- link[i] - 1] = WORD(1); 
         }
     }
     lifted_fac->num = r;

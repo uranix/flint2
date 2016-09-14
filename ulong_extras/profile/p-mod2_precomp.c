@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,14 +21,14 @@ void sample(void * arg, ulong count)
    double dpre;
    ulong i;
    mp_ptr array = (mp_ptr) flint_malloc(1024*sizeof(mp_limb_t));
-   flint_rand_t state;
-   flint_randinit(state);
+   FLINT_TEST_INIT(state);
+   
    
    for (i = 0; i < count; i++)
    {
       int j;
       d = n_randtest(state);
-      if (d == 0UL) d++;
+      if (d == UWORD(0)) d++;
 
       dpre = n_precompute_inverse(d);
 
@@ -71,7 +57,7 @@ int main(void)
    
    prof_repeat(&min, &max, sample, NULL);
    
-   printf("mod2_precomp min time is %.3f cycles, max time is %.3f cycles\n", 
+   flint_printf("mod2_precomp min time is %.3f cycles, max time is %.3f cycles\n", 
            (min/(double)FLINT_CLOCK_SCALE_FACTOR)/10000.0, (max/(double)FLINT_CLOCK_SCALE_FACTOR)/10000.0);
 
    return 0;

@@ -1,53 +1,34 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011, 2012 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <mpir.h>
-#include "flint.h"
 #include "ulong_extras.h"
 #include "long_extras.h"
-#include "fmpq.h"
 #include "padic.h"
 
 int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("get_str... ");
+    flint_printf("get_str... ");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpz_t p;
-        long N;
+        slong N;
         padic_ctx_t ctx;
 
         padic_t x;
@@ -55,39 +36,40 @@ main(void)
 
         char *s, *t;
 
-        fmpz_init(p);
-        fmpz_set_ui(p, n_randprime(state, 5, 1));
-        N = z_randint(state, 50) + 1;
-        padic_ctx_init(ctx, p, N, PADIC_TERSE);
+        fmpz_init_set_ui(p, n_randtest_prime(state, 0));
+        N = n_randint(state, PADIC_TEST_PREC_MAX - PADIC_TEST_PREC_MIN) 
+            + PADIC_TEST_PREC_MIN;
+        padic_ctx_init(ctx, p, FLINT_MAX(0, N-10), FLINT_MAX(0, N+10), PADIC_TERSE);
 
-        padic_init(x, ctx);
+        padic_init2(x, N);
         fmpq_init(y);
 
         padic_randtest(x, state, ctx);
-        _padic_get_fmpq(y, x, ctx);
+        padic_get_fmpq(y, x, ctx);
 
-        s = _padic_get_str(NULL, x, ctx);
+        s = padic_get_str(NULL, x, ctx);
         t = fmpq_get_str(NULL, 10, y);
 
         result = strcmp(s, t) == 0;
         if (!result)
         {
-            printf("FAIL:\n\n");
-            printf("x = "), _padic_print(x, ctx), printf("\n");
-            printf("y = "), fmpq_clear(y), printf("\n");
+            flint_printf("FAIL:\n\n");
+            flint_printf("x = "), padic_print(x, ctx), flint_printf("\n");
+            flint_printf("y = "), fmpq_print(y), flint_printf("\n");
             abort();
         }
 
-        free(s);
-        free(t);
-        _padic_clear(x);
+        flint_free(s);
+        flint_free(t);
+        padic_clear(x);
         fmpq_clear(y);
         padic_ctx_clear(ctx);
+        fmpz_clear(p);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return EXIT_SUCCESS;
 }
 

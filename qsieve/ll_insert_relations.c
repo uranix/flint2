@@ -1,38 +1,21 @@
-/*============================================================================
+/*
+    Copyright (C) 2006, 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-===============================================================================*/
-/******************************************************************************
-
- linear_algebra.c
- 
- Routines for dealing with building the final F_2 matrix
-
- (C) 2006, 2011 William Hart
-
-******************************************************************************/
-
-#undef ulong /* avoid clash with stdlib */
+#define ulong ulongxx /* interferes with system includes */
 #include <stdlib.h>
 #include <stdio.h>
-#define ulong unsigned long 
+#undef ulong
+#define ulong mp_limb_t 
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "qsieve.h"
@@ -50,7 +33,7 @@ int qsieve_ll_relations_cmp(const void * a, const void * b)
 {
   la_col_t * ra = *((la_col_t **) a);
   la_col_t * rb = *((la_col_t **) b);
-  long point;
+  slong point;
 
   if (ra->weight > rb->weight) return 1;
   else if (ra->weight < rb->weight) return -1;
@@ -73,7 +56,7 @@ int qsieve_ll_relations_cmp2(const void * a, const void * b)
 {
   la_col_t * ra = (la_col_t *) a;
   la_col_t * rb = (la_col_t *) b;
-  long point;
+  slong point;
 
   if (ra->weight > rb->weight) return 1;
   else if (ra->weight < rb->weight) return -1;
@@ -101,44 +84,44 @@ int qsieve_ll_relations_cmp2(const void * a, const void * b)
    
 ===========================================================================*/
 
-long qsieve_ll_merge_sort(qs_t qs_inf)
+slong qsieve_ll_merge_sort(qs_t qs_inf)
 {
    la_col_t * matrix = qs_inf->matrix;
-   long columns = qs_inf->columns;
+   slong columns = qs_inf->columns;
    la_col_t ** qsort_arr = qs_inf->qsort_arr;
-   long num_unmerged = qs_inf->num_unmerged;
-   long dups = 0;
+   slong num_unmerged = qs_inf->num_unmerged;
+   slong dups = 0;
    int comp;
-   long i;
+   slong i;
 
-   for (i = columns + num_unmerged - 1L; i >= dups; i--) 
+   for (i = columns + num_unmerged - WORD(1); i >= dups; i--) 
    {
       if (!columns) comp = -1;
       else if (!num_unmerged) comp = 1;
       else 
-         comp = qsieve_ll_relations_cmp2(matrix + columns - 1L, qsort_arr[num_unmerged - 1L]);
+         comp = qsieve_ll_relations_cmp2(matrix + columns - WORD(1), qsort_arr[num_unmerged - WORD(1)]);
       
       switch (comp)
       {
          case -1: 
          {
-            copy_col(matrix + i, qsort_arr[num_unmerged - 1L]);
-            clear_col(qsort_arr[num_unmerged - 1L]);
+            copy_col(matrix + i, qsort_arr[num_unmerged - WORD(1)]);
+            clear_col(qsort_arr[num_unmerged - WORD(1)]);
             num_unmerged--;
             break;
          }
          case 1: 
          {
-            copy_col(matrix + i, matrix + columns - 1L);
+            copy_col(matrix + i, matrix + columns - WORD(1));
             columns--;
             break;
          }
          case 0: 
          {
-            free_col(qsort_arr[num_unmerged - 1L]);
-            clear_col(qsort_arr[num_unmerged - 1L]);
+            free_col(qsort_arr[num_unmerged - WORD(1)]);
+            clear_col(qsort_arr[num_unmerged - WORD(1)]);
             num_unmerged--;
-            copy_col(matrix + i, matrix + columns - 1L);
+            copy_col(matrix + i, matrix + columns - WORD(1));
             columns--;
             dups++;
             break;
@@ -150,7 +133,7 @@ long qsieve_ll_merge_sort(qs_t qs_inf)
    
    if (dups)
    {
-      long i;
+      slong i;
       for (i = 0; i < columns; i++)
           copy_col(matrix + i, matrix + i + dups);
       
@@ -163,7 +146,7 @@ long qsieve_ll_merge_sort(qs_t qs_inf)
    qs_inf->num_unmerged = 0;
 
 #if (QS_DEBUG & 64)
-   printf("%ld new, %ld dups\n", columns, dups);
+   flint_printf("%wd new, %wd dups\n", columns, dups);
 #endif   
 
    return columns;
@@ -176,15 +159,15 @@ long qsieve_ll_merge_sort(qs_t qs_inf)
    
 ===========================================================================*/
 
-long qsieve_ll_merge_relations(qs_t qs_inf)
+slong qsieve_ll_merge_relations(qs_t qs_inf)
 {
-   const long num_unmerged = qs_inf->num_unmerged;
+   const slong num_unmerged = qs_inf->num_unmerged;
    la_col_t * unmerged = qs_inf->unmerged;
    la_col_t ** qsort_arr = qs_inf->qsort_arr;
    
    if (num_unmerged)
    {
-      long i;
+      slong i;
 
       for (i = 0; i < num_unmerged; i++)
          qsort_arr[i] = unmerged + i;
@@ -204,16 +187,16 @@ long qsieve_ll_merge_relations(qs_t qs_inf)
    
 ===========================================================================*/
 
-long qsieve_ll_insert_relation(qs_t qs_inf, fmpz_t Y)
+slong qsieve_ll_insert_relation(qs_t qs_inf, fmpz_t Y)
 {
    la_col_t * unmerged = qs_inf->unmerged;
-   long num_unmerged = qs_inf->num_unmerged;
-   long * small = qs_inf->small;
-   long num_factors = qs_inf->num_factors; 
+   slong num_unmerged = qs_inf->num_unmerged;
+   slong * small = qs_inf->small;
+   slong num_factors = qs_inf->num_factors; 
    fac_t * factor = qs_inf->factor; 
-   long * curr_rel = qs_inf->curr_rel;
-   long fac_num = 0; 
-   long i;
+   slong * curr_rel = qs_inf->curr_rel;
+   slong fac_num = 0; 
+   slong i;
 
    clear_col(unmerged + num_unmerged);
    

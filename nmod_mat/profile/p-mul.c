@@ -1,28 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright 2009 William Hart
     Copyright 2010 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +51,7 @@ void sample(void * arg, ulong count)
 
     prof_stop();
 
-    if (C->entries[0] == 5893479483L) abort();
+    if (C->entries[0] == WORD(5893479483)) abort();
 
     nmod_mat_clear(A);
     nmod_mat_clear(B);
@@ -76,13 +62,13 @@ int main(void)
 {
     double min_classical, min_strassen, max;
     mat_mul_t params;
-    long dim;
+    slong dim;
 
-    printf("nmod_mat_mul:\n");
+    flint_printf("nmod_mat_mul:\n");
 
     params.modulus = 40000;
 
-    for (dim = 2; dim <= 512; dim = (long) ((double) dim * 1.1) + 1)
+    for (dim = 2; dim <= 512; dim = (slong) ((double) dim * 1.1) + 1)
     {
         params.dim = dim;
 
@@ -92,7 +78,7 @@ int main(void)
         params.algorithm = 2;
         prof_repeat(&min_strassen, &max, sample, &params);
 
-        printf("dim = %ld, classical %.2f us strassen %.2f us\n", 
+        flint_printf("dim = %wd, classical %.2f us strassen %.2f us\n", 
             dim, min_classical, min_strassen);
     }
 

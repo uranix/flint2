@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <string.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -33,7 +19,7 @@
 
 void _fmpz_poly_mulhigh_kara_recursive(fmpz * out, const fmpz * pol1,
                                        const fmpz * pol2, fmpz * temp,
-                                       long length);
+                                       slong length);
 
 /*
    Multiplication using truncated karatsuba. Below length 7, classical 
@@ -47,10 +33,10 @@ void _fmpz_poly_mulhigh_kara_recursive(fmpz * out, const fmpz * pol1,
 
 void
 _fmpz_poly_mulhigh_kara_recursive(fmpz * out, const fmpz * pol1,
-                                  const fmpz * pol2, fmpz * temp, long length)
+                                  const fmpz * pol2, fmpz * temp, slong length)
 {
-    long m1 = length / 2;
-    long m2 = length - m1;
+    slong m1 = length / 2;
+    slong m2 = length - m1;
     int odd = (length & 1);
 
     if (length <= 6)
@@ -85,10 +71,10 @@ _fmpz_poly_mulhigh_kara_recursive(fmpz * out, const fmpz * pol1,
 /* Assumes poly1 and poly2 are not length 0. */
 void
 _fmpz_poly_mulhigh_karatsuba_n(fmpz * res, const fmpz * poly1,
-                               const fmpz * poly2, long len)
+                               const fmpz * poly2, slong len)
 {
     fmpz *temp;
-    long length, loglen = 0;
+    slong length, loglen = 0;
 
     if (len == 1)
     {
@@ -96,9 +82,9 @@ _fmpz_poly_mulhigh_karatsuba_n(fmpz * res, const fmpz * poly1,
         return;
     }
 
-    while ((1L << loglen) < len)
+    while ((WORD(1) << loglen) < len)
         loglen++;
-    length = (1L << loglen);
+    length = (WORD(1) << loglen);
 
     temp = _fmpz_vec_init(2 * length);
 
@@ -110,9 +96,9 @@ _fmpz_poly_mulhigh_karatsuba_n(fmpz * res, const fmpz * poly1,
 void
 fmpz_poly_mulhigh_karatsuba_n(fmpz_poly_t res,
                               const fmpz_poly_t poly1, const fmpz_poly_t poly2,
-                              long len)
+                              slong len)
 {
-    long lenr = poly1->length + poly2->length - 1;
+    slong lenr = poly1->length + poly2->length - 1;
     int clear1 = 0, clear2 = 0;
     fmpz *pol1, *pol2;
 

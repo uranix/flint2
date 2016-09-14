@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009, 2010, 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009, 2010, 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 *******************************************************************************
 
@@ -67,14 +53,14 @@ int fmpz_poly_q_is_canonical(const fmpz_poly_q_t op)
 *******************************************************************************
 
 void fmpz_poly_q_randtest(fmpz_poly_q_t poly, flint_rand_t state,
-                          long len1, mp_bitcnt_t bits1, 
-                          long len2, mp_bitcnt_t bits2)
+                          slong len1, mp_bitcnt_t bits1, 
+                          slong len2, mp_bitcnt_t bits2)
 
     Sets \code{poly} to a random rational function.
 
 void fmpz_poly_q_randtest_not_zero(fmpz_poly_q_t poly, flint_rand_t state, 
-                                   long len1, mp_bitcnt_t bits1, 
-                                   long len2, mp_bitcnt_t bits2)
+                                   slong len1, mp_bitcnt_t bits1, 
+                                   slong len2, mp_bitcnt_t bits2)
 
     Sets \code{poly} to a random non-zero rational function.
 
@@ -88,9 +74,9 @@ void fmpz_poly_q_set(fmpz_poly_q_t rop, const fmpz_poly_q_t op)
 
     Sets the element \code{rop} to the same value as the element \code{op}.
 
-void fmpz_poly_q_set_si(fmpz_poly_q_t rop, long op)
+void fmpz_poly_q_set_si(fmpz_poly_q_t rop, slong op)
 
-    Sets the element \code{rop} to the value given by the \code{long} 
+    Sets the element \code{rop} to the value given by the \code{slong} 
     \code{op}.
 
 void fmpz_poly_q_swap(fmpz_poly_q_t op1, fmpz_poly_q_t op2)
@@ -169,10 +155,10 @@ void fmpz_poly_q_submul(fmpz_poly_q_t rop,
 *******************************************************************************
 
 void fmpz_poly_q_scalar_mul_si(fmpz_poly_q_t rop, 
-                               const fmpz_poly_q_t op, long x)
+                               const fmpz_poly_q_t op, slong x)
 
     Sets \code{rop} to the product of the rational function \code{op} 
-    and the \code{long} integer $x$.
+    and the \code{slong} integer $x$.
 
 void fmpz_poly_q_scalar_mul_mpz(fmpz_poly_q_t rop, 
                                 const fmpz_poly_q_t op, const mpz_t x)
@@ -187,10 +173,10 @@ void fmpz_poly_q_scalar_mul_mpq(fmpz_poly_q_t rop,
     and the \code{mpq_t} rational $x$.
 
 void fmpz_poly_q_scalar_div_si(fmpz_poly_q_t rop, 
-                               const fmpz_poly_q_t op, long x)
+                               const fmpz_poly_q_t op, slong x)
 
     Sets \code{rop} to the quotient of the rational function \code{op} 
-    and the \code{long} integer $x$.
+    and the \code{slong} integer $x$.
 
 void fmpz_poly_q_scalar_div_mpz(fmpz_poly_q_t rop, 
                                 const fmpz_poly_q_t op, const mpz_t x)
@@ -261,7 +247,7 @@ int fmpz_poly_q_evaluate(mpq_t rop, const fmpz_poly_q_t f, const mpq_t a)
 
     Input and output
 
-    The following three methods enable users to construct elements of type 
+    The following three methods enable users to construct elements of type\\ 
     \code{fmpz_poly_q_t} from strings or to obtain string representations of 
     such elements.
 

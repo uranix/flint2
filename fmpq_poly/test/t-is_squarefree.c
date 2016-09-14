@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2010 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq_poly.h"
@@ -36,15 +22,15 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("is_squarefree....");
+    flint_printf("is_squarefree....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check that polynomials of degree <= 1 are square-free */
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < 50 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t f;
 
@@ -54,8 +40,8 @@ main(void)
         result = (fmpq_poly_is_squarefree(f));
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpq_poly_debug(f), printf("\n");
+            flint_printf("FAIL:\n");
+            fmpq_poly_debug(f), flint_printf("\n");
             abort();
         }
 
@@ -63,7 +49,7 @@ main(void)
     }
 
     /* Check that a^2 f is not square-free */
-    for (i = 0; i < 200; i++)
+    for (i = 0; i < 20 * flint_test_multiplier(); i++)
     {
         fmpq_poly_t a, f;
 
@@ -83,8 +69,8 @@ main(void)
         result = (!fmpq_poly_is_squarefree(f));
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpq_poly_debug(f), printf("\n");
+            flint_printf("FAIL:\n");
+            fmpq_poly_debug(f), flint_printf("\n");
             abort();
         }
 
@@ -92,8 +78,44 @@ main(void)
         fmpq_poly_clear(f);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    /* Check that f + N*(x^M + 1) is square-free, for N >> f, M > deg(f) */
+    for (i = 0; i < 20 * flint_test_multiplier(); i++)
+    {
+        fmpq_poly_t a, f;
+        fmpz_t N;
+
+        fmpq_poly_init(a);
+        fmpq_poly_set_coeff_si(a, 0, WORD(1));
+        fmpq_poly_set_coeff_si(a, n_randint(state, 20), WORD(1));
+        if (a->length < 2)
+        {
+            fmpq_poly_clear(a);
+            continue;
+        }
+        fmpq_poly_init(f);
+        fmpq_poly_randtest(f, state, a->length - 2, 40);
+
+        fmpz_init_set_ui(N, UWORD(1));
+        fmpz_mul_2exp(N, N, 45 + a->length);
+
+        fmpq_poly_scalar_mul_fmpz(a, a, N);
+        fmpq_poly_add(f, a, f);
+
+        result = fmpq_poly_is_squarefree(f);
+        if (!result)
+        {
+            flint_printf("FAIL:\n");
+            fmpq_poly_debug(f), flint_printf("\n");
+            abort();
+        }
+
+        fmpq_poly_clear(a);
+        fmpq_poly_clear(f);
+        fmpz_clear(N);
+    }
+
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

@@ -1,31 +1,13 @@
-/*=============================================================================
-
-    longlong.h -- 64 bit arithetic
-
-    This file is free software; you can redistribute it and/or modify it 
-    under the terms of the GNU Lesser General Public License as published 
-    by the Free Software Foundation; either version 2.1 of the License, or 
-    (at your option) any later version.
-
-    This file is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-    License for more details.
-
-    You should have received a copy of the GNU Lesser General Public 
-    License along with this file; see the file COPYING.LIB.  If not, write 
-    to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
-    Boston, MA 02110-1301, USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 1991, 1992, 1993, 1994, 1996, 1997, 1999, 2000, 2001, 
-                  2002, 2003, 2004, 2005 Free Software Foundation, Inc.
-    Copyright (C) 2009 William Hart
-    Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 *******************************************************************************
 
@@ -46,7 +28,7 @@ smul_ppmm(high_prod, low_prod, multipler, multiplicand)
 udiv_qrnnd(quotient, remainder, high_numerator, low_numerator, denominator) 
 
     Divides an unsigned integer, composed by the limb integers 
-    \code{HIGH_NUMERATOR} and \code{LOW_NUMERATOR}, by \code{DENOMINATOR} 
+    \code{HIGH_NUMERATOR} and\\ \code{LOW_NUMERATOR}, by \code{DENOMINATOR} 
     and places the quotient in \code{QUOTIENT} and the remainder in 
     \code{REMAINDER}.  \code{HIGH_NUMERATOR} must be less than 
     \code{DENOMINATOR} for correct operation. 
@@ -73,7 +55,7 @@ add_ssaaaa(high_sum, low_sum, high_addend_1, low_addend_1,
                                                high_addend_2, low_addend_2) 
 
     Adds two limb integers, composed by \code{HIGH_ADDEND_1} and 
-    \code{LOW_ADDEND_1}, and \code{HIGH_ADDEND_2} and \code{LOW_ADDEND_2}, 
+    \code{LOW_ADDEND_1}, and\\ \code{HIGH_ADDEND_2} and \code{LOW_ADDEND_2}, 
     respectively.  The result is placed in \code{HIGH_SUM} and 
     \code{LOW_SUM}.  Overflow, i.e.\ carry out, is not stored anywhere, 
     and is lost.
@@ -88,9 +70,14 @@ sub_ddmmss(high_difference, low_difference, high_minuend, low_minuend,
 
     Subtracts two limb integers, composed by \code{HIGH_MINUEND_1} and 
     \code{LOW_MINUEND_1}, and \code{HIGH_SUBTRAHEND_2} and 
-    \code{LOW_SUBTRAHEND_2}, respectively.  The result is placed in 
+    \code{LOW_SUBTRAHEND_2}, respectively.  The result is placed in\\ 
     \code{HIGH_DIFFERENCE} and \code{LOW_DIFFERENCE}.  Overflow, i.e.\ 
     carry out is not stored anywhere, and is lost.
+
+byte_swap(x)
+
+    Swap the order of the bytes in the word $x$, i.e. most significant byte
+    becomes least significant byte, etc.
 
 invert_limb(invxl, xl)
 

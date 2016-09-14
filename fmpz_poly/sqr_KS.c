@@ -1,44 +1,30 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2008, 2009 William Hart
     Copyright (C) 2010, 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
 void
-_fmpz_poly_sqr_KS(fmpz *rop, const fmpz *op, long len)
+_fmpz_poly_sqr_KS(fmpz *rop, const fmpz *op, slong len)
 {
-    const long in_len = len;
+    const slong in_len = len;
     int neg;
-    long bits, limbs, loglen;
+    slong bits, limbs, loglen;
     mp_limb_t *arr, *arr3;
-    long sign = 0;
+    slong sign = 0;
 
     FMPZ_VEC_NORM(op, len);
 
@@ -84,7 +70,7 @@ _fmpz_poly_sqr_KS(fmpz *rop, const fmpz *op, long len)
 
 void fmpz_poly_sqr_KS(fmpz_poly_t rop, const fmpz_poly_t op)
 {
-    long len;
+    slong len;
 
     if (op->length == 0)
     {

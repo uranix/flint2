@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq.h"
@@ -34,10 +20,10 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
 
-    printf("inv....");
+    flint_printf("inv....");
     fflush(stdout);
 
     /* x = y * z */
@@ -68,13 +54,13 @@ main(void)
 
         if (!fmpq_equal(x, z))
         {
-            printf("FAIL: applying inv twice did not give back the input!\n");
+            flint_printf("FAIL: applying inv twice did not give back the input!\n");
             abort();
         }
 
         if (!fmpq_is_canonical(y) || !fmpq_is_canonical(x))
         {
-            printf("FAIL: result not canonical!\n");
+            flint_printf("FAIL: result not canonical!\n");
             abort();
         }
 
@@ -86,14 +72,14 @@ main(void)
 
         if (!mpq_equal(Y, YY) || !mpq_equal(Z, ZZ))
         {
-            printf("FAIL: fmpq_inv != mpq_inv\n");
-            printf("x = ");
+            flint_printf("FAIL: fmpq_inv != mpq_inv\n");
+            flint_printf("x = ");
             fmpq_print(x);
-            printf("\ny = ");
+            flint_printf("\ny = ");
             fmpq_print(y);
-            printf("\nz = ");
+            flint_printf("\nz = ");
             fmpq_print(z);
-            printf("\n");
+            flint_printf("\n");
             abort();
         }
 
@@ -126,7 +112,7 @@ main(void)
 
         if (!fmpq_is_canonical(x))
         {
-            printf("FAIL: result not canonical!\n");
+            flint_printf("FAIL: result not canonical!\n");
             abort();
         }
 
@@ -135,10 +121,10 @@ main(void)
 
         if (!mpq_equal(X, Y))
         {
-            printf("FAIL: fmpq_mul(x,x,y) != mpq_mul(X,X,Y)\n");
-            printf("x = ");
+            flint_printf("FAIL: fmpq_mul(x,x,y) != mpq_mul(X,X,Y)\n");
+            flint_printf("x = ");
             fmpq_print(x);
-            printf("\n");
+            flint_printf("\n");
             abort();
         }
 
@@ -148,9 +134,9 @@ main(void)
         mpq_clear(Y);
     }
 
-    flint_randclear(state);
+    
 
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

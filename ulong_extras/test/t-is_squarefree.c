@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,8 +19,8 @@ void check(mp_limb_t n, int s1, int s2)
 {
     if (s1 != s2)
     {
-        printf("FAIL:\n");
-        printf("%lu: got %d instead of %d\n", n, s1, s2); 
+        flint_printf("FAIL:\n");
+        flint_printf("%wu: got %d instead of %d\n", n, s1, s2); 
         abort();
     }
 }
@@ -43,7 +29,9 @@ int main(void)
 {
     int s, k;
 
-    printf("is_squarefree....");
+    FLINT_TEST_INIT(state);
+    
+    flint_printf("is_squarefree....");
     fflush(stdout);
 
     check(0, n_is_squarefree(0), 0);
@@ -73,11 +61,12 @@ int main(void)
 
     if (s != 6083)
     {
-        printf("FAIL:\n");
-        printf("expected %d squarefree numbers <= 10000 (got %d)\n", 6083, s);
+        flint_printf("FAIL:\n");
+        flint_printf("expected %d squarefree numbers <= 10000 (got %d)\n", 6083, s);
         abort();
     }
 
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

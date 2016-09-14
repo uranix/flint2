@@ -1,45 +1,31 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
 int main(void)
 {
    int i, result;
-   flint_rand_t state;
+   FLINT_TEST_INIT(state);
    
-   printf("remove....");
+   flint_printf("remove....");
    fflush(stdout);
  
-   flint_randinit(state);
+   
 
-   for (i = 0; i < 100000; i++) /* Test random numbers */
+   for (i = 0; i < 10000 * flint_test_multiplier(); i++) /* Test random numbers */
    {
       mp_limb_t n1, n2, orig_n;
       mpz_t d_n2, d_n1, d_p;
@@ -55,17 +41,17 @@ int main(void)
 
       for (j = 0; j < FLINT_NUM_PRIMES_SMALL/10; j++)
       {
-         mpz_set_ui(d_n1, n1);
-         mpz_set_ui(d_p, flint_primes_small[j]);
+         flint_mpz_set_ui(d_n1, n1);
+         flint_mpz_set_ui(d_p, flint_primes_small[j]);
          exp1 = n_remove(&n1, flint_primes_small[j]);
          exp2 = mpz_remove(d_n2, d_n1, d_p);
-         n2 = mpz_get_ui(d_n2);
+         n2 = flint_mpz_get_ui(d_n2);
 
          result = ((exp1 == exp2) && (n1 == n2));
          if (!result)
          {
-            printf("FAIL:\n");
-            printf("n = %lu, exp1 = %d, exp2 = %d, n1 = %lu, n2 = %lu, p = %d\n", orig_n, exp1, exp2, n1, n2, flint_primes_small[j]);
+            flint_printf("FAIL:\n");
+            flint_printf("n = %wu, exp1 = %d, exp2 = %d, n1 = %wu, n2 = %wu, p = %d\n", orig_n, exp1, exp2, n1, n2, flint_primes_small[j]);
             abort();
          }
       }
@@ -75,7 +61,7 @@ int main(void)
       mpz_clear(d_p);
    }
          
-   for (i = 0; i < 100000; i++) /* Test perfect powers */
+   for (i = 0; i < 10000 * flint_test_multiplier(); i++) /* Test perfect powers */
    {
       mp_limb_t n1, n2, orig_n, base;
       mpz_t d_n2, d_n1, d_p;
@@ -95,17 +81,17 @@ int main(void)
 
       for (j = 0; j < FLINT_NUM_PRIMES_SMALL/10; j++)
       {
-         mpz_set_ui(d_n1, n1);
-         mpz_set_ui(d_p, flint_primes_small[j]);
+         flint_mpz_set_ui(d_n1, n1);
+         flint_mpz_set_ui(d_p, flint_primes_small[j]);
          exp1 = n_remove(&n1, flint_primes_small[j]);
          exp2 = mpz_remove(d_n2, d_n1, d_p);
-         n2 = mpz_get_ui(d_n2);
+         n2 = flint_mpz_get_ui(d_n2);
 
          result = ((exp1 == exp2) && (n1 == n2));
          if (!result)
          {
-            printf("FAIL\n");
-            printf("n = %lu, exp1 = %d, exp2 = %d, n1 = %lu, n2 = %lu, p = %d\n", orig_n, exp1, exp2, n1, n2, flint_primes_small[j]);
+            flint_printf("FAIL\n");
+            flint_printf("n = %wu, exp1 = %d, exp2 = %d, n1 = %wu, n2 = %wu, p = %d\n", orig_n, exp1, exp2, n1, n2, flint_primes_small[j]);
             abort();
          }
       }
@@ -115,8 +101,8 @@ int main(void)
       mpz_clear(d_p);
    }
    
-   flint_randclear(state);
-
-   printf("PASS\n");
+   FLINT_TEST_CLEANUP(state);
+   
+   flint_printf("PASS\n");
    return 0;
 }

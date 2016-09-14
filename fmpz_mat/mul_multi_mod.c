@@ -1,48 +1,27 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
-#include "nmod_vec.h"
-#include "nmod_mat.h"
-#include "ulong_extras.h"
-
 
 void
 _fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B,
-    long bits)
+    mp_bitcnt_t bits)
 {
-    long i, j;
+    slong i, j, k;
 
     fmpz_comb_t comb;
     fmpz_comb_temp_t comb_temp;
 
-    long num_primes;
-    long primes_bits;
+    slong num_primes;
+    mp_bitcnt_t primes_bits;
     mp_limb_t * primes;
     mp_limb_t * residues;
 
@@ -65,7 +44,7 @@ _fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B,
 
     /* Initialize */
     primes = flint_malloc(sizeof(mp_limb_t) * num_primes);
-    primes[0] = n_nextprime(1UL << primes_bits, 0);
+    primes[0] = n_nextprime(UWORD(1) << primes_bits, 0);
     for (i = 1; i < num_primes; i++)
         primes[i] = n_nextprime(primes[i-1], 0);
 
@@ -85,19 +64,21 @@ _fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B,
     fmpz_comb_temp_init(comb_temp, comb);
 
     /* Calculate residues of A */
-    for (i = 0; i < A->r * A->c; i++)
-    {
-        fmpz_multi_mod_ui(residues, &A->entries[i], comb, comb_temp);
-        for (j = 0; j < num_primes; j++)
-            mod_A[j]->entries[i] = residues[j];
+    for (i = 0; i < A->r; i++)
+    {   for (j = 0; j < A->c; j++)
+        {   fmpz_multi_mod_ui(residues, &(A->rows[i][j]), comb, comb_temp);
+            for (k = 0; k < num_primes; k++)
+                mod_A[k]->rows[i][j] = residues[k];
+        }
     }
 
     /* Calculate residues of B */
-    for (i = 0; i < B->r * B->c; i++)
-    {
-        fmpz_multi_mod_ui(residues, &B->entries[i], comb, comb_temp);
-        for (j = 0; j < num_primes; j++)
-            mod_B[j]->entries[i] = residues[j];
+    for (i = 0; i < B->r; i++)
+    {   for (j = 0; j < B->c; j++)
+        {   fmpz_multi_mod_ui(residues, &B->rows[i][j], comb, comb_temp);
+            for (k = 0; k < num_primes; k++)
+                mod_B[k]->rows[i][j] = residues[k];
+        }
     }
 
     /* Multiply */
@@ -107,11 +88,12 @@ _fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B,
     }
 
     /* Chinese remaindering */
-    for (i = 0; i < C->r * C->c; i++)
-    {
-        for (j = 0; j < num_primes; j++)
-            residues[j] = mod_C[j]->entries[i];
-        fmpz_multi_CRT_ui(&C->entries[i], residues, comb, comb_temp, 1);
+    for (i = 0; i < C->r; i++)
+    {   for (j = 0; j < C->c; j++)
+        {   for (k = 0; k < num_primes; k++)
+                residues[k] = mod_C[k]->rows[i][j];
+            fmpz_multi_CRT_ui(&C->rows[i][j], residues, comb, comb_temp, 1);
+        }
     }
 
     /* Cleanup */
@@ -136,8 +118,8 @@ _fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B,
 void
 fmpz_mat_mul_multi_mod(fmpz_mat_t C, const fmpz_mat_t A, const fmpz_mat_t B)
 {
-    long A_bits;
-    long B_bits;
+    slong A_bits;
+    slong B_bits;
 
     A_bits = fmpz_mat_max_bits(A);
     B_bits = fmpz_mat_max_bits(B);

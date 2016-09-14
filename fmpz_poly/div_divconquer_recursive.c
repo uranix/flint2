@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-   
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -34,7 +20,7 @@
 
 void
 _fmpz_poly_div_divconquer_recursive(fmpz * Q, fmpz * temp, 
-                                    const fmpz * A, const fmpz * B, long lenB)
+                                    const fmpz * A, const fmpz * B, slong lenB)
 {
     if (lenB <= FLINT_DIV_DIVCONQUER_CUTOFF)
     {
@@ -42,8 +28,8 @@ _fmpz_poly_div_divconquer_recursive(fmpz * Q, fmpz * temp,
     }
     else
     {
-        const long n2 = lenB / 2;
-        const long n1 = lenB - n2;
+        const slong n2 = lenB / 2;
+        const slong n1 = lenB - n2;
 
         fmpz * q0 = Q;
         fmpz * q1 = Q + n2;
@@ -74,7 +60,7 @@ _fmpz_poly_div_divconquer_recursive(fmpz * Q, fmpz * temp,
            short product via Karatsuba
          */
 
-        _fmpz_poly_mul_KS(t, q1, n1, B, n2);
+        _fmpz_poly_mul(t, q1, n1, B, n2);
 
         /*
            If lenB is odd, set {h, n2} to {r1, n2} - {h, n2}, otherwise, to 
@@ -82,7 +68,7 @@ _fmpz_poly_div_divconquer_recursive(fmpz * Q, fmpz * temp,
                {A + lenB - 1, 1} + {x * r1, n2} - {h, n2}
          */
 
-        if (lenB & 1L)
+        if (lenB & WORD(1))
         {
             _fmpz_vec_sub(h, r1, h, n2);
         }
@@ -100,7 +86,7 @@ _fmpz_poly_div_divconquer_recursive(fmpz * Q, fmpz * temp,
            Note the bottom n2 - 1 coefficients of t are irrelevant
          */
 
-        t += (lenB & 1L);
+        t += (lenB & WORD(1));
         
         _fmpz_poly_div_divconquer_recursive(q0, temp + lenB, t, B + n1, n2);
     }

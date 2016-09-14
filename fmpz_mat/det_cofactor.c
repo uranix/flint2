@@ -1,34 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010,2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010,2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "fmpz_mat.h"
-
 
 void
 _fmpz_mat_det_cofactor_2x2(fmpz_t det, fmpz ** const x)
@@ -125,7 +106,7 @@ _fmpz_mat_det_cofactor_4x4(fmpz_t det, fmpz ** const x)
 void
 fmpz_mat_det_cofactor(fmpz_t det, const fmpz_mat_t A)
 {
-    long dim = A->r;
+    slong dim = A->r;
 
     switch (dim)
     {
@@ -135,7 +116,7 @@ fmpz_mat_det_cofactor(fmpz_t det, const fmpz_mat_t A)
         case 3:  _fmpz_mat_det_cofactor_3x3(det, A->rows); break;
         case 4:  _fmpz_mat_det_cofactor_4x4(det, A->rows); break;
         default:
-            printf("Exception: fmpz_mat_det_cofactor: dim > 4 not implemented");
-            abort();
+            flint_printf("Exception (fmpz_mat_det_cofactor). dim > 4 not implemented.");
+            flint_abort();
     }
 }

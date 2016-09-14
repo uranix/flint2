@@ -1,29 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 Fredrik Johansson
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
 
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 *******************************************************************************
 
@@ -40,17 +25,6 @@ void fmpq_clear(fmpq_t x)
 
     Clears the \code{fmpq_t} variable \code{x}. To use the variable again,
     it must be re-initialised with \code{fmpq_init}.
-
-fmpq * _fmpq_vec_init(long n)
-
-    Initialises a vector of \code{fmpq} values of length $n$ and sets
-    all values to 0. This is equivalent to generating a \code{fmpz} vector
-    of length $2n$ with \code{_fmpz_vec_init} and setting all denominators
-    to 1.
-
-void _fmpq_vec_clear(fmpq * vec, long n)
-
-    Frees an \code{fmpq} vector.
 
 *******************************************************************************
 
@@ -120,11 +94,11 @@ void fmpq_one(fmpq_t res)
 
 *******************************************************************************
 
-int fmpq_is_zero(fmpq_t res)
+int fmpq_is_zero(const fmpq_t res)
 
     Returns nonzero if \code{res} has value 0, and returns zero otherwise.
 
-int fmpq_is_one(fmpq_t res)
+int fmpq_is_one(const fmpq_t res)
 
     Returns nonzero if \code{res} has value $1$, and returns zero otherwise.
 
@@ -136,6 +110,14 @@ int fmpq_equal(const fmpq_t x, const fmpq_t y)
 int fmpq_sgn(const fmpq_t x)
 
     Returns the sign of the rational number $x$.
+
+int fmpq_cmp(const fmpq_t x, const fmpq_t y)
+
+    Returns negative if $x < y$, zero if $x = y$, and positive if $x > y$.
+
+int fmpq_cmp_ui(const fmpq_t x, ulong y)
+
+    Returns negative if $x < y$, zero if $x = y$, and positive if $x > y$.
 
 void fmpq_height(fmpz_t height, const fmpq_t x)
 
@@ -158,11 +140,16 @@ void fmpq_set_fmpz_frac(fmpq_t res, const fmpz_t p, const fmpz_t q)
     This is equivalent to assigning the numerator and denominator
     separately and calling \code{fmpq_canonicalise}.
 
-void fmpq_set_si(fmpq_t res, long p, ulong q);
+void fmpq_get_mpz_frac(mpz_t a, mpz_t b, fmpq_t c)
+
+    Sets \code{a}, \code{b} to the numerator and denominator of \code{c}
+    respectively.
+
+void fmpq_set_si(fmpq_t res, slong p, ulong q)
 
     Sets \code{res} to the canonical form of the fraction \code{p / q}.
 
-void _fmpq_set_si(fmpz_t rnum, fmpz_t rden, long p, ulong q);
+void _fmpq_set_si(fmpz_t rnum, fmpz_t rden, slong p, ulong q)
 
     Sets \code{(rnum, rden)} to the canonical form of the fraction
     \code{p / q}. \code{rnum} and \code{rden} may not be aliased.
@@ -171,6 +158,13 @@ void fmpq_set_mpq(fmpq_t dest, const mpq_t src)
 
     Sets the value of \code{dest} to that of the \code{mpq_t} variable
     \code{src}.
+
+void fmpq_init_set_mpz_frac_readonly(fmpq_t z, const mpz_t p, const mpz_t q)
+
+    Assuming \code{z} is an \code{fmpz_t} which will not be cleaned up,
+    this temporarily copies \code{p} and \code{q} into the numerator and
+    denominator of \code{z} for read only operations only. The user must not
+    run \code{fmpq_clear} on \code{z}.
 
 void fmpq_get_mpq(mpq_t dest, const fmpq_t src)
 
@@ -196,7 +190,7 @@ char * fmpq_get_str(char * str, int b, const fmpq_t x)
 
 void flint_mpq_init_set_readonly(mpq_t z, const fmpq_t f)
 
-    Sets the unitialised \code{mpq_t} $z$ to the value of the 
+    Sets the uninitialised \code{mpq_t} $z$ to the value of the 
     readonly \code{fmpq_t} $f$.
 
     Note that it is assumed that $f$ does not change during 
@@ -259,27 +253,39 @@ void fmpq_clear_readonly(fmpq_t f)
 
 *******************************************************************************
 
-void fmpq_fprint(FILE * file, const fmpq_t x)
+int fmpq_fprint(FILE * file, const fmpq_t x)
 
     Prints \code{x} as a fraction to the stream \code{file}.   
     The numerator and denominator are printed verbatim as integers, 
     with a forward slash (/) printed in between.
 
-void _fmpq_fprint(FILE * file, fmpz_t num, fmpz_t den)
+    In case of success, returns a positive number. In case of failure,
+    returns a non-positive number.
+
+int _fmpq_fprint(FILE * file, const fmpz_t num, const fmpz_t den)
 
     Does the same thing as \code{fmpq_fprint}, but for numerator
     and denominator given explicitly as \code{fmpz_t} variables. 
 
-void fmpq_print(const fmpq_t x)
+    In case of success, returns a positive number. In case of failure,
+    returns a non-positive number.
+
+int fmpq_print(const fmpq_t x)
 
     Prints \code{x} as a fraction. The numerator and denominator are
     printed verbatim as integers, with a forward slash (/) printed in
     between.
 
-void _fmpq_print(fmpz_t num, fmpz_t den)
+    In case of success, returns a positive number. In case of failure,
+    returns a non-positive number.
+
+int _fmpq_print(const fmpz_t num, const fmpz_t den)
 
     Does the same thing as \code{fmpq_print}, but for numerator
     and denominator given explicitly as \code{fmpz_t} variables. 
+
+    In case of success, returns a positive number. In case of failure,
+    returns a non-positive number.
 
 *******************************************************************************
 
@@ -359,7 +365,34 @@ void _fmpq_div(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num,
     difference, product or quotient respectively of the fractions
     represented by \code{(op1num, op1den)} and \code{(op2num, op2den)}.
     Aliasing between any combination of the variables is allowed,
-    as long as no numerator is aliased with a denominator.
+    whilst no numerator is aliased with a denominator.
+
+void _fmpq_add_si(fmpz_t rnum, fmpz_t rden, const fmpz_t p, 
+                                                       const fmpz_t q, slong r)
+
+void _fmpq_sub_si(fmpz_t rnum, fmpz_t rden, const fmpz_t p, 
+                                                       const fmpz_t q, slong r)
+    
+void _fmpq_add_fmpz(fmpz_t rnum, fmpz_t rden, const fmpz_t p, 
+                                                const fmpz_t q, const fmpz_t r)
+
+void _fmpq_sub_fmpz(fmpz_t rnum, fmpz_t rden, const fmpz_t p, 
+                                                const fmpz_t q, const fmpz_t r)
+
+    Sets \code{(rnum, rden)} to the canonical form of the sum or difference
+    respectively of the fractions represented by \code{(p, q)} and
+    \code{(r, 1)}. Numerators may not be aliased with denominators.
+
+void fmpq_add_si(fmpq_t res, const fmpq_t op1, slong c)
+
+void fmpq_sub_si(fmpq_t res, const fmpq_t op1, slong c)
+
+void fmpq_add_fmpz(fmpq_t res, const fmpq_t op1, const fmpz_t c);
+
+void fmpq_sub_fmpz(fmpq_t res, const fmpq_t op1, const fmpz_t c);
+
+   Sets \code{res} to the sum or difference respectively, of the fraction 
+   \code{op1} and the integer $c$.
 
 void fmpq_addmul(fmpq_t res, const fmpq_t op1, const fmpq_t op2)
 
@@ -379,7 +412,7 @@ void _fmpq_submul(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num,
     \code{(rnum, rden)} + \code{(op1num, op1den)} * \code{(op2num, op2den)} or
     \code{(rnum, rden)} - \code{(op1num, op1den)} * \code{(op2num, op2den)}
     respectively. Aliasing between any combination of the variables is allowed,
-    as long as no numerator is aliased with a denominator.
+    whilst no numerator is aliased with a denominator.
 
 void fmpq_inv(fmpq_t dest, const fmpq_t src)
 
@@ -387,12 +420,12 @@ void fmpq_inv(fmpq_t dest, const fmpq_t src)
     form, assuming that \code{src} is already in canonical form.
 
 void _fmpq_pow_si(fmpz_t rnum, fmpz_t rden, 
-                  const fmpz_t opnum, const fmpz_t opden, long e);
+                  const fmpz_t opnum, const fmpz_t opden, slong e);
 
-void fmpq_pow_si(fmpq_t res, const fmpq_t op, long e);
+void fmpq_pow_si(fmpq_t res, const fmpq_t op, slong e);
 
     Sets \code{res} to \code{op} raised to the power~$e$, where~$e$ 
-    is a \code{signed long}.  If $e$ is $0$ and \code{op} is $0$, then 
+    is a \code{slong}.  If $e$ is $0$ and \code{op} is $0$, then 
     \code{res} will be set to $1$.
 
 void fmpq_mul_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x)
@@ -413,13 +446,29 @@ void fmpq_div_2exp(fmpq_t res, const fmpq_t x, mp_bitcnt_t exp)
 
     Sets \code{res} to \code{x} divided by \code{2^exp}.
 
+_fmpq_gcd(fmpz_t rnum, fmpz_t rden, const fmpz_t p, const fmpz_t q,
+                                                const fmpz_t r, const fmpz_t s)
+
+    Set \code{(rnum, rden)} to the gcd of \code{(p, q)} and \code{(r, s)}
+    which we define to be the canonicalisation of gcd$(ps, qr)/(qs)$. (This is
+    apparently Euclid's original definition and is stable under scaling of
+    numerator and denominator. It also agrees with the gcd on the integers.
+    Note that it does not agree with gcd as defined in \code{fmpq_poly}.)
+    This definition agrees with the result as output by Sage and Pari/GP.
+
+fmpq_gcd(fmpq_t res, const fmpq_t op1, const fmpq_t op2)
+
+    Set \code{res} to the gcd of \code{op1} and \code{op2}. See the low
+    level function \code{_fmpq_gcd} for our definition of gcd.
+
 *******************************************************************************
 
     Modular reduction and rational reconstruction
 
 *******************************************************************************
 
-int _fmpq_mod_fmpz(fmpz_t res, fmpz_t num, fmpz_t den, fmpz_t mod)
+int _fmpq_mod_fmpz(fmpz_t res,
+        const fmpz_t num, const fmpz_t den, const fmpz_t mod)
 
 int fmpq_mod_fmpz(fmpz_t res, const fmpq_t x, const fmpz_t mod)
 
@@ -532,7 +581,7 @@ void fmpq_next_signed_calkin_wilf(fmpq_t res, const fmpq_t x)
 
 *******************************************************************************
 
-long fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, long n)
+slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, slong n)
 
     Generates up to $n$ terms of the (simple) continued fraction expansion
     of $x$, writing the coefficients to the vector $c$ and the remainder $r$
@@ -561,7 +610,7 @@ long fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, long n)
     This function implements a simple algorithm, performing repeated
     divisions. The running time is quadratic.
 
-void fmpq_set_cfrac(fmpq_t x, const fmpz * c, long n)
+void fmpq_set_cfrac(fmpq_t x, const fmpz * c, slong n)
 
     Sets $x$ to the value of the continued fraction
 
@@ -578,7 +627,7 @@ void fmpq_set_cfrac(fmpq_t x, const fmpz * c, long n)
     This product is split in half recursively to balance the size
     of the coefficients.
 
-long fmpq_cfrac_bound(const fmpq_t x)
+slong fmpq_cfrac_bound(const fmpq_t x)
 
     Returns an upper bound for the number of terms in the continued
     fraction expansion of $x$. The computed bound is not necessarily sharp.
@@ -589,60 +638,115 @@ long fmpq_cfrac_bound(const fmpq_t x)
 
 *******************************************************************************
 
-    Summation
+    Special functions
 
 *******************************************************************************
 
-void fmpq_bsplit_init(fmpq_bsplit_t s)
+void _fmpq_harmonic_ui(fmpz_t num, fmpz_t den, ulong n)
 
-    Initialises the variable $s$ representing a partial sum
-    of a series of rational numbers computed using binary splitting.
-    The algorithm is described in \cite{HaiPap1998}.
+void fmpq_harmonic_ui(fmpq_t x, ulong n)
 
-void fmpq_bsplit_clear(fmpq_bsplit_t s);
+    Computes the harmonic number $H_n = 1 + 1/2 + 1/3 + \dotsb + 1/n$.
+    Table lookup is used for $H_n$ whose numerator and denominator 
+    fit in single limb. For larger $n$, a divide and conquer strategy is used.
 
-    Frees the binary splitting variable $s$.
+*******************************************************************************
 
-void fmpq_bsplit_get_fmpq(fmpq_t x, const fmpq_bsplit_t s)
+    Dedekind sums
 
-    Sets $x$ to the value of the sum $s(0,n)$ represented by $s$,
-    reduced to a single fraction in canonical form.
+    Most of the definitions and relations used in the following section
+    are given by Apostol \cite{Apostol1997}. The Dedekind sum $s(h,k)$ is
+    defined for all integers $h$ and $k$ as
 
-void fmpq_bsplit_get_mpfr(mpfr_t x, const fmpq_bsplit_t s)
+        $$s(h,k) = \sum_{i=1}^{k-1} \left(\left(\frac{i}{k}\right)\right)
+                                    \left(\left(\frac{hi}{k}\right)\right)$$
 
-    Sets $x$ to a numerical approximation of the sum $s$. To improve
-    performance, the final fraction is computed using floating-point
-    multiplications and divisions, possibly resulting in 3-4 bits
-    of roundoff error.
+    where 
 
-void fmpq_bsplit_sum_pq(fmpq_bsplit_t s, const fmpq * pq, long n1, long n2)
+        $$((x))=\begin{cases}
+            x-\lfloor x\rfloor-1/2 &\mbox{if }
+                x\in\mathbf{Q}\setminus\mathbf{Z}\\
+            0 &\mbox{if }x\in\mathbf{Z}.
+            \end{cases}$$
 
-    With $n_1 = 0$ and $n_2 = n$, computes
+    If $0 < h < k$ and $(h,k) = 1$, this reduces to
 
-    $$s(0,n) = \sum_{k=0}^{n} \frac{a_k}{b_k}
-            \left( \sum_{i=0}^k \frac{c_i}{d_i} \right)
-            \left( \prod_{i=0}^k \frac{p_i}{q_i} \right)$$
+        $$s(h,k) = \sum_{i=1}^{k-1} \frac{i}{k}
+            \left(\frac{hi}{k}-\left\lfloor\frac{hi}{k}\right\rfloor
+            -\frac{1}{2}\right).$$
 
-    using binary splitting. With $0 \le n_1 \le n_2 \le n$, computes
-    the content of the sum corresponding to that interval.
+    The main formula for evaluating the series above is the following.
+    Letting $r_0 = k$, $r_1 = h$, $r_2, r_3, \ldots, r_n, r_{n+1} = 1$
+    be the remainder sequence in the Euclidean algorithm for
+    computing GCD of $h$ and $k$, 
 
-void fmpq_bsplit_sum_abpq(fmpq_bsplit_t s,
-        const fmpq * ab, const fmpq * pq, long n1, long n2)
+        $$s(h,k) = \frac{1-(-1)^n}{8} - \frac{1}{12} \sum_{i=1}^{n+1}
+            (-1)^i \left(\frac{1+r_i^2+r_{i-1}^2}{r_i r_{i-1}}\right).$$
 
-    With $n_1 = 0$ and $n_2 = n$, computes
+    Writing $s(h,k) = p/q$, some useful properties employed are
+    $|s| < k / 12$, $q | 6k$ and $2|p| < k^2$.
 
-    $$s(0,n) = \sum_{k=0}^{n} \frac{a_k}{b_k}
-            \left( \prod_{i=0}^k \frac{p_i}{q_i} \right)$$
+*******************************************************************************
 
-    using binary splitting. With $0 \le n_1 \le n_2 \le n$, computes
-    the content of the sum corresponding to that interval.
+void fmpq_dedekind_sum_naive(fmpq_t s, const fmpz_t h, const fmpz_t k)
 
-void fmpq_bsplit_sum_pq(fmpq_bsplit_t s,
-        const fmpq * ab, const fmpq * cd, const fmpq * pq, long n1, long n2)
+    Computes $s(h,k)$ for arbitrary $h$ and $k$ using a straightforward
+    implementation of the defining sum using \code{fmpz} arithmetic.
+    This function is slow except for very small $k$ and is mainly
+    intended to be used for testing purposes.
 
-    With $n_1 = 0$ and $n_2 = n$, computes
+double fmpq_dedekind_sum_coprime_d(double h, double k)
 
-    $$s(0,n) = \sum_{k=0}^{n} \prod_{i=0}^k \frac{p_i}{q_i}$$
+    Returns an approximation of $s(h,k)$ computed by evaluating the
+    remainder sequence sum using double-precision arithmetic.
+    Assumes that $0 < h < k$ and $(h,k) = 1$, and that $h$, $k$ and
+    their remainders can be represented exactly as doubles, e.g.
+    $k < 2^{53}$.
 
-    using binary splitting. With $0 \le n_1 \le n_2 \le n$, computes
-    the content of the sum corresponding to that interval.
+    We give a rough error analysis with IEEE double precision arithmetic,
+    assuming $2 k^2 < 2^{53}$. By assumption, the terms in the sum evaluate
+    exactly apart from the division. Thus each term is bounded in magnitude
+    by $2k$ and its absolute error is bounded by $k 2^{-52}$.
+    By worst-case analysis of the Euclidean algorithm, we also know that
+    no more than 40 terms will be added.
+
+    It follows that the absolute error is at most $C k 2^{-53}$ for
+    some constant $C$. If we multiply the output by $6 k$ in order
+    to obtain an integer numerator, the order of magnitude of the error
+    is around $6 C k^2 2^{-53}$, so rounding to the nearest integer gives
+    a correct numerator whenever $k < 2^{26-d}$ for some small number of
+    guard bits $d$. A computation has shown that $d = 5$ is sufficient,
+    i.e. this function can be used for exact computation when
+    $k < 2^{21} \approx 2 \times 10^6$. This bound can likely be improved.
+
+void fmpq_dedekind_sum_coprime_large(fmpq_t s, const fmpz_t h, const fmpz_t k)
+
+    Computes $s(h,k)$ for $h$ and $k$ satisfying $0 \le h \le k$ and
+    $(h,k) = 1$. This function effectively evaluates the remainder
+    sequence sum using \code{fmpz} arithmetic, without optimising for
+    any special cases. To avoid rational arithmetic, we use
+    the integer algorithm of Knuth \cite{Knuth1977}.
+
+void fmpq_dedekind_sum_coprime(fmpq_t s, const fmpz_t h, const fmpz_t k)
+
+    Computes $s(h,k)$ for $h$ and $k$ satisfying $0 \le h \le k$
+    and $(h,k) = 1$.
+
+    This function calls \code{fmpq_dedekind_sum_coprime_d} if $k$ is small
+    enough for a double-precision estimate of the sum to yield a correct
+    numerator upon multiplication by $6k$ and rounding to the nearest integer.
+    Otherwise, it calls \code{fmpq_dedekind_sum_coprime_large}.
+
+void fmpq_dedekind_sum(fmpq_t s, const fmpz_t h, const fmpz_t k)
+
+    Computes $s(h,k)$ for arbitrary $h$ and $k$. If the caller
+    can guarantee $0 < h < k$ and $(h,k) = 1$ ahead of time, it is always
+    cheaper to call \code{fmpq_dedekind_sum_coprime}.
+
+    This function uses the following identities to reduce the general
+    case to the situation where $0 < h < k$ and $(h,k) = 1$:
+    If $k \le 2$ or $h = 0$, $s(h,k) = 0$.
+    If $h < 0$, $s(h,k) = -s(-h,k)$.
+    For any $q > 0$, $s(qh,qk) = s(h,k)$.
+    If $0 < k < h$ and $(h,k) = 1$,
+    $s(h,k) = (1+h(h-3k)+k^2) / (12hk) - t(k,h).$

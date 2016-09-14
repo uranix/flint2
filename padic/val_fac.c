@@ -1,37 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011, 2012 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
- 
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "padic.h"
 
-/* 
-    Returns $\ord_2(N!)$.
-
-    Note that since $N$ fits into an \code{unsigned long}, so does 
-    $\ord_2(N!)$ since $\ord_2{N!) \leq (N - 1) / (p - 1) = N - 1$.
- */
-ulong padic_val_fac_ui2(ulong N)
+ulong padic_val_fac_ui_2(ulong N)
 {
     ulong s = 0, t = N;
 
@@ -45,21 +25,17 @@ ulong padic_val_fac_ui2(ulong N)
     return s;
 }
 
-/* 
-    Returns $\ord_p(N!)$.
-
-    Note that since $N$ fits into an \code{unsigned long}, so does 
-    $\ord_p(N!)$ since $\ord_p{N!) \leq (N - 1) / (p - 1)$.
- */
-ulong padic_val_fac_ui(ulong N, const fmpz_t p)
+ulong padic_val_fac_ui(ulong N, const fmpz_t prime)
 {
-    if (fmpz_abs_fits_ui(p))
+    if (fmpz_abs_fits_ui(prime))
     {
-        ulong q = fmpz_get_ui(p), s = 0, t = N;
+        const ulong p = fmpz_get_ui(prime);
+
+        ulong s = 0, t = N;
 
         do
         {
-            t /= q;
+            t /= p;
             s += t;
         }
         while (t);
@@ -74,30 +50,27 @@ ulong padic_val_fac_ui(ulong N, const fmpz_t p)
 
 void padic_val_fac(fmpz_t rop, const fmpz_t op, const fmpz_t p)
 {
-    fmpz_t t, q, pow;
+    fmpz_t s, t;
 
-    if (fmpz_sgn(op) <= 0)
+    if (fmpz_sgn(op) < 0)
     {
-        printf("Exception (padic_val_fac).  op is non-positive.\n");
-        abort();
+        flint_printf("Exception (padic_val_fac).  op is negative.\n");
+        flint_abort();
     }
 
-    fmpz_init(t);
-    fmpz_init(q);
-    fmpz_init(pow);
-    fmpz_one(pow);
+    fmpz_init(s);
+    fmpz_init_set(t, op);
 
     do 
     {
-        fmpz_mul(pow, pow, p);
-        fmpz_fdiv_q(q, op, pow);
-        fmpz_add(t, t, q);
+        fmpz_fdiv_q(t, t, p);
+        fmpz_add(s, s, t);
     }
-    while (!fmpz_is_zero(q));
+    while (!fmpz_is_zero(t));
 
-    fmpz_swap(rop, t);
+    fmpz_swap(rop, s);
+
+    fmpz_clear(s);
     fmpz_clear(t);
-    fmpz_clear(q);
-    fmpz_clear(pow);
 }
 

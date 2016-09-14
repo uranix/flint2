@@ -1,40 +1,24 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010, 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010, 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 #include "fmpz_mod_poly.h"
 
-#define FMPZ_MOD_POLY_INV_NEWTON_CUTOFF  64
-
 void 
-_fmpz_mod_poly_inv_series_newton(fmpz * Qinv, const fmpz * Q, long n, 
+_fmpz_mod_poly_inv_series_newton(fmpz * Qinv, const fmpz * Q, slong n, 
                                  const fmpz_t cinv, const fmpz_t p)
 {
     if (n == 1)  /* {Q,1} * cinv == 1 mod (x) */
@@ -43,15 +27,15 @@ _fmpz_mod_poly_inv_series_newton(fmpz * Qinv, const fmpz * Q, long n,
     }
     else
     {
-        const long alloc = FLINT_MAX(n, 3 * FMPZ_MOD_POLY_INV_NEWTON_CUTOFF);
-        long *a, i, m;
+        const slong alloc = FLINT_MAX(n, 3 * FMPZ_MOD_POLY_INV_NEWTON_CUTOFF);
+        slong *a, i, m;
         fmpz *W;
 
         W = _fmpz_vec_init(alloc);
 
-        for (i = 1; (1L << i) < n; i++) ;
+        for (i = 1; (WORD(1) << i) < n; i++) ;
 
-        a = (long *) flint_malloc(i * sizeof(long));
+        a = (slong *) flint_malloc(i * sizeof(slong));
         a[i = 0] = n;
         while (n >= FMPZ_MOD_POLY_INV_NEWTON_CUTOFF)
             a[++i] = (n = (n + 1) / 2);
@@ -83,7 +67,7 @@ _fmpz_mod_poly_inv_series_newton(fmpz * Qinv, const fmpz * Q, long n,
 }
 
 void fmpz_mod_poly_inv_series_newton(fmpz_mod_poly_t Qinv, 
-    const fmpz_mod_poly_t Q, long n)
+    const fmpz_mod_poly_t Q, slong n)
 {
     const fmpz *p = &(Q->p);
     fmpz_t cinv;
@@ -97,11 +81,11 @@ void fmpz_mod_poly_inv_series_newton(fmpz_mod_poly_t Qinv,
     }
     else
     {
-        long i;
+        slong i;
         Qcopy = (fmpz *) flint_malloc(n * sizeof(fmpz));
         for (i = 0; i < Q->length; i++)
             Qcopy[i] = Q->coeffs[i];
-        mpn_zero((mp_ptr) Qcopy + i, n - i);
+        flint_mpn_zero((mp_ptr) Qcopy + i, n - i);
         Qalloc = 1;
     }
 

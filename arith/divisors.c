@@ -1,37 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include <mpir.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_poly.h"
-#include "fmpz_vec.h"
-#include "fmpz_factor.h"
 #include "arith.h"
-#include "ulong_extras.h"
+#include "fmpz.h"
 
 #define FLINT_NUM_TINY_DIVISORS FLINT_BITS
 
@@ -43,31 +22,31 @@ const int FLINT_TINY_DIVISORS_SIZE[FLINT_NUM_TINY_DIVISORS] = {
 };
 
 const ulong FLINT_TINY_DIVISORS_LOOKUP[FLINT_NUM_TINY_DIVISORS] = {
-    0x0UL,0x2UL,0x6UL,0xaUL,0x16UL,0x22UL,0x4eUL,0x82UL,0x116UL,0x20aUL,
-    0x426UL,0x802UL,0x105eUL,0x2002UL,0x4086UL,0x802aUL,0x10116UL,0x20002UL,
-    0x4024eUL,0x80002UL,0x100436UL,0x20008aUL,0x400806UL,0x800002UL,
-    0x100115eUL,0x2000022UL,0x4002006UL,0x800020aUL,0x10004096UL,0x20000002UL,
-    0x4000846eUL,0x80000002UL,
+    UWORD(0x0),UWORD(0x2),UWORD(0x6),0xaUL,UWORD(0x16),UWORD(0x22),0x4eUL,UWORD(0x82),UWORD(0x116),0x20aUL,
+    UWORD(0x426),UWORD(0x802),0x105eUL,UWORD(0x2002),UWORD(0x4086),0x802aUL,UWORD(0x10116),UWORD(0x20002),
+    0x4024eUL,UWORD(0x80002),UWORD(0x100436),0x20008aUL,UWORD(0x400806),UWORD(0x800002),
+    0x100115eUL,UWORD(0x2000022),UWORD(0x4002006),0x800020aUL,UWORD(0x10004096),UWORD(0x20000002),
+    0x4000846eUL,UWORD(0x80000002),
 #if FLINT64
-    0x100010116UL,0x20000080aUL,0x400020006UL,0x8000000a2UL,0x100004125eUL,
-    0x2000000002UL,0x4000080006UL,0x800000200aUL,0x10000100536UL,
-    0x20000000002UL,0x400002040ceUL,0x80000000002UL,0x100000400816UL,
-    0x20000000822aUL,0x400000800006UL,0x800000000002UL,0x100000101115eUL,
-    0x2000000000082UL,0x4000002000426UL,0x800000002000aUL,0x10000004002016UL,
-    0x20000000000002UL,0x4000000804024eUL,0x80000000000822UL,
-    0x100000010004196UL,0x20000000008000aUL,0x400000020000006UL,
-    0x800000000000002UL,0x100000004010947eUL,0x2000000000000002UL,
-    0x4000000080000006UL,0x800000000020028aUL
+    UWORD(0x100010116),0x20000080aUL,UWORD(0x400020006),UWORD(0x8000000a2),0x100004125eUL,
+    UWORD(0x2000000002),UWORD(0x4000080006),0x800000200aUL,UWORD(0x10000100536),
+    UWORD(0x20000000002),0x400002040ceUL,UWORD(0x80000000002),UWORD(0x100000400816),
+    0x20000000822aUL,UWORD(0x400000800006),UWORD(0x800000000002),0x100000101115eUL,
+    UWORD(0x2000000000082),UWORD(0x4000002000426),0x800000002000aUL,UWORD(0x10000004002016),
+    UWORD(0x20000000000002),0x4000000804024eUL,UWORD(0x80000000000822),
+    UWORD(0x100000010004196),0x20000000008000aUL,UWORD(0x400000020000006),
+    UWORD(0x800000000000002),0x100000004010947eUL,UWORD(0x2000000000000002),
+    UWORD(0x4000000080000006),0x800000000020028aUL
 #endif
 };
 
 
 void
-_fmpz_divisors(fmpz *res, long size, fmpz_factor_t factors)
+_arith_divisors(fmpz *res, slong size, fmpz_factor_t factors)
 {
-    long i;
-    long *exp = flint_malloc(sizeof(long) * factors->num);
-    long *exp_max = flint_malloc(sizeof(long) * factors->num);
+    slong i;
+    slong *exp = flint_malloc(sizeof(slong) * factors->num);
+    slong *exp_max = flint_malloc(sizeof(slong) * factors->num);
     fmpz *powers = _fmpz_vec_init(factors->num);
     fmpz_t d;
 
@@ -75,7 +54,7 @@ _fmpz_divisors(fmpz *res, long size, fmpz_factor_t factors)
     {
         exp[i] = 0;
         fmpz_set(powers + i, factors->p + i);
-        exp_max[i] = fmpz_get_ui(factors->exp + i);
+        exp_max[i] = factors->exp[i];
         fmpz_pow_ui(powers + i, powers + i, exp_max[i]);
     }
 
@@ -118,10 +97,10 @@ _fmpz_divisors(fmpz *res, long size, fmpz_factor_t factors)
 
 
 void
-_fmpz_divisors_tiny(fmpz_poly_t res, long n)
+_arith_divisors_tiny(fmpz_poly_t res, slong n)
 {
-    long size;
-    long i, k;
+    slong size;
+    slong i, k;
 
     size = FLINT_TINY_DIVISORS_SIZE[n];
 
@@ -129,7 +108,7 @@ _fmpz_divisors_tiny(fmpz_poly_t res, long n)
     i = 0;
     for (k = 1; k <= n; k++)
     {
-        if (FLINT_TINY_DIVISORS_LOOKUP[n] & (1UL << k))
+        if (FLINT_TINY_DIVISORS_LOOKUP[n] & (UWORD(1) << k))
         {
             fmpz_poly_set_coeff_si(res, i, k);
             i++;
@@ -140,9 +119,9 @@ _fmpz_divisors_tiny(fmpz_poly_t res, long n)
 }
 
 void
-fmpz_divisors(fmpz_poly_t res, const fmpz_t n)
+arith_divisors(fmpz_poly_t res, const fmpz_t n)
 {
-    long i, size, m;
+    slong i, size, m;
     fmpz_factor_t factors;
 
     if (!COEFF_IS_MPZ(*n))
@@ -150,7 +129,7 @@ fmpz_divisors(fmpz_poly_t res, const fmpz_t n)
         m = fmpz_get_si(n);
         if (-FLINT_NUM_TINY_DIVISORS < m && m < FLINT_NUM_TINY_DIVISORS)
         {
-            _fmpz_divisors_tiny(res, FLINT_ABS(m));
+            _arith_divisors_tiny(res, FLINT_ABS(m));
             return;
         }
     }
@@ -161,10 +140,10 @@ fmpz_divisors(fmpz_poly_t res, const fmpz_t n)
     /* TODO: check for overflow for huge n */
     size = 1;
     for (i = 0; i < factors->num; i++)
-        size *= fmpz_get_ui(factors->exp + i) + 1;
+        size *= factors->exp[i] + 1;
 
     fmpz_poly_fit_length(res, size);
-    _fmpz_divisors(res->coeffs, size, factors);
+    _arith_divisors(res->coeffs, size, factors);
     _fmpz_poly_set_length(res, size);
     _fmpz_vec_sort(res->coeffs, size);
 

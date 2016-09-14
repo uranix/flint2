@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "flint.h"
 #include "nmod_poly.h"
@@ -30,12 +16,12 @@
 #define E(j,k) nmod_poly_mat_entry(B,j,k)
 
 static __inline__ void
-nmod_poly_mat_swap_rows(nmod_poly_mat_t mat, long * perm, long r, long s)
+nmod_poly_mat_swap_rows(nmod_poly_mat_t mat, slong * perm, slong r, slong s)
 {
     if (r != s)
     {
         nmod_poly_struct * u;
-        long t;
+        slong t;
 
         if (perm)
         {
@@ -50,12 +36,12 @@ nmod_poly_mat_swap_rows(nmod_poly_mat_t mat, long * perm, long r, long s)
     }
 }
 
-long
-nmod_poly_mat_fflu(nmod_poly_mat_t B, nmod_poly_t den, long * perm,
+slong
+nmod_poly_mat_fflu(nmod_poly_mat_t B, nmod_poly_t den, slong * perm,
     const nmod_poly_mat_t A, int rank_check)
 {
     nmod_poly_t t;
-    long m, n, j, k, rank, r, pivot_row, pivot_col;
+    slong m, n, j, k, rank, r, pivot_row, pivot_col;
 
     if (nmod_poly_mat_is_empty(A))
     {

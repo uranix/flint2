@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010,2012 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010,2012 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_mat.h"
 #include "nmod_vec.h"
@@ -37,9 +23,9 @@ with op = -1, computes D = C - A*B
 
 static __inline__ void
 _nmod_mat_addmul_basic(mp_ptr * D, mp_ptr * const C, mp_ptr * const A,
-    mp_ptr * const B, long m, long k, long n, int op, nmod_t mod, int nlimbs)
+    mp_ptr * const B, slong m, slong k, slong n, int op, nmod_t mod, int nlimbs)
 {
-    long i, j;
+    slong i, j;
     mp_limb_t c;
 
     for (i = 0; i < m; i++)
@@ -60,11 +46,11 @@ _nmod_mat_addmul_basic(mp_ptr * D, mp_ptr * const C, mp_ptr * const A,
 
 static __inline__ void
 _nmod_mat_addmul_transpose(mp_ptr * D, const mp_ptr * C, const mp_ptr * A,
-    const mp_ptr * B, long m, long k, long n, int op, nmod_t mod, int nlimbs)
+    const mp_ptr * B, slong m, slong k, slong n, int op, nmod_t mod, int nlimbs)
 {
     mp_ptr tmp;
     mp_limb_t c;
-    long i, j;
+    slong i, j;
 
     tmp = flint_malloc(sizeof(mp_limb_t) * k * n);
 
@@ -93,10 +79,10 @@ _nmod_mat_addmul_transpose(mp_ptr * D, const mp_ptr * C, const mp_ptr * A,
 /* requires nlimbs = 1 */
 void
 _nmod_mat_addmul_packed(mp_ptr * D, const mp_ptr * C, const mp_ptr * A,
-    const mp_ptr * B, long M, long N, long K, int op, nmod_t mod, int nlimbs)
+    const mp_ptr * B, slong M, slong N, slong K, int op, nmod_t mod, int nlimbs)
 {
-    long i, j, k;
-    long Kpack;
+    slong i, j, k;
+    slong Kpack;
     int pack, pack_bits;
     mp_limb_t c, d, mask;
     mp_ptr tmp;
@@ -109,9 +95,9 @@ _nmod_mat_addmul_packed(mp_ptr * D, const mp_ptr * C, const mp_ptr * A,
     Kpack = (K + pack - 1) / pack;
 
     if (pack_bits == FLINT_BITS)
-        mask = -1UL;
+        mask = UWORD(-1);
     else
-        mask = (1UL << pack_bits) - 1;
+        mask = (UWORD(1) << pack_bits) - 1;
 
     tmp = _nmod_vec_init(Kpack * N);
 
@@ -176,7 +162,7 @@ void
 _nmod_mat_mul_classical(nmod_mat_t D, const nmod_mat_t C,
                                 const nmod_mat_t A, const nmod_mat_t B, int op)
 {
-    long m, k, n;
+    slong m, k, n;
     int nlimbs;
     nmod_t mod;
 

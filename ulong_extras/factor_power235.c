@@ -1,31 +1,19 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2008, 2009 William Hart
     Copyright (C) 2009 Thomas Boothby
 
-******************************************************************************/
+    This file is part of FLINT.
 
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#define ulong ulongxx /* interferes with standard libraries */
 #include <math.h>
-#include <mpir.h>
+#undef ulong
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
@@ -44,13 +32,13 @@ mp_limb_t n_factor_power235(ulong * exp, mp_limb_t n)
    char t;
    
    t = mod31[n%31];
-   if (!t) return 0UL;
+   if (!t) return UWORD(0);
 
    t &= mod44[n%44];
-   if (!t) return 0UL;
+   if (!t) return UWORD(0);
 
    t &= mod61[n%61];
-   if (!t) return 0UL;
+   if (!t) return UWORD(0);
 
    t&= mod63[n%63];
 
@@ -87,5 +75,5 @@ mp_limb_t n_factor_power235(ulong * exp, mp_limb_t n)
       }
    }
 
-   return 0UL;
+   return UWORD(0);
 }

@@ -1,31 +1,19 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
-
+#define ulong ulongxx /* prevent clash with standard library */
 #include <stdlib.h>
 #include <stdio.h>
-#include <mpir.h>
+#undef ulong
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
@@ -45,9 +33,15 @@ mp_limb_t n_factor_partial(n_factor_t * factors, mp_limb_t n, mp_limb_t limit, i
 
    cofactor = n_factor_trial_partial(factors, n, &prod, FLINT_FACTOR_TRIAL_PRIMES, limit);
    if (prod > limit) return cofactor;
+
+   if ( cofactor == 1 )
+   {
+      return cofactor;
+   }
+
    if (is_prime2(cofactor, proved)) 
    {
-      n_factor_insert(factors, cofactor, 1UL);
+      n_factor_insert(factors, cofactor, UWORD(1));
       return 1;
    }
 
@@ -55,7 +49,7 @@ mp_limb_t n_factor_partial(n_factor_t * factors, mp_limb_t n, mp_limb_t limit, i
    factors_left = 1;
    exp_arr[0] = 1;
 
-   cutoff = flint_primes[FLINT_FACTOR_TRIAL_PRIMES - 1]*flint_primes[FLINT_FACTOR_TRIAL_PRIMES - 1];
+   cutoff = FLINT_FACTOR_TRIAL_CUTOFF;
 
    while (factors_left > 0 && prod <= limit)
    {
@@ -84,8 +78,8 @@ mp_limb_t n_factor_partial(n_factor_t * factors, mp_limb_t n, mp_limb_t limit, i
                factors_left++;
 				} else
 				{
-               printf("Error : failed to factor %ld\n", n);
-               abort();
+               flint_printf("Error (n_factor_partial). Failed to factor %wd.\n", n);
+               flint_abort();
 				}
          } else
 			{

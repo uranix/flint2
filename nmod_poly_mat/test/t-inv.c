@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,20 +19,19 @@
 int
 main(void)
 {
-    flint_rand_t state;
-    long i;
+    slong i;
 
-    printf("inv....");
-    fflush(stdout);
+    FLINT_TEST_INIT(state);
 
-    flint_randinit(state);
+    flint_printf("inv....");
+    fflush(stdout);    
 
     /* Test aliasing */
-    for (i = 0; i < 400; i++)
+    for (i = 0; i < 40 * flint_test_multiplier(); i++)
     {
         nmod_poly_mat_t A, Ainv;
         nmod_poly_t den1, den2;
-        long n, deg;
+        slong n, deg;
         float density;
         int ns1, ns2, result;
         mp_limb_t mod;
@@ -76,9 +61,9 @@ main(void)
 
         if (!result)
         {
-            printf("FAIL (aliasing)!\n");
-            nmod_poly_mat_print(A, "x"); printf("\n");
-            nmod_poly_mat_print(Ainv, "x"); printf("\n");
+            flint_printf("FAIL (aliasing)!\n");
+            nmod_poly_mat_print(A, "x"); flint_printf("\n");
+            nmod_poly_mat_print(Ainv, "x"); flint_printf("\n");
             abort();
         }
 
@@ -89,11 +74,11 @@ main(void)
     }
 
     /* Check A^(-1) = A = 1 */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         nmod_poly_mat_t A, Ainv, B, Iden;
         nmod_poly_t den, det;
-        long n, deg;
+        slong n, deg;
         float density;
         int nonsingular;
         mp_limb_t mod;
@@ -118,7 +103,7 @@ main(void)
         {
             if (nonsingular == 0 || !nmod_poly_is_one(den))
             {
-                printf("FAIL: expected empty matrix to pass\n");
+                flint_printf("FAIL: expected empty matrix to pass\n");
                 abort();
             }
         }
@@ -127,7 +112,7 @@ main(void)
             if (!nmod_poly_equal(den, det))
             {
                 nmod_poly_neg(det, det);
-                printf("FAIL: den != det(A)\n");
+                flint_printf("FAIL: den != det(A)\n");
                 abort();
             }
 
@@ -137,14 +122,14 @@ main(void)
 
             if (!nmod_poly_mat_equal(B, Iden))
             {
-                printf("FAIL:\n");
-                printf("A:\n");
+                flint_printf("FAIL:\n");
+                flint_printf("A:\n");
                 nmod_poly_mat_print(A, "x");
-                printf("Ainv:\n");
+                flint_printf("Ainv:\n");
                 nmod_poly_mat_print(Ainv, "x");
-                printf("B:\n");
+                flint_printf("B:\n");
                 nmod_poly_mat_print(B, "x");
-                printf("den:\n");
+                flint_printf("den:\n");
                 nmod_poly_print(den);
                 abort();
             }
@@ -158,8 +143,8 @@ main(void)
         nmod_poly_mat_clear(Iden);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

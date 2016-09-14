@@ -1,33 +1,19 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "fmpz.h"
@@ -36,10 +22,10 @@ static void check(fmpz_t x, int expected)
 {
     if (fmpz_fits_si(x) != expected)
     {
-        printf("FAIL:\n\n");
-        printf("x = "), fmpz_print(x), printf("\n");
-        printf("fmpz_fits_si(x) = %d\n", fmpz_fits_si(x));
-        printf("LONG_MIN = %ld\n", LONG_MIN);
+        flint_printf("FAIL:\n\n");
+        flint_printf("x = "), fmpz_print(x), flint_printf("\n");
+        flint_printf("fmpz_fits_si(x) = %d\n", fmpz_fits_si(x));
+        flint_printf("WORD_MIN = %wd\n", WORD_MIN);
         abort();
     }
 }
@@ -47,10 +33,12 @@ static void check(fmpz_t x, int expected)
 int
 main(void)
 {
-    long i;
+    slong i;
     fmpz_t x;
 
-    printf("fits_si....");
+    FLINT_TEST_INIT(state);
+    
+    flint_printf("fits_si....");
     fflush(stdout);
 
     fmpz_init(x);
@@ -61,24 +49,24 @@ main(void)
     fmpz_set_si(x, COEFF_MAX);
     check(x, 1);
 
-    fmpz_set_si(x, LONG_MAX);
+    fmpz_set_si(x, WORD_MAX);
     check(x, 1);
 
-    fmpz_set_si(x, LONG_MIN);
+    fmpz_set_si(x, WORD_MIN);
     check(x, 1);
 
-    fmpz_set_ui(x, ULONG_MAX);
+    fmpz_set_ui(x, UWORD_MAX);
     check(x, 0);
 
-    fmpz_set_ui(x, ULONG_MAX);
+    fmpz_set_ui(x, UWORD_MAX);
     fmpz_neg(x, x);
     check(x, 0);
 
-    fmpz_set_si(x, LONG_MAX);
+    fmpz_set_si(x, WORD_MAX);
     fmpz_add_ui(x, x, 1);
     check(x, 0);
 
-    fmpz_set_si(x, LONG_MIN);
+    fmpz_set_si(x, WORD_MIN);
     fmpz_sub_ui(x, x, 1);
     check(x, 0);
 
@@ -88,12 +76,12 @@ main(void)
         fmpz_mul_2exp(x, x, i);
         check(x, i < FLINT_BITS - 1);
         fmpz_neg(x, x);
-        check(x, i < FLINT_BITS);  /* LONG_MIN fits */
+        check(x, i < FLINT_BITS);  /* WORD_MIN fits */
     }
 
     fmpz_clear(x);
 
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return EXIT_SUCCESS;
 }

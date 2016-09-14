@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "mpn_extras.h"
 #include "ulong_extras.h"
@@ -35,10 +21,11 @@ int main(void)
     int i, result;
     mpz_t a, b, c, g;
     gmp_randstate_t st;
-    flint_rand_t state;
-    long s1, s2;
+    slong s1, s2;
     
-    printf("gcd_full....");
+    FLINT_TEST_INIT(state);
+
+    flint_printf("gcd_full....");
     fflush(stdout);
 
     mpz_init(a);
@@ -46,7 +33,6 @@ int main(void)
     mpz_init(c);
     /* don't init g */
     gmp_randinit_default(st);
-    flint_randinit(state);
 
     for (i = 0; i < 10000; i++)
     {
@@ -72,12 +58,12 @@ int main(void)
 
        g->_mp_d = flint_malloc(FLINT_MIN(s1, s2)*sizeof(mp_limb_t));
 
-       g->_mp_size = mpn_gcd_full(g->_mp_d, a->_mp_d, a->_mp_size, b->_mp_d, b->_mp_size); 
+       g->_mp_size = flint_mpn_gcd_full(g->_mp_d, a->_mp_d, a->_mp_size, b->_mp_d, b->_mp_size); 
 
        result = (mpz_cmp(g, c) == 0);
        if (!result)
        {
-          printf("FAIL:\n");
+          flint_printf("FAIL:\n");
           gmp_printf("%Zd\n", g);
           gmp_printf("%Zd\n", c);
           abort();
@@ -91,8 +77,8 @@ int main(void)
     mpz_clear(c);
     /* don't clear g */
     gmp_randclear(st);
-    flint_randclear(state);
-
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

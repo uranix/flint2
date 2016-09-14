@@ -1,38 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include "flint.h"
-#include "ulong_extras.h"
-#include "fmpz.h"
+#include <math.h>
 #include "arith.h"
-#include "mpfr.h"
-#include "math.h"
-#include "fmpz_vec.h"
-#include "fmpz_poly.h"
 
 #define MAX_32BIT 58
 
@@ -99,10 +77,10 @@ static const int lookup_table[MAX_32BIT][28] =
 
 /* The coefficients in 2^d * \prod_{i=1}^d (x - cos(a_i)) are
    easily bounded using the binomial theorem. */
-static long
-magnitude_bound(long d)
+static slong
+magnitude_bound(slong d)
 {
-    long res;
+    slong res;
     fmpz_t t;
     fmpz_init(t);
     fmpz_bin_uiui(t, d, d / 2);
@@ -112,7 +90,7 @@ magnitude_bound(long d)
 }
 
 static void
-fmpz_mul_or_div_2exp(fmpz_t x, fmpz_t y, long s)
+fmpz_mul_or_div_2exp(fmpz_t x, fmpz_t y, slong s)
 {
     if (s >= 0)
         fmpz_mul_2exp(x, y, s);
@@ -124,7 +102,7 @@ fmpz_mul_or_div_2exp(fmpz_t x, fmpz_t y, long s)
 /* Balanced product of linear factors (x+alpha_i) using
    fixed-point arithmetic with prec bits */
 static void
-balanced_product(fmpz * c, fmpz * alpha, long len, long prec)
+balanced_product(fmpz * c, fmpz * alpha, slong len, slong prec)
 {
     if (len == 1)
     {
@@ -143,7 +121,7 @@ balanced_product(fmpz * c, fmpz * alpha, long len, long prec)
     else
     {
         fmpz *L, *R;
-        long i, m;
+        slong i, m;
 
         m = len / 2;
         L = _fmpz_vec_init(len + 2);
@@ -161,12 +139,14 @@ balanced_product(fmpz * c, fmpz * alpha, long len, long prec)
 }
 
 void
-_cyclotomic_cos_polynomial(fmpz * coeffs, long d, ulong n)
+_arith_cos_minpoly(fmpz * coeffs, slong d, ulong n)
 {
-    long i, j, prec, exp;
+    slong i, j;
     fmpz * alpha;
     fmpz_t half;
     mpfr_t t, u;
+    mp_bitcnt_t prec;
+    slong exp;
 
     if (n <= MAX_32BIT)
     {
@@ -178,31 +158,31 @@ _cyclotomic_cos_polynomial(fmpz * coeffs, long d, ulong n)
     /* Direct formula for odd primes > 3 */
     if (n_is_prime(n))
     {
-        long s = (n - 1) / 2;
+        slong s = (n - 1) / 2;
 
         switch (s % 4)
         {
             case 0:
-                fmpz_set_si(coeffs, 1L);
+                fmpz_set_si(coeffs, WORD(1));
                 fmpz_set_si(coeffs + 1, -s);
                 break;
             case 1:
-                fmpz_set_si(coeffs, 1L);
+                fmpz_set_si(coeffs, WORD(1));
                 fmpz_set_si(coeffs + 1, s + 1);
                 break;
             case 2:
-                fmpz_set_si(coeffs, -1L);
+                fmpz_set_si(coeffs, WORD(-1));
                 fmpz_set_si(coeffs + 1, s);
                 break;
             case 3:
-                fmpz_set_si(coeffs, -1L);
+                fmpz_set_si(coeffs, WORD(-1));
                 fmpz_set_si(coeffs + 1, -s - 1);
                 break;
         }
 
         for (i = 2; i <= s; i++)
         {
-            long b = (s - i) % 2;
+            slong b = (s - i) % 2;
             fmpz_mul2_uiui(coeffs + i, coeffs + i - 2, s+i-b, s+2-b-i);
             fmpz_divexact2_uiui(coeffs + i, coeffs + i, i, i-1);
             fmpz_neg(coeffs + i, coeffs + i);
@@ -242,7 +222,7 @@ _cyclotomic_cos_polynomial(fmpz * coeffs, long d, ulong n)
     /* Scale and round */
     for (i = 0; i < d + 1; i++)
     {
-        long r = d;
+        slong r = d;
         if ((n & (n - 1)) == 0)
             r--;
         fmpz_mul_2exp(coeffs + i, coeffs + i, r);
@@ -257,18 +237,18 @@ _cyclotomic_cos_polynomial(fmpz * coeffs, long d, ulong n)
 }
 
 void
-cyclotomic_cos_polynomial(fmpz_poly_t poly, ulong n)
+arith_cos_minpoly(fmpz_poly_t poly, ulong n)
 {
     if (n == 0)
     {
-        fmpz_poly_set_ui(poly, 1UL);
+        fmpz_poly_set_ui(poly, UWORD(1));
     }
     else
     {
-        long d = (n <= 2) ? 1 : n_euler_phi(n) / 2;
+        slong d = (n <= 2) ? 1 : n_euler_phi(n) / 2;
 
         fmpz_poly_fit_length(poly, d + 1);
-        _cyclotomic_cos_polynomial(poly->coeffs, d, n);
+        _arith_cos_minpoly(poly->coeffs, d, n);
         _fmpz_poly_set_length(poly, d + 1);
     }
 }

@@ -1,31 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
+    Copyright (C) 2011 Sebastian Pancratz
+    Copyright (C) 2014 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -106,10 +93,10 @@ do {                                                                \
     }                                                               \
 } while (0)
 
-static __inline__ void __mat_one(mp_ptr *M, long *lenM)
+static __inline__ void __mat_one(mp_ptr *M, slong *lenM)
 {
-    M[0][0] = 1L;
-    M[3][0] = 1L;
+    M[0][0] = WORD(1);
+    M[3][0] = WORD(1);
     lenM[0] = 1;
     lenM[1] = 0;
     lenM[2] = 0;
@@ -126,10 +113,10 @@ static __inline__ void __mat_one(mp_ptr *M, long *lenM)
     polynomial products involved.
  */
 
-static void __mat_mul_classical(mp_ptr *C, long *lenC, 
-    mp_ptr *A, long *lenA, mp_ptr *B, long *lenB, mp_ptr T, nmod_t mod)
+static void __mat_mul_classical(mp_ptr *C, slong *lenC, 
+    mp_ptr *A, slong *lenA, mp_ptr *B, slong *lenB, mp_ptr T, nmod_t mod)
 {
-    long lenT;
+    slong lenT;
 
     __mul(C[0], lenC[0], A[0], lenA[0], B[0], lenB[0]);
     __mul(T, lenT, A[1], lenA[1], B[2], lenB[2]);
@@ -158,11 +145,11 @@ static void __mat_mul_classical(mp_ptr *C, long *lenC,
     polynomial products involved.
  */
 
-static void __mat_mul_strassen(mp_ptr *C, long *lenC, 
-    mp_ptr *A, long *lenA, mp_ptr *B, long *lenB, mp_ptr T0, mp_ptr T1, 
+static void __mat_mul_strassen(mp_ptr *C, slong *lenC, 
+    mp_ptr *A, slong *lenA, mp_ptr *B, slong *lenB, mp_ptr T0, mp_ptr T1, 
     nmod_t mod)
 {
-    long lenT0, lenT1;
+    slong lenT0, lenT1;
 
     __sub(T0, lenT0, A[0], lenA[0], A[2], lenA[2]);
     __sub(T1, lenT1, B[3], lenB[3], B[1], lenB[1]);
@@ -206,11 +193,11 @@ static void __mat_mul_strassen(mp_ptr *C, long *lenC,
     polynomial products involved.
  */
 
-static void __mat_mul(mp_ptr *C, long *lenC, 
-    mp_ptr *A, long *lenA, mp_ptr *B, long *lenB, mp_ptr T0, mp_ptr T1, 
+static void __mat_mul(mp_ptr *C, slong *lenC, 
+    mp_ptr *A, slong *lenA, mp_ptr *B, slong *lenB, mp_ptr T0, mp_ptr T1, 
     nmod_t mod)
 {
-    long min = lenA[0];
+    slong min = lenA[0];
 
     min = FLINT_MIN(min, lenA[1]);
     min = FLINT_MIN(min, lenA[2]);
@@ -249,13 +236,13 @@ static void __mat_mul(mp_ptr *C, long *lenC,
     least (lena + 1)/2.
  */
 
-long _nmod_poly_hgcd_recursive_iter(mp_ptr *M, long *lenM, 
-    mp_ptr *A, long *lenA, mp_ptr *B, long *lenB, 
-    mp_srcptr a, long lena, mp_srcptr b, long lenb, 
-    mp_ptr Q, mp_ptr *T, mp_ptr *t, nmod_t mod)
+slong _nmod_poly_hgcd_recursive_iter(mp_ptr *M, slong *lenM, 
+    mp_ptr *A, slong *lenA, mp_ptr *B, slong *lenB, 
+    mp_srcptr a, slong lena, mp_srcptr b, slong lenb, 
+    mp_ptr Q, mp_ptr *T, mp_ptr *t, nmod_t mod, nmod_poly_res_t res)
 {
-    const long m = lena / 2;
-    long sgn = 1;
+    const slong m = lena / 2;
+    slong sgn = 1;
 
     __mat_one(M, lenM);
     __set(*A, *lenA, a, lena);
@@ -263,9 +250,40 @@ long _nmod_poly_hgcd_recursive_iter(mp_ptr *M, long *lenM,
 
     while (*lenB >= m + 1)
     {
-        long lenQ, lenT, lent;
+        slong lenQ, lenT, lent;
+        
+        if (res)
+           res->lc = (*B)[*lenB - 1];
 
         __divrem(Q, lenQ, *T, lenT, *A, *lenA, *B, *lenB);
+
+        if (res)
+        {
+           if (lenT >= m + 1)
+           {
+              if (lenT >= 1)
+              {
+                 res->lc  = n_powmod2_preinv(res->lc, *lenA - lenT, mod.n, mod.ninv);
+                 res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
+              
+                 if ((((*lenA + res->off) | (*lenB + res->off)) & 1) == 0)
+                    res->res = nmod_neg(res->res, mod);
+              } else
+              {
+                 if (*lenB == 1) 
+                 {
+                    res->lc  = n_powmod2_preinv(res->lc, *lenA - 1, mod.n, mod.ninv);
+                    res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
+                 } else
+                    res->res = 0;
+              }
+           } else
+           {
+              res->len0 = *lenA;
+              res->len1 = *lenB;
+           }
+        } 
+
         __swap(*B, *lenB, *T, lenT);
         __swap(*A, *lenA, *T, lenT);
 
@@ -297,14 +315,18 @@ long _nmod_poly_hgcd_recursive_iter(mp_ptr *M, long *lenM,
     which case these arrays are supposed to be sufficiently allocated. 
     Does not permute the pointers in {M, lenM}.  When flag is zero, 
     the first two arguments are allowed to be NULL.
+
+    The res struct, if not NULL, passes information required to compute
+    the sign changes and powers of leading terms used to compute the
+    resultant.
  */
 
-long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM, 
-    mp_ptr A, long *lenA, mp_ptr B, long *lenB, 
-    mp_srcptr a, long lena, mp_srcptr b, long lenb, 
-    mp_ptr P, nmod_t mod, int flag)
+slong _nmod_poly_hgcd_recursive(mp_ptr *M, slong *lenM, 
+    mp_ptr A, slong *lenA, mp_ptr B, slong *lenB, 
+    mp_srcptr a, slong lena, mp_srcptr b, slong lenb, 
+    mp_ptr P, nmod_t mod, int flag, nmod_poly_res_t res)
 {
-    const long m = lena / 2;
+    const slong m = lena / 2;
 
     if (lenb < m + 1)
     {
@@ -314,21 +336,22 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
         }
         __set(A, *lenA, a, lena);
         __set(B, *lenB, b, lenb);
+        
         return 1;
     }
     else
     {
         /* Readonly pointers */
         mp_ptr a0, b0, s, t, a4, b4, c0, d0;
-        long lena0, lenb0, lens, lent, lena4, lenb4, lenc0, lend0;
+        slong lena0, lenb0, lens, lent, lena4, lenb4, lenc0, lend0;
 
         /* Pointers to independently allocated memory */
         mp_ptr a2, b2, a3, b3, q, d, T0, T1;
-        long lena2, lenb2, lena3, lenb3, lenq, lend, lenT0;
+        slong lena2, lenb2, lena3, lenb3, lenq, lend, lenT0;
 
         mp_ptr R[4], S[4];
-        long lenR[4], lenS[4];
-        long sgnR, sgnS;
+        slong lenR[4], lenS[4];
+        slong sgnR, sgnS;
 
         a2 = P;
         b2 = a2 + lena;
@@ -353,13 +376,29 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
         __attach_shift(a0, lena0, (mp_ptr) a, lena, m);
         __attach_shift(b0, lenb0, (mp_ptr) b, lenb, m);
 
+        if (res)
+        {
+           res->lc = b[lenb - 1];
+
+           res->len0 -= m;
+           res->len1 -= m;
+           res->off += m;
+        }
+
         if (lena0 < NMOD_POLY_HGCD_CUTOFF)
             sgnR = _nmod_poly_hgcd_recursive_iter(R, lenR, &a3, &lena3, &b3, &lenb3, 
                                             a0, lena0, b0, lenb0, 
-                                            q, &T0, &T1, mod);
+                                            q, &T0, &T1, mod, res);
         else 
             sgnR = _nmod_poly_hgcd_recursive(R, lenR, a3, &lena3, b3, &lenb3, 
-                                       a0, lena0, b0, lenb0, P, mod, 1);
+                                       a0, lena0, b0, lenb0, P, mod, 1, res);
+
+        if (res)
+        {
+           res->off -= m;
+           res->len0 += m;
+           res->len1 += m;
+        }
 
         __attach_truncate(s, lens, (mp_ptr) a, lena, m);
         __attach_truncate(t, lent, (mp_ptr) b, lenb, m);
@@ -372,7 +411,7 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
         else
             __sub(b2, lenb2, T0, lenT0, b2, lenb2);
 
-        mpn_zero(b2 + lenb2, m + lenb3 - lenb2);
+        flint_mpn_zero(b2 + lenb2, m + lenb3 - lenb2);
 
         __attach_shift(b4, lenb4, b2, lenb2, m);
         __add(b4, lenb4, b4, lenb4, b3, lenb3);
@@ -387,7 +426,7 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
         else
             __sub(a2, lena2, a2, lena2, T0, lenT0);
 
-        mpn_zero(a2 + lena2, m + lena3 - lena2);
+        flint_mpn_zero(a2 + lena2, m + lena3 - lena2);
         __attach_shift(a4, lena4, a2, lena2, m);
         __add(a4, lena4, a4, lena4, a3, lena3);
         lena2 = FLINT_MAX(m + lena3, lena2);
@@ -410,20 +449,85 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
         }
         else
         {
-            long k = 2 * m - lenb2 + 1;
+            slong k = 2 * m - lenb2 + 1;
+
+            if (res) 
+            {
+               if (lenb2 < lenb) /* ensure something happened */
+               {
+                  if (lenb2 >= 1)
+                  {
+                     res->lc  = n_powmod2_preinv(res->lc, res->len0 - lenb2, mod.n, mod.ninv);
+                     res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
+
+                     if ((((res->len0 + res->off) | (res->len1 + res->off)) & 1) == 0)
+                        res->res = nmod_neg(res->res, mod);
+                  } else
+                  {
+                     if (res->len1 == 1) 
+                     {
+                        res->lc  = n_powmod2_preinv(res->lc, res->len0 - 1, mod.n, mod.ninv);
+                        res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
+                     } else
+                        res->res = 0;
+                  }
+               }
+
+               res->lc = b2[lenb2 - 1];
+            
+               res->len0 = lena2;
+               res->len1 = lenb2;
+            }
 
             __divrem(q, lenq, d, lend, a2, lena2, b2, lenb2);
 
             __attach_shift(c0, lenc0, b2, lenb2, k);
             __attach_shift(d0, lend0, d, lend, k);
+            
+            if (res)
+            {
+               if (lend >= m + 1)
+               {
+                  if (lend >= 1)
+                  {
+                     res->lc  = n_powmod2_preinv(res->lc, lena2 - lend, mod.n, mod.ninv);
+                     res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
 
+                     if ((((lena2 + res->off) | (lenb2 + res->off)) & 1) == 0)
+                        res->res = nmod_neg(res->res, mod);
+                  } else
+                  {
+                     if (lenb2 == 1) 
+                     {
+                        res->lc  = n_powmod2_preinv(res->lc, lena2 - 1, mod.n, mod.ninv);
+                        res->res = n_mulmod2_preinv(res->res, res->lc, mod.n, mod.ninv);
+                     } else
+                        res->res = 0;
+                  }
+                  
+                  res->len0 = lenb2;
+                  res->len1 = lend;
+               }
+
+               res->len0 -= k;
+               res->len1 -= k;
+               res->off += k;
+            } 
+            
             if (lenc0 < NMOD_POLY_HGCD_CUTOFF)
                 sgnS = _nmod_poly_hgcd_recursive_iter(S, lenS, &a3, &lena3, &b3, &lenb3, 
                                                 c0, lenc0, d0, lend0, 
-                                                a2, &T0, &T1, mod); /* a2 as temp */
+                                                a2, &T0, &T1, mod, res); /* a2 as temp */
             else 
                 sgnS = _nmod_poly_hgcd_recursive(S, lenS, a3, &lena3, b3, &lenb3, 
-                                           c0, lenc0, d0, lend0, P, mod, 1);
+                                           c0, lenc0, d0, lend0, P, mod, 1, res);
+
+            if (res)
+            {
+               res->len0 += k;
+               res->len1 += k;
+               res->off -= k;
+            }
 
             __attach_truncate(s, lens, b2, lenb2, k);
             __attach_truncate(t, lent, d, lend, k);
@@ -436,7 +540,7 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
             else
                 __sub(B, *lenB, T0, lenT0, B, *lenB);
 
-            mpn_zero(B + *lenB, k + lenb3 - *lenB);
+            flint_mpn_zero(B + *lenB, k + lenb3 - *lenB);
             __attach_shift(b4, lenb4, B, *lenB, k);
             __add(b4, lenb4, b4, lenb4, b3, lenb3);
             *lenB = FLINT_MAX(k + lenb3, *lenB);
@@ -450,7 +554,7 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
             else
                 __sub(A, *lenA, A, *lenA, T0, lenT0);
 
-            mpn_zero(A + *lenA, k + lena3 - *lenA);
+            flint_mpn_zero(A + *lenA, k + lena3 - *lenA);
             __attach_shift(a4, lena4, A, *lenA, k);
             __add(a4, lena4, a4, lena4, a3, lena3);
             *lenA = FLINT_MAX(k + lena3, *lenA);
@@ -467,7 +571,7 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
 
                 __mat_mul(M, lenM, R, lenR, S, lenS, a2, b2, mod);
             }
-
+            
             return - (sgnR * sgnS);
         }
     }
@@ -477,28 +581,28 @@ long _nmod_poly_hgcd_recursive(mp_ptr *M, long *lenM,
     XXX: Currently supports aliasing between {A,a} and {B,b}.
  */
 
-long _nmod_poly_hgcd(mp_ptr *M, long *lenM, 
-                     mp_ptr A, long *lenA, mp_ptr B, long *lenB, 
-                     mp_srcptr a, long lena, mp_srcptr b, long lenb, 
+slong _nmod_poly_hgcd(mp_ptr *M, slong *lenM, 
+                     mp_ptr A, slong *lenA, mp_ptr B, slong *lenB, 
+                     mp_srcptr a, slong lena, mp_srcptr b, slong lenb, 
                      nmod_t mod)
 {
-    const long lenW = 22 * lena + 16 * (FLINT_CLOG2(lena) + 1);
-    long sgnM;
+    const slong lenW = 22 * lena + 16 * (FLINT_CLOG2(lena) + 1);
+    slong sgnM;
     mp_ptr W;
-
+    
     W = _nmod_vec_init(lenW);
 
     if (M == NULL)
     {
         sgnM = _nmod_poly_hgcd_recursive(NULL, NULL, 
                                          A, lenA, B, lenB, 
-                                         a, lena, b, lenb, W, mod, 0);
+                                         a, lena, b, lenb, W, mod, 0, NULL);
     }
     else
     {
         sgnM = _nmod_poly_hgcd_recursive(M, lenM, 
                                          A, lenA, B, lenB, 
-                                         a, lena, b, lenb, W, mod, 1);
+                                         a, lena, b, lenb, W, mod, 1, NULL);
     }
     _nmod_vec_clear(W);
 

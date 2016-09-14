@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "arith.h"
 #include "fmpz_vec.h"
@@ -36,17 +22,17 @@
 
 int main(void)
 {
-    flint_rand_t state;
     fmpz * p;
     mp_ptr pmod;
-    long k, n;
+    slong k, n;
 
-    const long maxn = 1000;
+    const slong maxn = 1000;
 
-    printf("number_of_partitions_vec....");
+    FLINT_TEST_INIT(state);
+
+    flint_printf("number_of_partitions_vec....");
     fflush(stdout);
-
-    flint_randinit(state);
+    
     p = _fmpz_vec_init(maxn);
     pmod = _nmod_vec_init(maxn);
 
@@ -56,15 +42,15 @@ int main(void)
         nmod_t mod;
         nmod_init(&mod, n_randtest_prime(state, 0));
 
-        number_of_partitions_vec(p, n);
-        number_of_partitions_nmod_vec(pmod, n, mod);
+        arith_number_of_partitions_vec(p, n);
+        arith_number_of_partitions_nmod_vec(pmod, n, mod);
 
         for (k = 0; k < n; k++)
         {
             if (fmpz_fdiv_ui(p + k, mod.n) != pmod[k])
             {
-                printf("FAIL:\n");
-                printf("n = %ld, k = %ld\n", n, k);
+                flint_printf("FAIL:\n");
+                flint_printf("n = %wd, k = %wd\n", n, k);
                 abort();
             }
         }
@@ -76,7 +62,7 @@ int main(void)
 
             for (k = 1; k < n; k++)
             {
-                long j;
+                slong j;
 
                 j = n - 1 - k*(3*k - 1)/2;
                 if (j >= 0)
@@ -96,12 +82,12 @@ int main(void)
 
             if (!fmpz_equal(s, p + n - 1))
             {
-                printf("FAIL:\n");
-                printf("n = %ld\n", n);
+                flint_printf("FAIL:\n");
+                flint_printf("n = %wd\n", n);
                 fmpz_print(s);
-                printf("\n");
+                flint_printf("\n");
                 fmpz_print(p + n - 1);
-                printf("\n");
+                flint_printf("\n");
                 abort();
             }
 
@@ -113,8 +99,8 @@ int main(void)
     _fmpz_vec_clear(p, maxn);
     _nmod_vec_clear(pmod);
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

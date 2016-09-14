@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-   Copyright (C) 2010 Sebastian Pancratz
-   Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -33,9 +19,9 @@
 
 static void
 _set_vec(fmpz * rnum, fmpz_t den,
-                const fmpz * xnum, const fmpz * xden, long len)
+                const fmpz * xnum, const fmpz * xden, slong len)
 {
-    long j;
+    slong j;
     fmpz_t t;
     fmpz_init(t);
     fmpz_one(den);
@@ -54,26 +40,26 @@ _set_vec(fmpz * rnum, fmpz_t den,
 
 void
 _fmpq_poly_revert_series_lagrange(fmpz * Qinv, fmpz_t den,
-                            const fmpz * Q, const fmpz_t Qden, long n)
+                        const fmpz * Q, const fmpz_t Qden, slong Qlen, slong n)
 {
-    long i;
+    slong i;
     fmpz *R, *S, *T, *dens, *tmp;
     fmpz_t Rden, Sden, Tden;
 
-    if (fmpz_is_one(Qden) && (n > 1) && fmpz_is_pm1(Q + 1))
-    {
-        _fmpz_poly_revert_series(Qinv, Q, n);
-        fmpz_one(den);
-    }
-    else if (n <= 2)
+    Qlen = FLINT_MIN(Qlen, n);
+
+    if (Qlen <= 2)
     {
         fmpz_zero(Qinv);
-        if (n == 2)
+
+        if (Qlen == 2)
         {
             fmpz_set(Qinv + 1, Qden);
             fmpz_set(den, Q + 1);
             _fmpq_poly_canonicalise(Qinv, den, 2);
         }
+
+        _fmpz_vec_zero(Qinv + 2, n - 2);
     }
     else
     {
@@ -90,7 +76,7 @@ _fmpq_poly_revert_series_lagrange(fmpz * Qinv, fmpz_t den,
         fmpz_set(Qinv + 1, Qden);
         fmpz_set(dens + 1, Q + 1);
 
-        _fmpq_poly_inv_series(R, Rden, Q + 1, Qden, n - 1);
+        _fmpq_poly_inv_series(R, Rden, Q + 1, Qden, Qlen - 1, n - 1);
         _fmpq_poly_canonicalise(R, Rden, n - 1);
 
         _fmpz_vec_set(S, R, n - 1);
@@ -121,17 +107,14 @@ _fmpq_poly_revert_series_lagrange(fmpz * Qinv, fmpz_t den,
 
 void
 fmpq_poly_revert_series_lagrange(fmpq_poly_t res,
-            const fmpq_poly_t poly, long n)
+            const fmpq_poly_t poly, slong n)
 {
-    fmpz *copy;
-    int alloc;
-
     if (poly->length < 2 || !fmpz_is_zero(poly->coeffs)
                          || fmpz_is_zero(poly->coeffs + 1))
     {
-        printf("exception: fmpq_poly_revert_series_lagrange: input must have "
-            "zero constant term and nonzero coefficient of x^1");
-        abort();
+        flint_printf("Exception (fmpq_poly_revert_series_lagrange). Input must have \n"
+               "zero constant term and nonzero coefficient of x^1.\n");
+        flint_abort();
     }
 
     if (n < 2)
@@ -140,41 +123,22 @@ fmpq_poly_revert_series_lagrange(fmpq_poly_t res,
         return;
     }
 
-    if (poly->length >= n)
-    {
-        copy = poly->coeffs;
-        alloc = 0;
-    }
-    else
-    {
-        long i;
-        copy = (fmpz *) flint_malloc(n * sizeof(fmpz));
-        for (i = 0; i < poly->length; i++)
-            copy[i] = poly->coeffs[i];
-        for ( ; i < n; i++)
-            copy[i] = 0;
-        alloc = 1;
-    }
-
     if (res != poly)
     {
         fmpq_poly_fit_length(res, n);
         _fmpq_poly_revert_series_lagrange(res->coeffs,
-                res->den, copy, poly->den, n);
+                res->den, poly->coeffs, poly->den, poly->length, n);
     }
     else
     {
         fmpq_poly_t t;
         fmpq_poly_init2(t, n);
         _fmpq_poly_revert_series_lagrange(t->coeffs,
-                t->den, copy, poly->den, n);
+                t->den, poly->coeffs, poly->den, poly->length, n);
         fmpq_poly_swap(res, t);
         fmpq_poly_clear(t);
     }
 
     _fmpq_poly_set_length(res, n);
     _fmpq_poly_normalise(res);
-
-    if (alloc)
-        flint_free(copy);
 }

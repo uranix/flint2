@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "nmod_vec.h"
@@ -31,10 +17,10 @@
 
 
 static void
-_interpolate_newton(mp_ptr ys, mp_srcptr xs, long n, nmod_t mod)
+_interpolate_newton(mp_ptr ys, mp_srcptr xs, slong n, nmod_t mod)
 {
     mp_limb_t p, q, t;
-    long i, j;
+    slong i, j;
 
     for (i = 1; i < n; i++)
     {
@@ -52,10 +38,10 @@ _interpolate_newton(mp_ptr ys, mp_srcptr xs, long n, nmod_t mod)
 }
 
 static void
-_newton_to_monomial(mp_ptr ys, mp_srcptr xs, long n, nmod_t mod)
+_newton_to_monomial(mp_ptr ys, mp_srcptr xs, slong n, nmod_t mod)
 {
     mp_limb_t t;
-    long i, j;
+    slong i, j;
 
     for (i = n - 2; i >= 0; i--)
     {
@@ -77,7 +63,7 @@ _newton_to_monomial(mp_ptr ys, mp_srcptr xs, long n, nmod_t mod)
 
 void
 _nmod_poly_interpolate_nmod_vec_newton(mp_ptr poly, mp_srcptr xs,
-    mp_srcptr ys, long n, nmod_t mod)
+    mp_srcptr ys, slong n, nmod_t mod)
 {
     if (n == 1)
     {
@@ -94,7 +80,7 @@ _nmod_poly_interpolate_nmod_vec_newton(mp_ptr poly, mp_srcptr xs,
 
 void
 nmod_poly_interpolate_nmod_vec_newton(nmod_poly_t poly,
-                                    mp_srcptr xs, mp_srcptr ys, long n)
+                                    mp_srcptr xs, mp_srcptr ys, slong n)
 {
     if (n == 0)
     {

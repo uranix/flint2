@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include <mpfr.h>
 #include "flint.h"
 #include "fmpz.h"
@@ -37,10 +23,9 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
 
-    printf("get_mpfr....");
+    flint_printf("get_mpfr....");
     fflush(stdout);
 
     for (i = 0; i < 10000; i++)
@@ -73,14 +58,14 @@ main(void)
 
         if (r1 != r2 || !mpfr_equal_p(f1, f2))
         {
-            printf("FAIL\n");
-            fmpq_print(x); printf("\n");
-            printf("r1 = %d, r2 = %d\n", r1, r2);
-            printf("\nf1: \n");
+            flint_printf("FAIL\n");
+            fmpq_print(x); flint_printf("\n");
+            flint_printf("r1 = %d, r2 = %d\n", r1, r2);
+            flint_printf("\nf1: \n");
             mpfr_out_str(stdout, 10, 0, f1, MPFR_RNDN);
-            printf("\n\nf1: \n");
+            flint_printf("\n\nf1: \n");
             mpfr_out_str(stdout, 10, 0, f2, MPFR_RNDN);
-            printf("\n\n");
+            flint_printf("\n\n");
             abort();
         }
 
@@ -90,8 +75,8 @@ main(void)
         mpfr_clear(f2);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

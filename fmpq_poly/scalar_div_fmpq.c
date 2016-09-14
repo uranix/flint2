@@ -1,37 +1,23 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpq_poly.h"
 
 void _fmpq_poly_scalar_div_fmpq(fmpz * rpoly, fmpz_t rden, 
-                                const fmpz * poly, const fmpz_t den, long len, 
+                                const fmpz * poly, const fmpz_t den, slong len, 
                                 const fmpz_t r, const fmpz_t s)
 {
     fmpz_t gcd1;  /* GCD( poly, r ) */
@@ -40,18 +26,18 @@ void _fmpq_poly_scalar_div_fmpq(fmpz * rpoly, fmpz_t rden,
     fmpz_init(gcd2);
     fmpz_one(gcd1);
     fmpz_one(gcd2);
-    if (*r != 1L)
+    if (*r != WORD(1))
     {
         _fmpz_vec_content(gcd1, poly, len);
-        if (*gcd1 != 1L)
+        if (*gcd1 != WORD(1))
             fmpz_gcd(gcd1, gcd1, r);
     }
-    if (*den != 1L && *s != 1L)
+    if (*den != WORD(1) && *s != WORD(1))
         fmpz_gcd(gcd2, s, den);
     
-    if (*gcd1 == 1L)
+    if (*gcd1 == WORD(1))
     {
-        if (*gcd2 == 1L)
+        if (*gcd2 == WORD(1))
         {
             _fmpz_vec_scalar_mul_fmpz(rpoly, poly, len, s);
             fmpz_mul(rden, den, r);
@@ -72,7 +58,7 @@ void _fmpq_poly_scalar_div_fmpq(fmpz * rpoly, fmpz_t rden,
         fmpz_t r2;
         fmpz_init(r2);
         fmpz_divexact(r2, r, gcd1);
-        if (*gcd2 == 1L)
+        if (*gcd2 == WORD(1))
         {
             _fmpz_vec_scalar_divexact_fmpz(rpoly, poly, len, gcd1);
             _fmpz_vec_scalar_mul_fmpz(rpoly, rpoly, len, s);
@@ -108,8 +94,8 @@ void fmpq_poly_scalar_div_fmpq(fmpq_poly_t rop, const fmpq_poly_t op, const fmpq
 {
     if (fmpq_is_zero(c))
     {
-        printf("Exception: division by zero in fmpq_poly_scalar_div_fmpq\n");
-        abort();
+        flint_printf("Exception (fmpq_poly_scalar_div_fmpq). Division by zero.\n");
+        flint_abort();
     }
 
     if (fmpq_poly_is_zero(op))

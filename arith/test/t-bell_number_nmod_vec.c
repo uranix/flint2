@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "arith.h"
 #include "nmod_vec.h"
@@ -33,16 +19,15 @@
 
 int main(void)
 {
-    flint_rand_t state;
     mp_ptr b1, b2;
-    long n;
+    slong n;
 
-    const long maxn = 3000;
+    const slong maxn = 3000;
 
-    printf("bell_number_nmod_vec....");
-    fflush(stdout);
+    FLINT_TEST_INIT(state);
 
-    flint_randinit(state);
+    flint_printf("bell_number_nmod_vec....");
+    fflush(stdout);    
 
     b1 = _nmod_vec_init(maxn);
     b2 = _nmod_vec_init(maxn);
@@ -58,13 +43,13 @@ int main(void)
 
         nmod_init(&mod, p);
 
-        bell_number_nmod_vec_recursive(b1, n, mod);
-        bell_number_nmod_vec_series(b2, n, mod);
+        arith_bell_number_nmod_vec_recursive(b1, n, mod);
+        arith_bell_number_nmod_vec_series(b2, n, mod);
 
         if (!_nmod_vec_equal(b1, b2, n))
         {
-            printf("FAIL:\n");
-            printf("n = %ld\n", n);
+            flint_printf("FAIL:\n");
+            flint_printf("n = %wd\n", n);
             abort();
         }
     }
@@ -72,8 +57,8 @@ int main(void)
     _nmod_vec_clear(b1);
     _nmod_vec_clear(b2);
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

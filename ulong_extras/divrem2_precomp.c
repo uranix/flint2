@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 
@@ -31,27 +17,35 @@ mp_limb_t
 n_divrem2_precomp(mp_limb_t * q, mp_limb_t a, mp_limb_t n, double npre)
 {
     mp_limb_t quot;
-    long rem;
+    slong rem;
 
     if (a < n)
     {
-        (*q) = 0UL;
+        (*q) = UWORD(0);
         return a;
     }
 
-    if ((mp_limb_signed_t) n < 0L)
+    if ((mp_limb_signed_t) n < WORD(0))
     {
-        (*q) = 1UL;
+        (*q) = UWORD(1);
         return a - n;
     }
 
-    quot = (mp_limb_t) ((double) a * npre);
-    rem = a - quot * n;
+    if (n == 1)
+    {
+        quot = a;
+        rem = 0;
+    } else
+    {
+        quot = (ulong) ( a * npre);
+        rem = a - quot * n;
+    }
+
     if (rem < (mp_limb_signed_t) (-n))
         quot -= (mp_limb_t) ((double) (-rem) * npre);
-    else if (rem >= (long) n)
+    else if (rem >= (slong) n)
         quot += (mp_limb_t) ((double) rem * npre);
-    else if (rem < 0L)
+    else if (rem < WORD(0))
     {
         (*q) = quot - 1;
         return rem + n;
@@ -63,12 +57,12 @@ n_divrem2_precomp(mp_limb_t * q, mp_limb_t a, mp_limb_t n, double npre)
     }
 
     rem = a - quot * n;
-    if (rem >= (long) n)
+    if (rem >= (slong) n)
     {
         (*q) = quot + 1;
         return rem - n;
     }
-    else if (rem < 0L)
+    else if (rem < WORD(0))
     {
         (*q) = quot - 1;
         return rem + n;

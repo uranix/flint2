@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2011 William Hart
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include <float.h>
 #include <math.h>
 #include "flint.h"
@@ -60,9 +46,9 @@
 #define bitslo   256
 #define bitshi   67108864
 #define bitsh    2
-#define cutoff   22000000000L
-#define cols     ((long)(log((double)lenhi/(double)lenlo)/log(lenh) + 1.5))
-#define rows     ((long)(log((double)bitshi/(double)bitslo)/log(bitsh) + 1.5))
+#define cutoff   WORD(22000000000)
+#define cols     ((slong)(log((double)lenhi/(double)lenlo)/log(lenh) + 1.5))
+#define rows     ((slong)(log((double)bitshi/(double)bitslo)/log(bitsh) + 1.5))
 #define cpumin   100
 #define ncases   1
 #define nalgs    2
@@ -78,7 +64,7 @@ int write_rgb_ppm(const char* file_name, unsigned char* pixels,
     FILE* file = fopen(file_name, "wb");
     if (file == NULL)
         return -1;
-    fprintf(file, "P6\n%d %d\n255\n", width, height);
+    flint_fprintf(file, "P6\n%d %d\n255\n", width, height);
     fwrite(pixels, sizeof(unsigned char), width * height * 3, file);
     fclose(file);
     return 0;
@@ -87,13 +73,13 @@ int write_rgb_ppm(const char* file_name, unsigned char* pixels,
 int
 main(void)
 {
-    long i, j, k, len, bits;
+    slong i, j, k, len, bits;
     int X[rows][cols];
     double T[rows][cols][nalgs];
     fmpz_poly_t f, g, h;
     
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
        
     fmpz_poly_init2(f, lenhi);
     fmpz_poly_init2(g, lenhi);
@@ -101,14 +87,14 @@ main(void)
     
     for (len = lenlo, j = 0; len <= lenhi; len *= lenh, j++)
     {
-        long s[nalgs], sum;
+        slong s[nalgs], sum;
         
         for (bits = bitslo, i = 0; bits <= bitshi; bits *= bitsh, i++)
         {
             int c, n, reps = 0, none = 0;
             
             for (c = 0; c < nalgs; c++)
-                s[c] = 0L;
+                s[c] = WORD(0);
             
             for (n = 0; n < ncases; n++)
             {
@@ -120,15 +106,15 @@ main(void)
                        Construct random polynomials f and g
                      */
                     {
-                        long k;
+                        slong k;
                         for (k = 0; k < len; k++)
                         {
                             fmpz_randbits(f->coeffs + k, state, bits);
                             fmpz_randbits(g->coeffs + k, state, bits);
                         }
-                        if ((f->coeffs)[len-1] == 0L)
+                        if ((f->coeffs)[len-1] == WORD(0))
                             fmpz_randtest_not_zero(f->coeffs + (len - 1), state, bits);
-                        if ((g->coeffs)[len-1] == 0L)
+                        if ((g->coeffs)[len-1] == WORD(0))
                             fmpz_randtest_not_zero(g->coeffs + (len - 1), state, bits);
                         f->length = len;
                         g->length = len;
@@ -179,15 +165,15 @@ main(void)
                    sum += s[c];
             }
         }
-        printf("len = %d, time = %ldms\n", len, sum), fflush(stdout);
+        flint_printf("len = %wd, time = %wdms\n", len, sum), fflush(stdout);
         for (k = 0; k < rows; k++)
         {
             if (X[k][j] == -1) 
-                printf(" ");
+                flint_printf(" ");
             else 
-                printf("%d", X[k][j]);
+                flint_printf("%d", X[k][j]);
         }
-        printf("\n");
+        flint_printf("\n");
     }
     fmpz_poly_clear(f);
     fmpz_poly_clear(g);
@@ -201,11 +187,11 @@ main(void)
         for (j = 0; j < cols; j++)
         {
             if (X[i][j] == -1) 
-                printf(" ");
+                flint_printf(" ");
             else 
-                printf("%d", X[i][j]);
+                flint_printf("%d", X[i][j]);
         }
-        printf("\n");
+        flint_printf("\n");
     }
     
     /*
@@ -253,7 +239,7 @@ main(void)
         
         if (k)
         {
-            printf("Exception:  writing ppm image failed\n");
+            flint_printf("Exception:  writing ppm image failed\n");
         }
     }
 

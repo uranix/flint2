@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008, 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008, 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -32,8 +18,8 @@
 
 /* Assumes poly1 and poly2 are not length 0 and 0 < trunc <= len1 + len2 - 1 */
 void
-_nmod_poly_mullow_classical(mp_ptr res, mp_srcptr poly1, long len1,
-                            mp_srcptr poly2, long len2, long trunc, nmod_t mod)
+_nmod_poly_mullow_classical(mp_ptr res, mp_srcptr poly1, slong len1,
+                            mp_srcptr poly2, slong len2, slong trunc, nmod_t mod)
 {
     if (len1 == 1 || trunc == 1)    /* Special case if the length of output is 1 */
     {
@@ -41,10 +27,10 @@ _nmod_poly_mullow_classical(mp_ptr res, mp_srcptr poly1, long len1,
     }
     else                        /* Ordinary case */
     {
-        long i;
+        slong i;
 
-        long bits = FLINT_BITS - (long) mod.norm;
-        long log_len = FLINT_BIT_COUNT(len2);
+        slong bits = FLINT_BITS - (slong) mod.norm;
+        slong log_len = FLINT_BIT_COUNT(len2);
 
         if (2 * bits + log_len <= FLINT_BITS)
         {
@@ -92,9 +78,9 @@ _nmod_poly_mullow_classical(mp_ptr res, mp_srcptr poly1, long len1,
 void
 nmod_poly_mullow_classical(nmod_poly_t res,
                            const nmod_poly_t poly1, const nmod_poly_t poly2,
-                           long trunc)
+                           slong trunc)
 {
-    long len_out;
+    slong len_out;
 
     if (poly1->length == 0 || poly2->length == 0 || trunc == 0)
     {

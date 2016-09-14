@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpq.h"
 #include "fmpq_mat.h"
@@ -34,19 +20,19 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
 
-    printf("inv....");
+    flint_printf("inv....");
     fflush(stdout);
 
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpq_mat_t A, B, C;
         fmpq_t d;
 
         int success1, success2;
-        long n, bits;
+        slong n, bits;
 
         n = n_randint(state, 10);
         bits = 1 + n_randint(state, 100);
@@ -59,7 +45,7 @@ main(void)
 
         /* XXX: replace with a randtest function */
         {
-            long k;
+            slong k;
 
             for (k = 0; (k < 100) && fmpq_is_zero(d); k++)
             {
@@ -79,12 +65,12 @@ main(void)
 
         if (!fmpq_mat_equal(A, C) || !success1 || !success2)
         {
-            printf("FAIL!\n");
-            printf("A:\n");
+            flint_printf("FAIL!\n");
+            flint_printf("A:\n");
             fmpq_mat_print(A);
-            printf("B:\n");
+            flint_printf("B:\n");
             fmpq_mat_print(B);
-            printf("C:\n");
+            flint_printf("C:\n");
             fmpq_mat_print(C);
             abort();
         }
@@ -95,13 +81,13 @@ main(void)
     }
 
     /* Test aliasing */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpq_mat_t A, B;
         fmpq_t d;
 
         int success1, success2;
-        long n, bits;
+        slong n, bits;
 
         n = n_randint(state, 10);
         bits = 1 + n_randint(state, 100);
@@ -124,10 +110,10 @@ main(void)
 
         if (!fmpq_mat_equal(A, B) || !success1 || !success2)
         {
-            printf("FAIL!\n");
-            printf("A:\n");
+            flint_printf("FAIL!\n");
+            flint_printf("A:\n");
             fmpq_mat_print(A);
-            printf("B:\n");
+            flint_printf("B:\n");
             fmpq_mat_print(B);
             abort();
         }
@@ -137,9 +123,9 @@ main(void)
     }
 
     /* Test singular matrices */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
-        long n, r, b, d;
+        slong n, r, b, d;
         fmpq_mat_t A, B;
         fmpz_mat_t M;
         fmpz_t den;
@@ -170,8 +156,8 @@ main(void)
 
             if (success)
             {
-                printf("FAIL:\n");
-                printf("matrix reported as invertible:\n");
+                flint_printf("FAIL:\n");
+                flint_printf("matrix reported as invertible:\n");
                 fmpq_mat_print(A);
                 abort();
             }
@@ -184,9 +170,8 @@ main(void)
         fmpz_clear(den);
     }
 
-    flint_randclear(state);
-
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

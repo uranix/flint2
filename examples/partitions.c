@@ -1,5 +1,20 @@
+/*
+    Copyright (C) 2011 Fredrik Johansson
+
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+/*
+    FLINT program for demonstrating the Integer Partition function.
+*/
+
 #include <stdio.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "arith.h"
@@ -12,18 +27,18 @@ main(int argc, char * argv[])
 
     if (argc != 2)
     {
-        printf("usage: partitions n\n");
+        flint_printf("usage: partitions n\n");
         return 1;
     }
 
-    sscanf(argv[1], "%lu", &n);
+    flint_sscanf(argv[1], "%wu", &n);
 
-    printf("p(%lu) = \n", n);
+    flint_printf("p(%wu) = \n", n);
 
     fmpz_init(x);
-    number_of_partitions(x, n);
+    arith_number_of_partitions(x, n);
     fmpz_print(x);
-    printf("\n");
+    flint_printf("\n");
     fmpz_clear(x);
 
     return 0;

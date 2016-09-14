@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -31,12 +17,21 @@
 
 void
 _fmpq_poly_asinh_series(fmpz * g, fmpz_t gden, 
-                           const fmpz * h, const fmpz_t hden, long n)
+                       const fmpz * h, const fmpz_t hden, slong hlen, slong n)
 {
     fmpz * t;
     fmpz * u;
     fmpz_t tden;
     fmpz_t uden;
+
+    hlen = FLINT_MIN(hlen, n);
+
+    if (hlen == 1)
+    {
+        _fmpz_vec_zero(g, n);
+        fmpz_one(gden);
+        return;
+    }
 
     t = _fmpz_vec_init(n);
     u = _fmpz_vec_init(n);
@@ -44,11 +39,11 @@ _fmpq_poly_asinh_series(fmpz * g, fmpz_t gden,
     fmpz_init(uden);
 
     /* asinh(h(x)) = integral(h'(x)/sqrt(1+h(x)^2)) */
-    _fmpq_poly_mullow(u, uden, h, hden, n, h, hden, n, n);
+    _fmpq_poly_mullow(u, uden, h, hden, hlen, h, hden, hlen, n);
     fmpz_set(u, uden);  /* u += 1 */
-    _fmpq_poly_invsqrt_series(t, tden, u, uden, n);
-    _fmpq_poly_derivative(u, uden, h, hden, n);
-    _fmpq_poly_mullow(g, gden, t, tden, n, u, uden, n, n);
+    _fmpq_poly_invsqrt_series(t, tden, u, uden, n, n);
+    _fmpq_poly_derivative(u, uden, h, hden, hlen);
+    _fmpq_poly_mullow(g, gden, t, tden, n, u, uden, hlen - 1, n);
     _fmpq_poly_integral(g, gden, g, gden, n);
 
     _fmpz_vec_clear(t, n);
@@ -57,42 +52,34 @@ _fmpq_poly_asinh_series(fmpz * g, fmpz_t gden,
     fmpz_clear(uden);
 }
 
-
-void
-fmpq_poly_asinh_series(fmpq_poly_t res, const fmpq_poly_t f, long n)
+void fmpq_poly_asinh_series(fmpq_poly_t res, const fmpq_poly_t poly, slong n)
 {
-    fmpz * f_coeffs;
-    long flen = f->length;
-
-    if (flen && !fmpz_is_zero(f->coeffs))
+    if (poly->length && !fmpz_is_zero(poly->coeffs))
     {
-        printf("Exception: fmpq_poly_asinh_series: constant term != 0\n");
-        abort();
+        flint_printf("Exception (fmpq_poly_asinh_series). Constant term != 0.\n");
+        flint_abort();
     }
 
-    if (flen == 0 || n < 2)
+    if (poly->length == 0 || n < 2)
     {
         fmpq_poly_zero(res);
         return;
     }
 
-    fmpq_poly_fit_length(res, n);
-
-    if (flen < n)
+    if (res != poly)
     {
-        f_coeffs = _fmpz_vec_init(n);
-        _fmpz_vec_set(f_coeffs, f->coeffs, flen);
+        fmpq_poly_fit_length(res, n);
+        _fmpq_poly_asinh_series(res->coeffs, res->den,
+            poly->coeffs, poly->den, poly->length, n);
     }
     else
     {
-        f_coeffs = f->coeffs;
-    }
-
-    _fmpq_poly_asinh_series(res->coeffs, res->den, f_coeffs, f->den, n);
-
-    if (flen < n)
-    {
-        _fmpz_vec_clear(f_coeffs, n);
+        fmpq_poly_t t;
+        fmpq_poly_init2(t, n);
+        _fmpq_poly_asinh_series(t->coeffs, t->den,
+            poly->coeffs, poly->den, poly->length, n);
+        fmpq_poly_swap(res, t);
+        fmpq_poly_clear(t);
     }
 
     _fmpq_poly_set_length(res, n);

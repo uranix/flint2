@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2010 William Hart
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -37,7 +23,7 @@ n_powmod2_mpz(mp_limb_t a, mpz_srcptr exp, mp_limb_t n, mp_limb_t ninv)
 {
     if (mpz_fits_slong_p(exp))
     {
-        return n_powmod2_preinv(a, mpz_get_si(exp), n, ninv);
+        return n_powmod2_preinv(a, flint_mpz_get_si(exp), n, ninv);
     }
     else
     {
@@ -45,10 +31,10 @@ n_powmod2_mpz(mp_limb_t a, mpz_srcptr exp, mp_limb_t n, mp_limb_t ninv)
         mp_limb_t y;
         mpz_init(t);
         mpz_init(m);
-        mpz_set_ui(t, a);
-        mpz_set_ui(m, n);
+        flint_mpz_set_ui(t, a);
+        flint_mpz_set_ui(m, n);
         mpz_powm(t, t, exp, m);
-        y = mpz_get_ui(t);
+        y = flint_mpz_get_ui(t);
         mpz_clear(t);
         mpz_clear(m);
         return y;
@@ -58,11 +44,11 @@ n_powmod2_mpz(mp_limb_t a, mpz_srcptr exp, mp_limb_t n, mp_limb_t ninv)
 void
 _nmod_poly_powmod_mpz_binexp(mp_ptr res, mp_srcptr poly, 
                                 mpz_srcptr e, mp_srcptr f,
-                                long lenf, nmod_t mod)
+                                slong lenf, nmod_t mod)
 {
     mp_ptr T, Q;
-    long lenT, lenQ;
-    long i;
+    slong lenT, lenQ;
+    slong i;
 
     if (lenf == 2)
     {
@@ -100,21 +86,21 @@ nmod_poly_powmod_mpz_binexp(nmod_poly_t res,
                            const nmod_poly_t f)
 {
     mp_ptr p;
-    long len = poly->length;
-    long lenf = f->length;
-    long trunc = lenf - 1;
+    slong len = poly->length;
+    slong lenf = f->length;
+    slong trunc = lenf - 1;
     int pcopy = 0;
 
     if (lenf == 0)
     {
-        printf("Exception: nmod_poly_powmod: divide by zero\n");
-        abort();
+        flint_printf("Exception (nmod_poly_powmod). Divide by zero.\n");
+        flint_abort();
     }
 
     if (mpz_sgn(e) < 0)
     {
-        printf("Exception: nmod_poly_powmod: negative exp not implemented\n");
-        abort();
+        flint_printf("Exception (nmod_poly_powmod). Negative exp not implemented.\n");
+        flint_abort();
     }
 
     if (len >= lenf)
@@ -131,17 +117,17 @@ nmod_poly_powmod_mpz_binexp(nmod_poly_t res,
 
     if (mpz_fits_ulong_p(e))
     {
-        ulong exp = mpz_get_ui(e);
+        ulong exp = flint_mpz_get_ui(e);
 
         if (exp <= 2)
         {
-            if (exp == 0UL)
+            if (exp == UWORD(0))
             {
                 nmod_poly_fit_length(res, 1);
-                res->coeffs[0] = 1UL;
+                res->coeffs[0] = UWORD(1);
                 res->length = 1;
             }
-            else if (exp == 1UL)
+            else if (exp == UWORD(1))
             {
                 nmod_poly_set(res, poly);
             }
@@ -160,8 +146,8 @@ nmod_poly_powmod_mpz_binexp(nmod_poly_t res,
     if (poly->length < trunc)
     {
         p = _nmod_vec_init(trunc);
-        mpn_copyi(p, poly->coeffs, poly->length);
-        mpn_zero(p + poly->length, trunc - poly->length);
+        flint_mpn_copyi(p, poly->coeffs, poly->length);
+        flint_mpn_zero(p + poly->length, trunc - poly->length);
         pcopy = 1;
     } else
         p = poly->coeffs;

@@ -1,31 +1,14 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
 #include "longlong.h"
 
@@ -33,8 +16,8 @@ void
 fmpz_mat_mul_classical_inline(fmpz_mat_t C, const fmpz_mat_t A,
                                                 const fmpz_mat_t B)
 {
-    long ar, bc, br;
-    long i, j, k;
+    slong ar, bc, br;
+    slong i, j, k;
 
     fmpz a, b;
     mpz_t t;
@@ -53,9 +36,9 @@ fmpz_mat_mul_classical_inline(fmpz_mat_t C, const fmpz_mat_t A,
     {
         for (j = 0; j < bc; j++)
         {
-            mpz_set_ui(t, 0UL);
+            flint_mpz_set_ui(t, UWORD(0));
 
-            pos[2] = pos[1] = pos[0] = neg[2] = neg[1] = neg[0] = 0UL;
+            pos[2] = pos[1] = pos[0] = neg[2] = neg[1] = neg[0] = UWORD(0);
 
             for (k = 0; k < br; k++)
             {
@@ -74,7 +57,7 @@ fmpz_mat_mul_classical_inline(fmpz_mat_t C, const fmpz_mat_t A,
 
                         umul_ppmm(au, bu, au, bu);
 
-                        if ((a ^ b) >= 0L)
+                        if ((a ^ b) >= WORD(0))
                             add_sssaaaaaa(pos[2], pos[1], pos[0],
                                           pos[2], pos[1], pos[0], 0, au, bu);
                         else
@@ -84,17 +67,17 @@ fmpz_mat_mul_classical_inline(fmpz_mat_t C, const fmpz_mat_t A,
                     else
                     {
                         if (a >= 0)
-                            mpz_addmul_ui(t, COEFF_TO_PTR(b), a);
+                            flint_mpz_addmul_ui(t, COEFF_TO_PTR(b), a);
                         else
-                            mpz_submul_ui(t, COEFF_TO_PTR(b), -a);
+                            flint_mpz_submul_ui(t, COEFF_TO_PTR(b), -a);
                     }
                 }
                 else if (!COEFF_IS_MPZ(b))  /* b is small */
                 {
                     if (b >= 0)
-                        mpz_addmul_ui(t, COEFF_TO_PTR(a), b);
+                        flint_mpz_addmul_ui(t, COEFF_TO_PTR(a), b);
                     else
-                        mpz_submul_ui(t, COEFF_TO_PTR(a), -b);
+                        flint_mpz_submul_ui(t, COEFF_TO_PTR(a), -b);
                 }
                 else
                 {
@@ -123,14 +106,9 @@ fmpz_mat_mul_classical_inline(fmpz_mat_t C, const fmpz_mat_t A,
             else
             {
                 if (neg[0] > pos[0])
-                {
-                    fmpz_set_ui(fmpz_mat_entry(C, i, j), neg[0] - pos[0]);
-                    fmpz_neg(fmpz_mat_entry(C, i, j), fmpz_mat_entry(C, i, j));
-                }
+                    fmpz_neg_ui(fmpz_mat_entry(C, i, j), neg[0] - pos[0]);
                 else
-                {
                     fmpz_set_ui(fmpz_mat_entry(C, i, j), pos[0] - neg[0]);
-                }
             }
         }
     }

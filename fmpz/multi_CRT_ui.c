@@ -1,30 +1,16 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2008, 2009, William Hart 
     Copyright (C) 2010 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "fmpz.h"
@@ -32,13 +18,13 @@
 
 
 void
-__fmpz_multi_CRT_ui_sign(fmpz_t output, fmpz_t input,
+__fmpz_multi_CRT_ui_sign(fmpz_t output, const fmpz_t input,
     const fmpz_comb_t comb, fmpz_t temp)
 {
-    long n = comb->n;
-    long p;
+    slong n = comb->n;
+    slong p;
 
-    if (n == 0L)
+    if (n == WORD(0))
     {
         if (fmpz_is_zero(input)) 
         {
@@ -49,7 +35,7 @@ __fmpz_multi_CRT_ui_sign(fmpz_t output, fmpz_t input,
         /* XXX: overflow possible? */
         p = comb->primes[0];
         if ((p - (*input)) < (*input))
-            fmpz_set_si(output, (long) ((*input) - p));
+            fmpz_set_si(output, (slong) ((*input) - p));
         else
             fmpz_set_ui(output, (*input));
         return;
@@ -65,14 +51,14 @@ __fmpz_multi_CRT_ui_sign(fmpz_t output, fmpz_t input,
     return;
 }
 
-void fmpz_multi_CRT_ui(fmpz_t output, const mp_limb_t * residues,
+void fmpz_multi_CRT_ui(fmpz_t output, mp_srcptr residues,
     const fmpz_comb_t comb, fmpz_comb_temp_t ctemp, int sign)
 {
-    long i, j;
-    long n = comb->n;
-    long num;
-    long log_res;
-    long num_primes = comb->num_primes;
+    slong i, j;
+    slong n = comb->n;
+    slong num;
+    slong log_res;
+    slong num_primes = comb->num_primes;
 
     fmpz ** comb_temp = ctemp->comb_temp;
     fmpz * temp = ctemp->temp;
@@ -98,7 +84,7 @@ void fmpz_multi_CRT_ui(fmpz_t output, const mp_limb_t * residues,
     }
 
     /* First layer of reconstruction */
-    num = (1L << n);
+    num = (WORD(1) << n);
 
     for (i = 0, j = 0; i + 2 <= num_primes; i += 2, j++)
     {

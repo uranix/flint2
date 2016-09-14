@@ -1,46 +1,35 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/*****************************************************************************
-
-    Copyright (C) 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
-void _nmod_poly_mullow(mp_ptr res, mp_srcptr poly1, long len1, 
-                             mp_srcptr poly2, long len2, long n, nmod_t mod)
+void _nmod_poly_mullow(mp_ptr res, mp_srcptr poly1, slong len1, 
+                             mp_srcptr poly2, slong len2, slong n, nmod_t mod)
 {
-    long bits, bits2;
-    
+    slong bits, bits2;
+
+    len1 = FLINT_MIN(len1, n);
+    len2 = FLINT_MIN(len2, n);
+
     if (len1 + len2 <= 6 || n <= 6)
     {
         _nmod_poly_mullow_classical(res, poly1, len1, poly2, len2, n, mod);
         return;
     }
 
-    bits = FLINT_BITS - (long) mod.norm;
+    bits = FLINT_BITS - (slong) mod.norm;
     bits2 = FLINT_BIT_COUNT(len1);
 
     if (2 * bits + bits2 <= FLINT_BITS && len1 + len2 < 16)
@@ -50,9 +39,9 @@ void _nmod_poly_mullow(mp_ptr res, mp_srcptr poly1, long len1,
 }
 
 void nmod_poly_mullow(nmod_poly_t res, 
-              const nmod_poly_t poly1, const nmod_poly_t poly2, long trunc)
+              const nmod_poly_t poly1, const nmod_poly_t poly2, slong trunc)
 {
-    long len1, len2, len_out;
+    slong len1, len2, len_out;
     
     len1 = poly1->length;
     len2 = poly2->length;

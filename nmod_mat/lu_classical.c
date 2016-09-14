@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,9 +18,9 @@
 
 
 static __inline__ int
-nmod_mat_pivot(nmod_mat_t A, long * P, long start_row, long col)
+nmod_mat_pivot(nmod_mat_t A, slong * P, slong start_row, slong col)
 {
-    long j, t;
+    slong j, t;
     mp_ptr u;
 
     if (nmod_mat_entry(A, start_row, col) != 0)
@@ -59,12 +45,12 @@ nmod_mat_pivot(nmod_mat_t A, long * P, long start_row, long col)
 }
 
 
-long 
-nmod_mat_lu_classical(long * P, nmod_mat_t A, int rank_check)
+slong 
+nmod_mat_lu_classical(slong * P, nmod_mat_t A, int rank_check)
 {
     mp_limb_t d, e, **a;
     nmod_t mod;
-    long i, m, n, rank, length, row, col;
+    slong i, m, n, rank, length, row, col;
 
     m = A->r;
     n = A->c;

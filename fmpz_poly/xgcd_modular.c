@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
+    Copyright (C) 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-    Copyright (C) 2011 Sebastian Pancratz
-   
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -32,8 +18,8 @@
 #include "mpn_extras.h"
 
 void _fmpz_poly_xgcd_modular(fmpz_t r, fmpz * s, fmpz * t, 
-                             const fmpz * poly1, long len1, 
-                             const fmpz * poly2, long len2)
+                             const fmpz * poly1, slong len1, 
+                             const fmpz * poly2, slong len2)
 {
     mp_ptr G, S, T, A, B, T1, T2;
     fmpz_t prod;
@@ -53,7 +39,7 @@ void _fmpz_poly_xgcd_modular(fmpz_t r, fmpz * s, fmpz * t,
     _fmpz_vec_zero(s, len2);
     _fmpz_vec_zero(t, len1);
 
-    p = (1UL << (FLINT_BITS - 1));
+    p = (UWORD(1) << (FLINT_BITS - 1));
 
     G = _nmod_vec_init(4 * len1 + 5 * len2 - 2);
     S = G + len2;
@@ -79,8 +65,8 @@ void _fmpz_poly_xgcd_modular(fmpz_t r, fmpz * s, fmpz * t,
         R = fmpz_fdiv_ui(r, p);
 
         /* If p divides resultant or either leading coeff, discard p */
-        if ((fmpz_fdiv_ui(poly1 + len1 - 1, p) == 0L) || 
-            (fmpz_fdiv_ui(poly2 + len2 - 1, p) == 0L) || (R == 0))
+        if ((fmpz_fdiv_ui(poly1 + len1 - 1, p) == WORD(0)) || 
+            (fmpz_fdiv_ui(poly2 + len2 - 1, p) == WORD(0)) || (R == 0))
             continue;
 
         nmod_init(&mod, p);
@@ -91,7 +77,7 @@ void _fmpz_poly_xgcd_modular(fmpz_t r, fmpz * s, fmpz * t,
 
         if (stabilised) /* CRT has stabilised, probably don't need more xgcds */
         {
-            long tlen;
+            slong tlen;
 
             /* Multiply out A*S + B*T to see if it is R mod p */
             _fmpz_vec_get_nmod_vec(S, s, len2, mod);
@@ -152,7 +138,7 @@ void _fmpz_poly_xgcd_modular(fmpz_t r, fmpz * s, fmpz * t,
 
         if (stabilised) 
         {
-            long bound1, bound2, bound;
+            slong bound1, bound2, bound;
 
             bound1 = FLINT_BIT_COUNT(len2) 
                     + FLINT_ABS(_fmpz_vec_max_bits(poly1, len1)) 
@@ -176,62 +162,65 @@ void
 fmpz_poly_xgcd_modular(fmpz_t r, fmpz_poly_t s, fmpz_poly_t t,
                        const fmpz_poly_t poly1, const fmpz_poly_t poly2)
 {
-    const long len1 = poly1->length;
-    const long len2 = poly2->length;
-    fmpz *S, *T;
-    fmpz_poly_t temp1, temp2;
+    if (poly1->length < poly2->length)
+    {
+        fmpz_poly_xgcd_modular(r, t, s, poly2, poly1);
+    } else /* len1 >= len2 >= 0 */
+    {
+        const slong len1 = poly1->length;
+        const slong len2 = poly2->length;
+        fmpz *S, *T;
+        fmpz_poly_t temp1, temp2;
 
-    if (len1 == 0 || len2 == 0)
-    {
-        fmpz_zero(r);
-        return;
-    }
-
-    if (s == poly1 || s == poly2)
-    {
-       fmpz_poly_init2(temp1, len2);
-       S = temp1->coeffs;
-    }
-    else
-    {
-       fmpz_poly_fit_length(s, len2);
-       S = s->coeffs;
-    }
+        if (len1 == 0 || len2 == 0) 
+        {
+            fmpz_zero(r);
+        } 
+        else /* len1 >= len2 >= 1 */
+        {
+            if (s == poly1 || s == poly2)
+            {
+                fmpz_poly_init2(temp1, len2);
+                S = temp1->coeffs;
+            }
+            else
+            {
+                fmpz_poly_fit_length(s, len2);
+                S = s->coeffs;
+            }
     
-    if (t == poly1 || t == poly2)
-    {
-       fmpz_poly_init2(temp2, len1);
-       T = temp2->coeffs;
-    }
-    else
-    {
-       fmpz_poly_fit_length(t, len1);
-       T = t->coeffs;
-    }
-    
-    if (len1 >= len2)
-       _fmpz_poly_xgcd_modular(r, S, T, poly1->coeffs, len1,
+            if (t == poly1 || t == poly2)
+            {
+                fmpz_poly_init2(temp2, len1);
+                T = temp2->coeffs;
+            }
+            else
+            {
+                fmpz_poly_fit_length(t, len1);
+                T = t->coeffs;
+            }
+     
+            _fmpz_poly_xgcd_modular(r, S, T, poly1->coeffs, len1,
                                         poly2->coeffs, len2);
-    else
-       _fmpz_poly_xgcd_modular(r, T, S, poly2->coeffs, len2,
-                                        poly1->coeffs, len1);
+            
+            if (s == poly1 || s == poly2)
+            {
+                fmpz_poly_swap(s, temp1);
+                fmpz_poly_clear(temp1);
+            }
 
-    if (s == poly1 || s == poly2)
-    {
-       fmpz_poly_swap(s, temp1);
-       fmpz_poly_clear(temp1);
+            if (t == poly1 || t == poly2)
+            {
+                fmpz_poly_swap(t, temp2);
+                fmpz_poly_clear(temp2);
+            }
+ 
+            _fmpz_poly_set_length(s, len2);
+            _fmpz_poly_normalise(s);
+ 
+            _fmpz_poly_set_length(t, len1);
+            _fmpz_poly_normalise(t);
+        }
     }
-
-    if (t == poly1 || t == poly2)
-    {
-       fmpz_poly_swap(t, temp2);
-       fmpz_poly_clear(temp2);
-    }
-
-    _fmpz_poly_set_length(s, len2);
-    _fmpz_poly_normalise(s);
-
-    _fmpz_poly_set_length(t, len1);
-    _fmpz_poly_normalise(t);
 }
 

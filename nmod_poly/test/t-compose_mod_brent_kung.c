@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_poly.h"
 #include "ulong_extras.h"
@@ -34,12 +20,12 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
-    flint_randinit(state);
-    printf("compose_mod_brent_kung....");
+    FLINT_TEST_INIT(state);
+    
+    flint_printf("compose_mod_brent_kung....");
     fflush(stdout);
 
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         nmod_poly_t a, b, c, d, e;
         mp_limb_t m = n_randtest_prime(state, 0);
@@ -61,12 +47,12 @@ main(void)
 
         if (!nmod_poly_equal(d, e))
         {
-            printf("FAIL (composition):\n");
-            nmod_poly_print(a); printf("\n");
-            nmod_poly_print(b); printf("\n");
-            nmod_poly_print(c); printf("\n");
-            nmod_poly_print(d); printf("\n");
-            nmod_poly_print(e); printf("\n");
+            flint_printf("FAIL (composition):\n");
+            nmod_poly_print(a); flint_printf("\n");
+            nmod_poly_print(b); flint_printf("\n");
+            nmod_poly_print(c); flint_printf("\n");
+            nmod_poly_print(d); flint_printf("\n");
+            nmod_poly_print(e); flint_printf("\n");
             abort();
         }
 
@@ -78,7 +64,7 @@ main(void)
     }
 
     /* Test aliasing of res and a */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         nmod_poly_t a, b, c, d;
         mp_limb_t m = n_randtest_prime(state, 0);
@@ -98,11 +84,11 @@ main(void)
 
         if (!nmod_poly_equal(d, a))
         {
-            printf("FAIL (aliasing a):\n");
-            nmod_poly_print(a); printf("\n");
-            nmod_poly_print(b); printf("\n");
-            nmod_poly_print(c); printf("\n");
-            nmod_poly_print(d); printf("\n");
+            flint_printf("FAIL (aliasing a):\n");
+            nmod_poly_print(a); flint_printf("\n");
+            nmod_poly_print(b); flint_printf("\n");
+            nmod_poly_print(c); flint_printf("\n");
+            nmod_poly_print(d); flint_printf("\n");
             abort();
         }
 
@@ -113,7 +99,7 @@ main(void)
     }
 
     /* Test aliasing of res and b */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         nmod_poly_t a, b, c, d;
         mp_limb_t m = n_randtest_prime(state, 0);
@@ -133,11 +119,11 @@ main(void)
 
         if (!nmod_poly_equal(d, b))
         {
-            printf("FAIL (aliasing b)\n");
-            nmod_poly_print(a); printf("\n");
-            nmod_poly_print(b); printf("\n");
-            nmod_poly_print(c); printf("\n");
-            nmod_poly_print(d); printf("\n");
+            flint_printf("FAIL (aliasing b)\n");
+            nmod_poly_print(a); flint_printf("\n");
+            nmod_poly_print(b); flint_printf("\n");
+            nmod_poly_print(c); flint_printf("\n");
+            nmod_poly_print(d); flint_printf("\n");
             abort();
         }
 
@@ -148,7 +134,7 @@ main(void)
     }
 
     /* Test aliasing of res and c */
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         nmod_poly_t a, b, c, d;
         mp_limb_t m = n_randtest_prime(state, 0);
@@ -168,11 +154,11 @@ main(void)
 
         if (!nmod_poly_equal(d, c))
         {
-            printf("FAIL (aliasing c)\n");
-            nmod_poly_print(a); printf("\n");
-            nmod_poly_print(b); printf("\n");
-            nmod_poly_print(c); printf("\n");
-            nmod_poly_print(d); printf("\n");
+            flint_printf("FAIL (aliasing c)\n");
+            nmod_poly_print(a); flint_printf("\n");
+            nmod_poly_print(b); flint_printf("\n");
+            nmod_poly_print(c); flint_printf("\n");
+            nmod_poly_print(d); flint_printf("\n");
             abort();
         }
 
@@ -182,7 +168,8 @@ main(void)
         nmod_poly_clear(d);
     }
 
-    flint_randclear(state);
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,8 +29,8 @@ void sample(void * arg, ulong count)
    mp_bitcnt_t bits = info->bits;
    ulong type = info->type;
    ulong i;
-   flint_rand_t state;
-   flint_randinit(state);
+   FLINT_TEST_INIT(state);
+   
       
    mp_ptr arr  = (mp_ptr) flint_malloc(1024*sizeof(mp_limb_t));
    mp_ptr arr2 = (mp_ptr) flint_malloc(1024*sizeof(mp_limb_t));
@@ -53,7 +39,7 @@ void sample(void * arg, ulong count)
    {
       int j;
       d = n_randbits(state, bits);
-      if (d == 0UL) d++;
+      if (d == UWORD(0)) d++;
 
       dinv = n_preinvert_limb(d);
       
@@ -68,7 +54,7 @@ void sample(void * arg, ulong count)
 	  case 1:
 
          prof_start();
-         for (mp_size_t j = 0; j < 10000UL; j++)
+         for (mp_size_t j = 0; j < UWORD(10000); j++)
          {
             r += n_lll_mod_preinv(arr2[j&1023], arr[j&1023], arr[(j+1)&1023], d, dinv);  
          }
@@ -79,7 +65,7 @@ void sample(void * arg, ulong count)
 
    }
   
-   if (r == 9879875897UL) abort();
+   if (r == UWORD(9879875897)) abort();
 
    flint_randclear(state);
    flint_free(arr);
@@ -98,7 +84,7 @@ int main(void)
 	  info.type = 1;
       prof_repeat(&min1, &max, sample, (void *) &info);
 
-	  printf("bits %d, ll_inv %.1f c/l\n", 
+	  flint_printf("bits %d, ll_inv %.1f c/l\n", 
            i,
 		   (min1/(double)FLINT_CLOCK_SCALE_FACTOR)/10000
  	  );

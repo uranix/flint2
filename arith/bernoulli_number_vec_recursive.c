@@ -1,42 +1,22 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <mpir.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "arith.h"
 
 static void
-__ramanujan_even_common_denom(fmpz * num, fmpz * den, long start, long n)
+__ramanujan_even_common_denom(fmpz * num, fmpz * den, slong start, slong n)
 {
     fmpz_t t, c, d, cden;
-    long j, k, m, mcase;
-    int prodsize;
+    slong j, k, m, mcase;
+    int prodsize = 0;
 
     if (start >= n)
         return;
@@ -47,7 +27,7 @@ __ramanujan_even_common_denom(fmpz * num, fmpz * den, long start, long n)
     fmpz_init(cden);
 
     /* Common denominator */
-    fmpz_primorial(cden, n + 1);
+    arith_primorial(cden, n + 1);
 
     start += start % 2;
 
@@ -63,41 +43,41 @@ __ramanujan_even_common_denom(fmpz * num, fmpz * den, long start, long n)
     {
         mcase = m % 6;
 
-        fmpz_mul_ui(num + m, cden, m + 3UL);
-        fmpz_divexact_ui(num + m, num + m, 3UL);
+        fmpz_mul_ui(num + m, cden, m + UWORD(3));
+        fmpz_divexact_ui(num + m, num + m, UWORD(3));
 
         if (mcase == 4)
         {
             fmpz_neg(num + m, num + m);
-            fmpz_divexact_ui(num + m, num + m, 2UL);
+            fmpz_divexact_ui(num + m, num + m, UWORD(2));
         }
 
         /* All factors are strictly smaller than m + 4; choose prodsize such
-           that (m + 4)^prodsize fits in a signed long. */
+           that (m + 4)^prodsize fits in an slong. */
         {
 #if FLINT64
-            if      (m < 1444L)       prodsize = 6;
-            else if (m < 2097148L)    prodsize = 3;
-            else if (m < 3037000495L) prodsize = 2;  /* not very likely... */
-            else abort();
+            if      (m < WORD(1444))       prodsize = 6;
+            else if (m < WORD(2097148))    prodsize = 3;
+            else if (m < WORD(3037000495)) prodsize = 2;  /* not very likely... */
+            else flint_abort();
 #else
-            if      (m < 32L)    prodsize = 6;
-            else if (m < 1286L)  prodsize = 3;
-            else if (m < 46336L) prodsize = 2;
-            else abort();
+            if      (m < WORD(32))    prodsize = 6;
+            else if (m < WORD(1286))  prodsize = 3;
+            else if (m < WORD(46336)) prodsize = 2;
+            else flint_abort();
 #endif
         }
 
         /* c = t = binomial(m+3, m) */
-        fmpz_set_ui(t, m + 1UL);
-        fmpz_mul_ui(t, t, m + 2UL);
-        fmpz_mul_ui(t, t, m + 3UL);
-        fmpz_divexact_ui(t, t, 6UL);
+        fmpz_set_ui(t, m + UWORD(1));
+        fmpz_mul_ui(t, t, m + UWORD(2));
+        fmpz_mul_ui(t, t, m + UWORD(3));
+        fmpz_divexact_ui(t, t, UWORD(6));
         fmpz_set(c, t);
 
         for (j = 6; j <= m; j += 6)
         {
-            long r = m - j;
+            slong r = m - j;
 
             /* c = binomial(m+3, m-j); */
             switch (prodsize)
@@ -134,7 +114,7 @@ __ramanujan_even_common_denom(fmpz * num, fmpz * den, long start, long n)
     /* Convert to separate denominators */
     for (k = 0; k < n; k += 2)
     {
-        bernoulli_number_denom(den + k, k);
+        arith_bernoulli_number_denom(den + k, k);
         fmpz_divexact(t, cden, den + k);
         fmpz_divexact(num + k, num + k, t);
     }
@@ -145,9 +125,9 @@ __ramanujan_even_common_denom(fmpz * num, fmpz * den, long start, long n)
     fmpz_clear(cden);
 }
 
-void _bernoulli_number_vec_recursive(fmpz * num, fmpz * den, long n)
+void _arith_bernoulli_number_vec_recursive(fmpz * num, fmpz * den, slong n)
 {
-    long i, start;
+    slong i, start;
     fmpz_t t;
     fmpz_t d;
 
@@ -158,13 +138,13 @@ void _bernoulli_number_vec_recursive(fmpz * num, fmpz * den, long n)
 
     /* Initial values */
     for (i = 0; i < start; i += 2)
-        _bernoulli_number(num + i, den + i, i);
+        _arith_bernoulli_number(num + i, den + i, i);
 
     __ramanujan_even_common_denom(num, den, start, n);
 
     /* Odd values */
     for (i = 1; i < n; i += 2)
-        _bernoulli_number(num + i, den + i, i);
+        _arith_bernoulli_number(num + i, den + i, i);
 
     fmpz_clear(d);
     fmpz_clear(t);

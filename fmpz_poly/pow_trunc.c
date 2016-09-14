@@ -1,38 +1,24 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
 void
-_fmpz_poly_pow_trunc(fmpz * res, const fmpz * poly, ulong e, long n)
+_fmpz_poly_pow_trunc(fmpz * res, const fmpz * poly, ulong e, slong n)
 {
-    ulong bit = ~((~0UL) >> 1);
+    ulong bit = ~((~UWORD(0)) >> 1);
     fmpz *v = _fmpz_vec_init(n);
     fmpz *R, *S, *T;
 
@@ -40,7 +26,7 @@ _fmpz_poly_pow_trunc(fmpz * res, const fmpz * poly, ulong e, long n)
        Set bits to the bitmask with a 1 one place lower than the msb of e
      */
     
-    while ((bit & e) == 0UL)
+    while ((bit & e) == UWORD(0))
         bit >>= 1;
     
     bit >>= 1;
@@ -56,7 +42,7 @@ _fmpz_poly_pow_trunc(fmpz * res, const fmpz * poly, ulong e, long n)
         if ((bit2 & e))
             swaps = ~swaps;
         while (bit2 >>= 1)
-            if ((bit2 & e) == 0UL)
+            if ((bit2 & e) == UWORD(0))
                 swaps = ~swaps;
         
         if (swaps == 0U)
@@ -104,11 +90,11 @@ _fmpz_poly_pow_trunc(fmpz * res, const fmpz * poly, ulong e, long n)
 }
 
 void
-fmpz_poly_pow_trunc(fmpz_poly_t res, const fmpz_poly_t poly, ulong e, long n)
+fmpz_poly_pow_trunc(fmpz_poly_t res, const fmpz_poly_t poly, ulong e, slong n)
 {
     fmpz * copy;
     int clear;
-    long i, len;
+    slong i, len;
 
     if (n == 0)
     {
@@ -162,7 +148,7 @@ fmpz_poly_pow_trunc(fmpz_poly_t res, const fmpz_poly_t poly, ulong e, long n)
         copy = (fmpz *) flint_malloc(n * sizeof(fmpz));
         for (i = 0; i < poly->length; i++)
             copy[i] = poly->coeffs[i];
-        mpn_zero((mp_ptr) copy + poly->length, n - poly->length);
+        flint_mpn_zero((mp_ptr) copy + poly->length, n - poly->length);
         clear = 1;
     }
 

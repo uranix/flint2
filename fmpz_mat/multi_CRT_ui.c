@@ -1,41 +1,22 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
-#include "flint.h"
-#include "nmod_mat.h"
-#include "nmod_vec.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
 
 void
 fmpz_mat_multi_CRT_ui_precomp(fmpz_mat_t mat,
-    nmod_mat_t * const residues, long nres,
-    fmpz_comb_t comb, fmpz_comb_temp_t temp, int sign)
+    nmod_mat_t * const residues, slong nres,
+    const fmpz_comb_t comb, fmpz_comb_temp_t temp, int sign)
 {
-    long i, j, k;
+    slong i, j, k;
     mp_ptr r;
 
     r = _nmod_vec_init(nres);
@@ -55,12 +36,12 @@ fmpz_mat_multi_CRT_ui_precomp(fmpz_mat_t mat,
 
 void
 fmpz_mat_multi_CRT_ui(fmpz_mat_t mat, nmod_mat_t * const residues,
-    long nres, int sign)
+    slong nres, int sign)
 {
     fmpz_comb_t comb;
     fmpz_comb_temp_t temp;
     mp_ptr primes;
-    long i;
+    slong i;
 
     primes = _nmod_vec_init(nres);
     for (i = 0; i < nres; i++)

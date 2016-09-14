@@ -1,37 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 William Hart
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <mpir.h>
-#include "flint.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
 
 /*
-    The macros xxx_putc, xxx_printf, and xxx_fmpz_print are provided 
+    The macros xxx_putc, xxx_flint_printf, and xxx_fmpz_print are provided 
     as wrappers to handle return values and error conditions.  While 
     this is not exactly pretty, it improves the readability of the 
     functions fmpz_mat_fprint and fmpz_mat_fprint_pretty.  Moreover, 
@@ -48,9 +29,9 @@ do {                       \
         return z;          \
 } while (0)
 
-#define xxx_printf()                       \
+#define xxx_flint_printf()                       \
 do {                                       \
-    z = fprintf(file, "%li %li  ", r, c);  \
+    z = flint_fprintf(file, "%li %li  ", r, c);  \
     if (z <= 0)                            \
         return z;                          \
 } while (0)
@@ -65,11 +46,11 @@ do {                             \
 int fmpz_mat_fprint(FILE * file, const fmpz_mat_t mat)
 {
     int z;
-    long i, j;
-    long r = mat->r;
-    long c = mat->c;
+    slong i, j;
+    slong r = mat->r;
+    slong c = mat->c;
 
-    xxx_printf();
+    xxx_flint_printf();
     for (i = 0; (i < r); i++)
     {
         for (j = 0; j < c; j++)
@@ -88,9 +69,9 @@ int fmpz_mat_fprint(FILE * file, const fmpz_mat_t mat)
 int fmpz_mat_fprint_pretty(FILE * file, const fmpz_mat_t mat)
 {
     int z;
-    long i, j;
-    long r = mat->r;
-    long c = mat->c;
+    slong i, j;
+    slong r = mat->r;
+    slong c = mat->c;
 
     xxx_putc('[');
     for (i = 0; i < r; i++)
@@ -111,6 +92,6 @@ int fmpz_mat_fprint_pretty(FILE * file, const fmpz_mat_t mat)
 }
 
 #undef xxx_putc
-#undef xxx_printf
+#undef xxx_flint_printf
 #undef xxx_fmpz_print
 

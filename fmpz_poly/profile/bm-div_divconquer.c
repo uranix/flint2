@@ -1,39 +1,25 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
 
-void fmpz_poly_gmprand(fmpz_poly_t rop, gmp_randstate_t state, long len, long bits)
+void fmpz_poly_gmprand(fmpz_poly_t rop, gmp_randstate_t state, slong len, slong bits)
 {
-    long i;
+    slong i;
     mpz_t c;
     fmpz_t d;
     mpz_init(c);
@@ -43,7 +29,7 @@ void fmpz_poly_gmprand(fmpz_poly_t rop, gmp_randstate_t state, long len, long bi
     for (i = 0; i < len; i++)
     {
         mpz_urandomb(c, state, bits);
-        if (rand() & 1L)
+        if (rand() & WORD(1))
             mpz_neg(c, c);
         fmpz_set_mpz(d, c);
         fmpz_poly_set_coeff_fmpz(rop, i, d);
@@ -72,8 +58,8 @@ main(void)
     gmp_randstate_t state;
     
     gmp_randinit_default(state);
-    gmp_randseed_ui(state, 362436069UL);
-    srand(521288629UL);
+    gmp_randseed_ui(state, UWORD(362436069));
+    srand(UWORD(521288629));
         
     fmpz_poly_init(f);
     fmpz_poly_init(g);
@@ -85,13 +71,13 @@ main(void)
     fmpz_poly_fit_length(q, lenhi);
     fmpz_poly_fit_length(r, 2 * lenhi - 1);
     
-    printf("3 2 1");
+    flint_printf("3 2 1");
     for (len = lenlo, j = 0; len <= lenhi; len += lenh, j++)
     {
         for (bits = bitslo, i = 0; bits <= bitshi; bits += bitsh, i++)
         {
             int c, n, reps = 0;
-            long s = 0L;
+            slong s = WORD(0);
             
             for (n = 0; n < ncases; n++)
             {
@@ -126,11 +112,11 @@ main(void)
             }
 
             X[i][j] = (double) s / (double) reps;
-            printf(" .");
+            flint_printf(" .");
             fflush(stdout);
         }
     }
-    printf("\n");
+    flint_printf("\n");
 
     fmpz_poly_clear(f);
     fmpz_poly_clear(g);
@@ -140,8 +126,8 @@ main(void)
     for (i = 0; i < rows; i++)
     {
         for (j = 0; j < cols; j++)
-            printf("%8.3f", X[i][j]);
-        printf("\n");
+            flint_printf("%8.3f", X[i][j]);
+        flint_printf("\n");
     }
 
     gmp_randclear(state);

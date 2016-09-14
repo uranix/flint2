@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2012 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "fmpz.h"
@@ -35,50 +21,54 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("setbit....");
+    flint_printf("setbit....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
-    for (i = 0; i < 100000; i++)
+    for (i = 0; i < 100000 * flint_test_multiplier(); i++)
     {
         ulong j;
-        fmpz_t a, c;
-        mpz_t b;
+        fmpz_t a, b, c;
+        mpz_t z;
 
         fmpz_init(a);
+        fmpz_init(b);
         fmpz_init(c);
-        mpz_init(b);
+        mpz_init(z);
 
         fmpz_randtest(a, state, 2 * FLINT_BITS);
-        fmpz_get_mpz(b, a);
+        fmpz_set(b, a);
+        fmpz_get_mpz(z, b);
         j = n_randint(state, 3 * FLINT_BITS);
 
-        fmpz_setbit(a, j);
-        mpz_setbit(b, j);
-        fmpz_set_mpz(c, b);
+        fmpz_setbit(b, j);
+        mpz_setbit(z, j);
+        fmpz_set_mpz(c, z);
 
-        result = (fmpz_equal(a, c));
+        result = (fmpz_equal(b, c));
 
         if (!result)
         {
-            printf("FAIL:\n");
-            printf("a = "), fmpz_print(a), printf("\n");
-            gmp_printf("b = %Zd\n", b);
-            printf("c = "), fmpz_print(c), printf("\n");
-            printf("j = %ld\n", j);
+            flint_printf("FAIL:\n");
+            flint_printf("a = "), fmpz_print(a), flint_printf("\n");
+            flint_printf("b = "), fmpz_print(b), flint_printf("\n");
+            flint_printf("c = "), fmpz_print(c), flint_printf("\n");
+            gmp_printf("z = %Zd\n", z);
+            flint_printf("j = %wd\n", j);
             abort();
         }
 
         fmpz_clear(a);
+        fmpz_clear(b);
         fmpz_clear(c);
-        mpz_clear(b);
+        mpz_clear(z);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

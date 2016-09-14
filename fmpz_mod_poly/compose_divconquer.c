@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy1 of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz_mod_poly.h"
 
@@ -41,7 +27,7 @@
  */
 
 void _fmpz_mod_poly_compose_divconquer_recursive(fmpz *res, 
-    const fmpz *poly1, long len1, fmpz **pow2, long len2, fmpz *v, 
+    const fmpz *poly1, slong len1, fmpz **pow2, slong len2, fmpz *v, 
     const fmpz_t p)
 {
     if (len1 == 1)
@@ -57,26 +43,26 @@ void _fmpz_mod_poly_compose_divconquer_recursive(fmpz *res,
     }
     else
     {
-        const long i = FLINT_BIT_COUNT(len1 - 1) - 1;
-        fmpz *w = v + ((1L << i) - 1) * (len2 - 1) + 1;
+        const slong i = FLINT_BIT_COUNT(len1 - 1) - 1;
+        fmpz *w = v + ((WORD(1) << i) - 1) * (len2 - 1) + 1;
 
         _fmpz_mod_poly_compose_divconquer_recursive(v, 
-            poly1 + (1L << i), len1 - (1L << i), pow2, len2, w, p);
+            poly1 + (WORD(1) << i), len1 - (WORD(1) << i), pow2, len2, w, p);
 
-        _fmpz_mod_poly_mul(res, pow2[i], (len2 - 1) * (1L << i) + 1, 
-                                v, (len2 - 1) * (len1 - (1L << i) - 1) + 1, p);
+        _fmpz_mod_poly_mul(res, pow2[i], (len2 - 1) * (WORD(1) << i) + 1, 
+                                v, (len2 - 1) * (len1 - (WORD(1) << i) - 1) + 1, p);
 
-        _fmpz_mod_poly_compose_divconquer_recursive(v, poly1, 1L << i, 
+        _fmpz_mod_poly_compose_divconquer_recursive(v, poly1, WORD(1) << i, 
                                                        pow2, len2, w, p);
 
-        _fmpz_mod_poly_add(res, res, (len2 - 1) * ((1L << i) - 1) + 1, 
-                                  v, (len2 - 1) * ((1L << i) - 1) + 1, p);
+        _fmpz_mod_poly_add(res, res, (len2 - 1) * ((WORD(1) << i) - 1) + 1, 
+                                  v, (len2 - 1) * ((WORD(1) << i) - 1) + 1, p);
     }
 }
 
 void _fmpz_mod_poly_compose_divconquer(fmpz *res, 
-                                       const fmpz *poly1, long len1, 
-                                       const fmpz *poly2, long len2, 
+                                       const fmpz *poly1, slong len1, 
+                                       const fmpz *poly2, slong len2, 
                                        const fmpz_t p)
 {
     if (len1 == 1 || len2 == 0)
@@ -85,10 +71,10 @@ void _fmpz_mod_poly_compose_divconquer(fmpz *res,
     }
     else
     {
-        const long k = FLINT_BIT_COUNT(len1 - 1);
-        const long lenV = len2 * ((1L << k) - 1) + k;
-        const long lenW = (len2 - 1) * ((1L << k) - 2) - (len2 - 2) * (k-1);
-        long i;
+        const slong k = FLINT_BIT_COUNT(len1 - 1);
+        const slong lenV = len2 * ((WORD(1) << k) - 1) + k;
+        const slong lenW = (len2 - 1) * ((WORD(1) << k) - 2) - (len2 - 2) * (k-1);
+        slong i;
         fmpz *v, *w, **pow2;
 
         v    = _fmpz_vec_init(lenV + lenW);
@@ -97,14 +83,14 @@ void _fmpz_mod_poly_compose_divconquer(fmpz *res,
 
         for (i = 0; i < k; i++)
         {
-            pow2[i] = v + (len2 * ((1L << i) - 1) + i);
+            pow2[i] = v + (len2 * ((WORD(1) << i) - 1) + i);
         }
 
         _fmpz_vec_set(pow2[0], poly2, len2);
         for (i = 1; i < k; i++)
         {
             _fmpz_mod_poly_sqr(pow2[i], 
-                               pow2[i-1], (len2 - 1) * (1L << (i - 1)) + 1, p);
+                               pow2[i-1], (len2 - 1) * (WORD(1) << (i - 1)) + 1, p);
         }
 
         _fmpz_mod_poly_compose_divconquer_recursive(res, poly1, len1, 
@@ -119,8 +105,8 @@ void fmpz_mod_poly_compose_divconquer(fmpz_mod_poly_t res,
                                       const fmpz_mod_poly_t poly1, 
                                       const fmpz_mod_poly_t poly2)
 {
-    const long len1 = poly1->length;
-    const long len2 = poly2->length;
+    const slong len1 = poly1->length;
+    const slong len2 = poly2->length;
 
     if (len1 == 0)
     {
@@ -132,7 +118,7 @@ void fmpz_mod_poly_compose_divconquer(fmpz_mod_poly_t res,
     }
     else
     {
-        const long lenr = (len1 - 1) * (len2 - 1) + 1;
+        const slong lenr = (len1 - 1) * (len2 - 1) + 1;
 
         if ((res != poly1) && (res != poly2))
         {

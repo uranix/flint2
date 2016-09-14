@@ -1,43 +1,30 @@
-/*=============================================================================
+/*
+    Copyright (C) 2006, 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2006, 2011 William Hart
-
-******************************************************************************/
-
-#undef ulong /* avoid clash with stdlib */
+#define ulong ulongxx /* interferes with system includes */
 #include <stdlib.h>
 #include <stdio.h>
-#define ulong unsigned long
+#undef ulong
+#define ulong mp_limb_t
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "qsieve.h"
 #include "fmpz.h"
 
 void balance4(qs_t qs_inf, mp_limb_t * A_ind, 
-     prime_t * factor_base, long min, long fact, long span, mp_limb_t target)
+     prime_t * factor_base, slong min, slong fact, slong span, mp_limb_t target)
 {
-    long i, j;
+    slong i, j;
     
     mp_limb_t prod = factor_base[A_ind[0]].p * factor_base[A_ind[1]].p;
     i = fact;
@@ -58,9 +45,9 @@ void balance4(qs_t qs_inf, mp_limb_t * A_ind,
 }
 
 void balance5(qs_t qs_inf, mp_limb_t * A_ind, 
-     prime_t * factor_base, long min, long high, long span, mp_limb_t target)
+     prime_t * factor_base, slong min, slong high, slong span, mp_limb_t target)
 {
-    long i, j;
+    slong i, j;
     
     mp_limb_t prod = factor_base[A_ind[0]].p * factor_base[A_ind[1]].p 
                    * factor_base[A_ind[2]].p;
@@ -83,16 +70,16 @@ void balance5(qs_t qs_inf, mp_limb_t * A_ind,
 
 void try_compute_A(qs_t qs_inf)
 {
-   long min = qs_inf->min;
-   long span = qs_inf->span;
-   long fact = qs_inf->fact;
-   long mid = qs_inf->mid;
-   long high = qs_inf->high;
-   long s = qs_inf->s;
+   slong min = qs_inf->min;
+   slong span = qs_inf->span;
+   slong fact = qs_inf->fact;
+   slong mid = qs_inf->mid;
+   slong high = qs_inf->high;
+   slong s = qs_inf->s;
    mp_limb_t * A_ind = qs_inf->A_ind;
    mp_limb_t target = qs_inf->target_A;
    prime_t * factor_base = qs_inf->factor_base;
-   long i, j;
+   slong i, j;
    mp_limb_t prod;
        
    if (qs_inf->A == 0) /* this is our first poly */
@@ -270,13 +257,13 @@ void try_compute_A(qs_t qs_inf)
    return;
 
 out_of_polys:
-   printf("Out of polynomials, s = %ld\n", qs_inf->s);
-   abort();
+   flint_printf("Out of polynomials, s = %wd\n", qs_inf->s);
+   flint_abort();
 }
 
 void qsieve_ll_compute_A(qs_t qs_inf)
 {
-    long i;
+    slong i;
     
     do
     {
@@ -287,7 +274,7 @@ void qsieve_ll_compute_A(qs_t qs_inf)
           || qs_inf->A < qs_inf->target_A / P_GOODNESS2) && qs_inf->s == 2)));
 
 #if QS_DEBUG > 1
-   printf("A = %ld, target A = %ld\n", qs_inf->A, qs_inf->target_A);
+   flint_printf("A = %wd, target A = %wd\n", qs_inf->A, qs_inf->target_A);
 #endif    
  
     for (i = 0; i < qs_inf->s; i++)
@@ -299,7 +286,7 @@ void qsieve_ll_compute_A(qs_t qs_inf)
 
 void qsieve_ll_compute_B_terms(qs_t qs_inf)
 {
-   long s = qs_inf->s;
+   slong s = qs_inf->s;
    mp_limb_t * A_ind = qs_inf->A_ind;
    mp_limb_t * A_modp = qs_inf->A_modp;
    mp_limb_t * B_terms = qs_inf->B_terms;
@@ -307,7 +294,7 @@ void qsieve_ll_compute_B_terms(qs_t qs_inf)
    mp_limb_t A = qs_inf->A;
    mp_limb_t B;
    mp_limb_t p, temp, temp2, pinv;
-   long i;
+   slong i;
    
    for (i = 0; i < s; i++)
    {
@@ -331,7 +318,7 @@ void qsieve_ll_compute_B_terms(qs_t qs_inf)
 
 void qsieve_ll_compute_off_adj(qs_t qs_inf)
 {
-   long num_primes = qs_inf->num_primes;
+   slong num_primes = qs_inf->num_primes;
    mp_limb_t A = qs_inf->A;
    mp_limb_t B = qs_inf->B;
    mp_limb_t * A_inv = qs_inf->A_inv;
@@ -339,18 +326,20 @@ void qsieve_ll_compute_off_adj(qs_t qs_inf)
    mp_limb_t * B_terms = qs_inf->B_terms;
    mp_limb_t * soln1 = qs_inf->soln1;
    mp_limb_t * soln2 = qs_inf->soln2;
+   mp_limb_t Amod;
    int * sqrts = qs_inf->sqrts;
    prime_t * factor_base = qs_inf->factor_base;
-   long s = qs_inf->s;
+   slong s = qs_inf->s;
    mp_limb_t p, temp, pinv;
-   long i, j;
+   slong i, j;
    
    for (i = 2; i < num_primes; i++) /* skip k and 2 */
    {
       p = factor_base[i].p;
       pinv = factor_base[i].pinv;
       
-      A_inv[i] = n_invmod(n_mod2_preinv(A, p, pinv), p);
+      Amod = n_mod2_preinv(A, p, pinv);
+      A_inv[i] = Amod == 0 ? 0 : n_invmod(Amod, p);
              
       for (j = 0; j < s; j++)
       {
@@ -378,7 +367,7 @@ void qsieve_ll_compute_off_adj(qs_t qs_inf)
 
 void qsieve_ll_compute_A_factor_offsets(qs_t qs_inf)
 {
-   long s = qs_inf->s;
+   slong s = qs_inf->s;
    mp_limb_t * A_ind = qs_inf->A_ind;
    mp_limb_t * A_modp = qs_inf->A_modp;
    mp_limb_t * soln1 = qs_inf->soln1;
@@ -391,7 +380,7 @@ void qsieve_ll_compute_A_factor_offsets(qs_t qs_inf)
    prime_t * factor_base = qs_inf->factor_base;
    mp_limb_t * inv_p2 = qs_inf->inv_p2;
    mp_limb_t pinv;
-   long j;
+   slong j;
    
    for (j = 0; j < s; j++)
    {
@@ -433,7 +422,7 @@ void qsieve_ll_compute_C(qs_t qs_inf)
    mp_limb_t A = qs_inf->A;
    mp_limb_t B = qs_inf->B;
    
-   if ((mp_limb_signed_t) B < 0L) B = -B;
+   if ((mp_limb_signed_t) B < WORD(0)) B = -B;
    fmpz_set_ui(qs_inf->C, B);
    fmpz_mul_ui(qs_inf->C, qs_inf->C, B);
    fmpz_sub(qs_inf->C, qs_inf->C, qs_inf->kn);

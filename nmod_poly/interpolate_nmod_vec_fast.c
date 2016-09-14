@@ -1,39 +1,25 @@
-/*=============================================================================
+/*
+    Copyright (C) 2012 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2012 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "ulong_extras.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
 void
-_nmod_poly_interpolation_weights(mp_ptr w, mp_ptr * tree, long len, nmod_t mod)
+_nmod_poly_interpolation_weights(mp_ptr w, const mp_ptr * tree, slong len, nmod_t mod)
 {
     mp_ptr tmp;
-    long i, n, height;
+    slong i, n, height;
 
     if (len == 0)
         return;
@@ -46,7 +32,7 @@ _nmod_poly_interpolation_weights(mp_ptr w, mp_ptr * tree, long len, nmod_t mod)
 
     tmp = _nmod_vec_init(len + 1);
     height = FLINT_CLOG2(len);
-    n = 1L << (height - 1);
+    n = WORD(1) << (height - 1);
 
     _nmod_poly_mul(tmp, tree[height-1], n + 1,
                         tree[height-1] + (n + 1), (len - n + 1), mod);
@@ -62,10 +48,10 @@ _nmod_poly_interpolation_weights(mp_ptr w, mp_ptr * tree, long len, nmod_t mod)
 
 void
 _nmod_poly_interpolate_nmod_vec_fast_precomp(mp_ptr poly, mp_srcptr ys,
-    mp_ptr * tree, mp_srcptr weights, long len, nmod_t mod)
+    const mp_ptr * tree, mp_srcptr weights, slong len, nmod_t mod)
 {
     mp_ptr t, u, pa, pb;
-    long i, pow, left;
+    slong i, pow, left;
 
     if (len == 0)
         return;
@@ -78,7 +64,7 @@ _nmod_poly_interpolate_nmod_vec_fast_precomp(mp_ptr poly, mp_srcptr ys,
 
     for (i = 0; i < FLINT_CLOG2(len); i++)
     {
-        pow = (1L << i);
+        pow = (WORD(1) << i);
         pa = tree[i];
         pb = poly;
         left = len;
@@ -109,7 +95,7 @@ _nmod_poly_interpolate_nmod_vec_fast_precomp(mp_ptr poly, mp_srcptr ys,
 
 void
 _nmod_poly_interpolate_nmod_vec_fast(mp_ptr poly,
-                            mp_srcptr xs, mp_srcptr ys, long len, nmod_t mod)
+                            mp_srcptr xs, mp_srcptr ys, slong len, nmod_t mod)
 {
     mp_ptr * tree;
     mp_ptr w;
@@ -128,7 +114,7 @@ _nmod_poly_interpolate_nmod_vec_fast(mp_ptr poly,
 
 void
 nmod_poly_interpolate_nmod_vec_fast(nmod_poly_t poly,
-                                    mp_srcptr xs, mp_srcptr ys, long n)
+                                    mp_srcptr xs, mp_srcptr ys, slong n)
 {
     if (n == 0)
     {

@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2006, 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2006, 2011 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef QSIEVE_H
 #define QSIEVE_H
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 
@@ -34,8 +20,12 @@
  extern "C" {
 #endif
 
-#ifndef uint64_t
-#define uint64_t unsigned long
+#if FLINT_BITS==64
+   #ifndef uint64_t
+   #define uint64_t ulong
+   #endif
+#else
+   #include <stdint.h>
 #endif
 
 /* 
@@ -63,15 +53,15 @@ typedef struct prime_t
 
 typedef struct fac_t /* struct for factors of relations */
 {
-   long ind;
-   long exp;
+   slong ind;
+   slong exp;
 } fac_t;
 
 typedef struct la_col_t /* matrix column */
 {
-	long * data;		/* The list of occupied rows in this column */
-	long weight;		/* Number of nonzero entries in this column */
-	long orig;         /* Original relation number */
+  slong * data;   /* The list of occupied rows in this column */
+  slong weight;   /* Number of nonzero entries in this column */
+  slong orig;         /* Original relation number */
 } la_col_t;
 
 typedef struct qs_s
@@ -86,9 +76,9 @@ typedef struct qs_s
    mp_limb_t k; /* Multiplier */
    fmpz_t kn; /* kn as a multiprecision integer */
 
-   long num_primes; /* number of factor base primes including k and 2 */
-   long small_primes; /* number of primes to not sieve with */
-   long sieve_size; /* size of sieve to use */
+   slong num_primes; /* number of factor base primes including k and 2 */
+   slong small_primes; /* number of primes to not sieve with */
+   slong sieve_size; /* size of sieve to use */
 
    prime_t * factor_base; /* data about factor base primes */
 
@@ -124,32 +114,32 @@ typedef struct qs_s
 
    mp_limb_t target_A; /* approximate target value for A coeff of poly */
 
-   long s; /* number of prime factors of A coeff */
-   long min; /* minimum FB prime that can appear as factor of A */
-   long span; /* size of set of possible prime factors of A */
-   long fact; /* middle of set of possible prime factors of A */
-   long mid; /* start of range for middle factor */
-   long high; /* end of range for middle factor */
+   slong s; /* number of prime factors of A coeff */
+   slong min; /* minimum FB prime that can appear as factor of A */
+   slong span; /* size of set of possible prime factors of A */
+   slong fact; /* middle of set of possible prime factors of A */
+   slong mid; /* start of range for middle factor */
+   slong high; /* end of range for middle factor */
 
 
    /*********************
      Relations data
    **********************/
 
-   long qsort_rels; /* number of relations to accumulate before sorting */
-   long extra_rels; /* number of extra relations beyond num_primes */
-   long max_factors; /* maximum number of factors a relation can have */
+   slong qsort_rels; /* number of relations to accumulate before sorting */
+   slong extra_rels; /* number of extra relations beyond num_primes */
+   slong max_factors; /* maximum number of factors a relation can have */
 
-   long * small; /* exponents of small prime factors in relations */
+   slong * small; /* exponents of small prime factors in relations */
    fac_t * factor; /* factors for a relation */
    fmpz * Y_arr; /* array of Y's corresponding to relations */
-   long * curr_rel; /* current relation in array of relations */
-   long * relation; /* relation array */
+   slong * curr_rel; /* current relation in array of relations */
+   slong * relation; /* relation array */
 
-   long buffer_size; /* size of buffer of relations */
-   long num_relations; /* number of relations so far */
+   slong buffer_size; /* size of buffer of relations */
+   slong num_relations; /* number of relations so far */
 
-   long num_factors; /* number of factors found in a relation */
+   slong num_factors; /* number of factors found in a relation */
 
    /*********************
      Linear algebra data
@@ -159,21 +149,21 @@ typedef struct qs_s
    la_col_t * unmerged; /* unmerged matrix columns */
    la_col_t ** qsort_arr; /* array of columns ready to be sorted */
 
-   long num_unmerged; /* number of columns unmerged */
-   long columns; /* number of columns in matrix so far */
+   slong num_unmerged; /* number of columns unmerged */
+   slong columns; /* number of columns in matrix so far */
 
    /*********************
      Square root data
    **********************/
 
-   long * prime_count; /* counts of the exponents of primes appearing in the square */
+   slong * prime_count; /* counts of the exponents of primes appearing in the square */
 
    /*********************
      Statistics
    **********************/
 
 #if (QS_DEBUG & 16)
-   long * sieve_tally;
+   slong * sieve_tally;
 #endif
 
 } qs_s;
@@ -191,8 +181,8 @@ typedef qs_s qs_t[1];
 */
 static const mp_limb_t qsieve_ll_tune[][5] =
 {
-    {0, 50, 50, 2, 14000 },
-	{30, 50, 60, 2, 16000 },
+    {0, 50, 80, 2, 14000 },
+    {30, 50, 80, 2, 16000 },
     {40, 50, 100, 3, 18000 },
     {50, 50, 120, 3, 20000 },
     {60, 50, 140, 4, 22000 },
@@ -213,41 +203,41 @@ static const mp_limb_t qsieve_ll_tune[][5] =
 
 #define BITS_ADJUST 10 /* no. bits less than f(X) to qualify for trial division */
 
-void qsieve_ll_init(qs_t qs_inf, mp_limb_t hi, mp_limb_t lo);
+FLINT_DLL void qsieve_ll_init(qs_t qs_inf, mp_limb_t hi, mp_limb_t lo);
 
-void qsieve_ll_clear(qs_t qs_inf);
+FLINT_DLL void qsieve_ll_clear(qs_t qs_inf);
 
-mp_limb_t qsieve_ll_knuth_schroeppel(qs_t qs_inf);
+FLINT_DLL mp_limb_t qsieve_ll_knuth_schroeppel(qs_t qs_inf);
 
-mp_limb_t qsieve_ll_primes_init(qs_t qs_inf);
+FLINT_DLL mp_limb_t qsieve_ll_primes_init(qs_t qs_inf);
 
-mp_limb_t qsieve_ll_poly_init(qs_t qs_inf);
+FLINT_DLL mp_limb_t qsieve_ll_poly_init(qs_t qs_inf);
 
-void qsieve_ll_linalg_init(qs_t qs_inf);
+FLINT_DLL void qsieve_ll_linalg_init(qs_t qs_inf);
 
-void qsieve_ll_compute_poly_data(qs_t qs_inf);
+FLINT_DLL void qsieve_ll_compute_poly_data(qs_t qs_inf);
 
-void qsieve_ll_compute_A_factor_offsets(qs_t qs_inf);
+FLINT_DLL void qsieve_ll_compute_A_factor_offsets(qs_t qs_inf);
 
-void qsieve_ll_compute_C(qs_t qs_inf);
+FLINT_DLL void qsieve_ll_compute_C(qs_t qs_inf);
 
-long qsieve_ll_collect_relations(qs_t qs_inf, char * sieve);
+FLINT_DLL slong qsieve_ll_collect_relations(qs_t qs_inf, char * sieve);
 
-long qsieve_ll_merge_sort(qs_t qs_inf);
+FLINT_DLL slong qsieve_ll_merge_sort(qs_t qs_inf);
       
-long qsieve_ll_merge_relations(qs_t qs_inf);
+FLINT_DLL slong qsieve_ll_merge_relations(qs_t qs_inf);
 
-long qsieve_ll_insert_relation(qs_t qs_inf, fmpz_t Y);
+FLINT_DLL slong qsieve_ll_insert_relation(qs_t qs_inf, fmpz_t Y);
 
-mp_limb_t qsieve_ll_factor(mp_limb_t hi, mp_limb_t lo);
+FLINT_DLL mp_limb_t qsieve_ll_factor(mp_limb_t hi, mp_limb_t lo);
 
-static __inline__ void insert_col_entry(la_col_t * col, long entry)
+static __inline__ void insert_col_entry(la_col_t * col, slong entry)
 {
    if (((col->weight >> 4) << 4) == col->weight) /* need more space */
    {
        if (col->weight != 0) col->data = 
-           (long *) flint_realloc(col->data, (col->weight + 16)*sizeof(long));
-       else col->data = (long *) flint_malloc(16*sizeof(long));
+           (slong *) flint_realloc(col->data, (col->weight + 16)*sizeof(slong));
+       else col->data = (slong *) flint_malloc(16*sizeof(slong));
    }
    
    col->data[col->weight] = entry;
@@ -288,15 +278,15 @@ static __inline__ void free_col(la_col_t * col)
    if (col->weight) flint_free(col->data);
 }
 
-uint64_t get_null_entry(uint64_t * nullrows, long i, long l);
+FLINT_DLL uint64_t get_null_entry(uint64_t * nullrows, slong i, slong l);
 
-void reduce_matrix(qs_t qs_inf, long * nrows, long * ncols, la_col_t * cols);
+FLINT_DLL void reduce_matrix(qs_t qs_inf, slong * nrows, slong * ncols, la_col_t * cols);
 
-uint64_t * block_lanczos(flint_rand_t state, long nrows, long dense_rows, 
-                                                       long ncols, la_col_t *B);
+uint64_t * block_lanczos(flint_rand_t state, slong nrows, slong dense_rows, 
+                                                       slong ncols, la_col_t *B);
 
-void qsieve_ll_square_root(fmpz_t X, fmpz_t Y, qs_t qs_inf,
-                             uint64_t * nullrows, long ncols, long l, fmpz_t N);
+FLINT_DLL void qsieve_ll_square_root(fmpz_t X, fmpz_t Y, qs_t qs_inf,
+                             uint64_t * nullrows, slong ncols, slong l, fmpz_t N);
 
 #ifdef __cplusplus
 }

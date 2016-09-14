@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2009 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2009 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "flint.h"
 #include "fmpz.h"
@@ -40,7 +26,7 @@ fmpz_randtest(fmpz_t f, flint_rand_t state, mp_bitcnt_t bits)
     fmpz_randtest_unsigned(f, state, bits);
 
     m = n_randlimb(state);
-    if (m & 1UL)
+    if (m & UWORD(1))
         fmpz_neg(f, f);
 }
 
@@ -55,15 +41,15 @@ fmpz_randtest_unsigned(fmpz_t f, flint_rand_t state, mp_bitcnt_t bits)
     if (bits <= FLINT_BITS - 2)
     {
         _fmpz_demote(f);
-        if (m & 3UL)
-            *f = n_randbits(state, bits);
+        if (m & UWORD(3))
+            *f = n_randtest_bits(state, bits);
         else
         {
             m >>= 2;
             if (bits == 0)
                 *f = 0;
             else if (bits < FLINT_BITS - 2)
-                *f = m & 1UL;
+                *f = m & UWORD(1);
             else
                 *f = COEFF_MAX;
         }
@@ -83,8 +69,8 @@ fmpz_randtest_not_zero(fmpz_t f, flint_rand_t state, mp_bitcnt_t bits)
 {
     if (bits == 0)
     {
-        printf("Exception: 0 passed to fmpz_randtest_not_zero\n");
-        abort();
+        flint_printf("Exception (fmpz_randtest_not_zero). bits == 0.\n");
+        flint_abort();
     }
 
     fmpz_randtest(f, state, bits);

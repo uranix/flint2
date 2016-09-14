@@ -1,107 +1,104 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
+    Copyright (C) 2014 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include <mpir.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
 void 
-_fmpz_poly_div_series(fmpz * Q, const fmpz * A, const fmpz * B, long n)
+_fmpz_poly_div_series(fmpz * Q, const fmpz * A, slong Alen,
+    const fmpz * B, slong Blen, slong n)
 {
-    if (n == 1)
+    Alen = FLINT_MIN(Alen, n);
+    Blen = FLINT_MIN(Blen, n);
+
+    if (Blen == 1)
     {
-        _fmpz_vec_set(Q, A, n);
+        if (fmpz_is_one(B))
+            _fmpz_vec_set(Q, A, Alen);
+        else
+            _fmpz_vec_neg(Q, A, Alen);
+        _fmpz_vec_zero(Q + Alen, n - Alen);
+    }
+    else if (n < 32 || Blen < 20)
+    {
+        slong i, j;
+
+        if (fmpz_is_one(B))
+            fmpz_set(Q, A);
+        else
+            fmpz_neg(Q, A);
+
+        for (i = 1; i < n; i++)
+        {
+            fmpz_mul(Q + i, B + 1, Q + i - 1);
+
+            for (j = 2; j < FLINT_MIN(i + 1, Blen); j++)
+                fmpz_addmul(Q + i, B + j, Q + i - j);
+
+            if (i < Alen)
+            {
+                if (fmpz_is_one(B))
+                    fmpz_sub(Q + i, A + i, Q + i);
+                else
+                    fmpz_sub(Q + i, Q + i, A + i);
+            }
+            else if (fmpz_is_one(B))
+            {
+                fmpz_neg(Q + i, Q + i);
+            }
+        }
     }
     else
     {
         fmpz * Binv = _fmpz_vec_init(n);
 
-        _fmpz_poly_inv_series(Binv, B, n);
-        _fmpz_poly_mullow(Q, A, n, Binv, n, n);
+        _fmpz_poly_inv_series(Binv, B, Blen, n);
+        _fmpz_poly_mullow(Q, Binv, n, A, Alen, n);
 
         _fmpz_vec_clear(Binv, n);
     }
 }
 
 void fmpz_poly_div_series(fmpz_poly_t Q, const fmpz_poly_t A, 
-                                         const fmpz_poly_t B, long n)
+                                         const fmpz_poly_t B, slong n)
 {
-    fmpz *a, *b;
-    ulong flags = 0UL;  /* 2^0 for a, 2^1 for b */
+    slong Alen = FLINT_MIN(A->length, n);
+    slong Blen = FLINT_MIN(B->length, n);
 
-    if (Q == A)
+    if (Blen == 0)
     {
-        fmpz_poly_t t;
-        fmpz_poly_init2(t, n);
-        fmpz_poly_div_series(t, A, B, n);
-        fmpz_poly_swap(Q, t);
-        fmpz_poly_clear(t);
+        flint_printf("Exception (fmpz_poly_div_series). Division by zero.\n");
+        flint_abort();
+    }
+
+    if (Alen == 0)
+    {
+        fmpz_poly_zero(Q);
         return;
     }
 
-    fmpz_poly_fit_length(Q, n);
-
-    if (A->length >= n)
+    if (Q == A || Q == B)
     {
-        a = A->coeffs;
+        fmpz_poly_t t;
+        fmpz_poly_init2(t, n);
+        _fmpz_poly_div_series(t->coeffs, A->coeffs, Alen, B->coeffs, Blen, n);
+        fmpz_poly_swap(Q, t);
+        fmpz_poly_clear(t);
     }
     else
     {
-        long i;
-        a = (fmpz *) flint_malloc(n * sizeof(fmpz));
-        for (i = 0; i < A->length; i++)
-            a[i] = A->coeffs[i];
-        mpn_zero((mp_ptr) a + A->length, n - A->length);
-        flags |= 1UL;
+        fmpz_poly_fit_length(Q, n);
+        _fmpz_poly_div_series(Q->coeffs, A->coeffs, Alen, B->coeffs, Blen, n);
     }
-
-    if (B->length >= n)
-    {
-        b = B->coeffs;
-    }
-    else
-    {
-        long i;
-        b = (fmpz *) flint_malloc(n * sizeof(fmpz));
-        for (i = 0; i < B->length; i++)
-            b[i] = B->coeffs[i];
-        mpn_zero((mp_ptr) b + B->length, n - B->length);
-        flags |= 2UL;
-    }
-
-    _fmpz_poly_div_series(Q->coeffs, a, b, n);
 
     _fmpz_poly_set_length(Q, n);
     _fmpz_poly_normalise(Q);
-
-    if ((flags & 1UL))
-        flint_free(a);
-    if ((flags & 2UL))
-        flint_free(b);
 }
-

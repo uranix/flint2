@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,19 +19,18 @@
 int
 main(void)
 {
-    flint_rand_t state;
-    long i;
+    slong i;
 
-    printf("det....");
-    fflush(stdout);
+    FLINT_TEST_INIT(state);
 
-    flint_randinit(state);
+    flint_printf("det....");
+    fflush(stdout);    
 
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 100 * flint_test_multiplier(); i++)
     {
         fmpz_poly_mat_t A, B, C;
         fmpz_poly_t a, b, ab, c;
-        long n, bits, deg;
+        slong n, bits, deg;
         float density;
 
         n = n_randint(state, 10);
@@ -73,23 +58,23 @@ main(void)
 
         if (!fmpz_poly_equal(c, ab))
         {
-            printf("FAIL:\n");
-            printf("determinants don't agree!\n");
-            printf("A:\n");
+            flint_printf("FAIL:\n");
+            flint_printf("determinants don't agree!\n");
+            flint_printf("A:\n");
             fmpz_poly_mat_print(A, "x");
-            printf("B:\n");
+            flint_printf("B:\n");
             fmpz_poly_mat_print(B, "x");
-            printf("C:\n");
+            flint_printf("C:\n");
             fmpz_poly_mat_print(C, "x");
-            printf("det(A):\n");
+            flint_printf("det(A):\n");
             fmpz_poly_print_pretty(a, "x");
-            printf("\ndet(B):\n");
+            flint_printf("\ndet(B):\n");
             fmpz_poly_print_pretty(b, "x");
-            printf("\ndet(C):\n");
+            flint_printf("\ndet(C):\n");
             fmpz_poly_print_pretty(c, "x");
-            printf("\ndet(A)*det(B):\n");
+            flint_printf("\ndet(A)*det(B):\n");
             fmpz_poly_print_pretty(ab, "x");
-            printf("\n");
+            flint_printf("\n");
             abort();
         }
 
@@ -103,8 +88,8 @@ main(void)
         fmpz_poly_mat_clear(C);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

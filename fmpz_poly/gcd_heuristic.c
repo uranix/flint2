@@ -1,29 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 William Hart
-   
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -34,7 +20,7 @@
    Divide (arrayg, limbsg) by the positive value gc inplace and
    return the number of limbs written
 */
-mp_size_t mpn_tdiv_q_fmpz_inplace(mp_ptr arrayg, mp_size_t limbsg, fmpz_t gc)
+mp_size_t flint_mpn_tdiv_q_fmpz_inplace(mp_ptr arrayg, mp_size_t limbsg, fmpz_t gc)
 {
    if (fmpz_size(gc) == 1) 
    {
@@ -47,7 +33,7 @@ mp_size_t mpn_tdiv_q_fmpz_inplace(mp_ptr arrayg, mp_size_t limbsg, fmpz_t gc)
       __mpz_struct * mpz_ptr = COEFF_TO_PTR(*gc);
       
       mp_ptr temp = flint_malloc(limbsg*sizeof(mp_limb_t));
-      mpn_copyi(temp, arrayg, limbsg);
+      flint_mpn_copyi(temp, arrayg, limbsg);
       
       mpn_tdiv_q(arrayg, temp, limbsg, mpz_ptr->_mp_d, mpz_ptr->_mp_size);
       tlimbs = limbsg - mpz_ptr->_mp_size + 1;
@@ -62,8 +48,8 @@ mp_size_t mpn_tdiv_q_fmpz_inplace(mp_ptr arrayg, mp_size_t limbsg, fmpz_t gc)
    Returns 1 if sign * (G, glen) * (Q, qlen) = (P, len), else returns 0.
    Temp requires space for glen + qlen - 1 coefficients
 */
-int multiplies_out(fmpz * P, long len, const fmpz * Q, long qlen, 
-                   const fmpz * G, long glen, long sign, fmpz * temp)
+int multiplies_out(fmpz * P, slong len, const fmpz * Q, slong qlen, 
+                   const fmpz * G, slong glen, slong sign, fmpz * temp)
 {
    int divides = 0;
 
@@ -72,7 +58,7 @@ int multiplies_out(fmpz * P, long len, const fmpz * Q, long qlen,
       _fmpz_poly_mul(temp, Q, qlen, G, glen);
    else
       _fmpz_poly_mul(temp, G, glen, Q, qlen);
-   if (sign < 0L) _fmpz_vec_neg(temp, temp, glen + qlen - 1);
+   if (sign < WORD(0)) _fmpz_vec_neg(temp, temp, glen + qlen - 1);
 
    /* check if quotient really was exact */
    divides = (glen + qlen - 1 == len && _fmpz_vec_equal(temp, P, len));
@@ -82,13 +68,13 @@ int multiplies_out(fmpz * P, long len, const fmpz * Q, long qlen,
    
 /* Assumes len1 != 0 != len2 */
 int
-_fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1, 
-                                        const fmpz * poly2, long len2)
+_fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, slong len1, 
+                                        const fmpz * poly2, slong len2)
 {
-	ulong bits1, bits2, max_bits, pack_bits, bound_bits, bits_G, bits_Q;
+   slong bits1, bits2, max_bits, pack_bits, bound_bits, bits_G, bits_Q;
    ulong limbs1, limbs2, limbsg, pack_limbs, qlimbs;
    ulong log_glen, log_length;
-   long sign1, sign2, glen, qlen;
+   slong sign1, sign2, glen, qlen;
 	fmpz_t ac, bc, d, gc;
    fmpz * A, * B, * G, * Q, * t;
    mp_ptr array1, array2, arrayg, q, temp;
@@ -154,9 +140,17 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
       http://arxiv.org/abs/cs/0206032v1
    */
    bits1 = FLINT_ABS(_fmpz_vec_max_bits(A, len1));
-	bits2 = FLINT_ABS(_fmpz_vec_max_bits(B, len2));
-	max_bits = FLINT_MAX(bits1, bits2);
+   bits2 = FLINT_ABS(_fmpz_vec_max_bits(B, len2));
+   /* 
+      always extra bit for signs whether polys are signed or not, since we don't
+      know if any purported gcds/quotients will be signed
+   */
+   max_bits = FLINT_MAX(bits1, bits2) + 1; 
    			
+	/* 
+	   the +6 is chosen heuristically for performance; the theorem
+	   is satisfied with +3 (including a bit for signs)
+	*/
 	bound_bits = FLINT_MIN(bits1, bits2) + 6; 
 	pack_bits = FLINT_MAX(bound_bits, max_bits); /* need to pack original polys */
    pack_limbs = (pack_bits - 1)/FLINT_BITS + 1;
@@ -172,17 +166,17 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
    arrayg = flint_calloc(limbs2, sizeof(mp_limb_t));
    
    /* pack first poly and normalise */
-   sign1 = (long) fmpz_sgn(A + len1 - 1);
+   sign1 = (slong) fmpz_sgn(A + len1 - 1);
 	_fmpz_poly_bit_pack(array1, A, len1, pack_bits, sign1);
 	while (array1[limbs1 - 1] == 0) limbs1--;
 
    /* pack second poly and normalise */
-   sign2 = (long) fmpz_sgn(B + len2 - 1);
+   sign2 = (slong) fmpz_sgn(B + len2 - 1);
    _fmpz_poly_bit_pack(array2, B, len2, pack_bits, sign2);
 	while (array2[limbs2 - 1] == 0) limbs2--;
 	
 	/* compute integer GCD */
-   limbsg = mpn_gcd_full(arrayg, array1, limbs1, array2, limbs2);
+   limbsg = flint_mpn_gcd_full(arrayg, array1, limbs1, array2, limbs2);
 	
    /* 
       Make space for unpacked gcd. May have one extra coeff due to 
@@ -190,7 +184,13 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
    */
    glen = FLINT_MIN((limbsg*FLINT_BITS)/pack_bits + 1, len2); 
    G = _fmpz_vec_init(glen);
-   
+
+   /* 
+      clear bits after g in arrayg so they are not inadvertently
+      pulled into G after bit unpacking
+   */
+   flint_mpn_zero(arrayg + limbsg, limbs2-limbsg);
+
    /* unpack gcd */
    _fmpz_poly_bit_unpack(G, glen, arrayg, pack_bits, 0);
    while (G[glen - 1] == 0) glen--;
@@ -200,7 +200,7 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
 	_fmpz_poly_content(gc, G, glen);
 
    if (!fmpz_is_one(gc)) 
-      limbsg = mpn_tdiv_q_fmpz_inplace(arrayg, limbsg, gc);
+      limbsg = flint_mpn_tdiv_q_fmpz_inplace(arrayg, limbsg, gc);
 
    /* make space for quotient and remainder of first poly by gcd */
    qlimbs = limbs1 - limbsg + 1;
@@ -211,46 +211,49 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
    
 	divides = 0;
 
-   if (mpn_divides(q, array1, limbs1, arrayg, limbsg, temp)) 
+   if (flint_mpn_divides(q, array1, limbs1, arrayg, limbsg, temp)) 
 	{
       /* unpack quotient of first poly by gcd */
       Q = _fmpz_vec_init(len1); 
       t = _fmpz_vec_init(len1 + glen);
       _fmpz_poly_bit_unpack(Q, qlen, q, pack_bits, 0);
       while (Q[qlen - 1] == 0) qlen--;
-      
+            
       /* divide by content */
       _fmpz_vec_scalar_divexact_fmpz(G, G, glen, gc);
 		
       /* check if we really need to multiply out to check for exact quotient */
       bits_G = FLINT_ABS(_fmpz_vec_max_bits(G, glen));
-		bits_Q = FLINT_ABS(_fmpz_vec_max_bits(Q, qlen));
-		log_glen = FLINT_BIT_COUNT(glen);
-		log_length = FLINT_MIN(log_glen, FLINT_BIT_COUNT(qlen));
+	  bits_Q = FLINT_ABS(_fmpz_vec_max_bits(Q, qlen));
+	  log_glen = FLINT_BIT_COUNT(glen);
+	  log_length = FLINT_MIN(log_glen, FLINT_BIT_COUNT(qlen));
        
-	   divides = (bits_G + bits_Q + log_length < pack_bits);
+	  /* allow one bit for signs */
+	  divides = (bits_G + bits_Q + log_length < pack_bits);
      
       if (!divides) /* need to multiply out to check exact quotient */
          divides = multiplies_out(A, len1, Q, qlen, G, glen, sign1, t);
 
 		if (divides) /* quotient really was exact */
 		{
-         mpn_zero(q, qlimbs);
+           divides = 0;
+           flint_mpn_zero(q, qlimbs);
           
-         if (mpn_divides(q, array2, limbs2, arrayg, limbsg, temp)) 
+         if (flint_mpn_divides(q, array2, limbs2, arrayg, limbsg, temp)) 
 	      {
             /* unpack quotient of second poly by gcd */
             qlimbs = limbs2 - limbsg + 1;
             qlen = FLINT_MIN(len2, (qlimbs*FLINT_BITS - 1)/pack_bits + 1);
             _fmpz_poly_bit_unpack(Q, qlen, q, pack_bits, 0);
             while (Q[qlen - 1] == 0) qlen--;
-            
-            /* check if we really need to multiply out to check for exact quotient */
+			
+			/* check if we really need to multiply out to check for exact quotient */
             bits_Q = FLINT_ABS(_fmpz_vec_max_bits(Q, qlen));
-				log_length = FLINT_MIN(log_glen, FLINT_BIT_COUNT(qlen));
+		    log_length = FLINT_MIN(log_glen, FLINT_BIT_COUNT(qlen));
 
-				divides = (bits_G + bits_Q + log_length < pack_bits);
-		      
+			/* allow one bit for signs */
+			divides = (bits_G + bits_Q + log_length < pack_bits);
+       
             if (!divides) /* we need to multiply out */
                divides = multiplies_out(B, len2, Q, qlen, G, glen, sign1, t);
 			} 
@@ -284,70 +287,46 @@ _fmpz_poly_gcd_heuristic(fmpz * res, const fmpz * poly1, long len1,
 }
 
 int
-fmpz_poly_gcd_heuristic(fmpz_poly_t res,
-                           const fmpz_poly_t poly1, const fmpz_poly_t poly2)
+fmpz_poly_gcd_heuristic(fmpz_poly_t res, const fmpz_poly_t poly1,
+              const fmpz_poly_t poly2)
 {
-    const long len1 = poly1->length;
-    const long len2 = poly2->length;
-    long rlen;
-    int done = 0;
-
-    if (len1 == 0)
+    if (poly1->length < poly2->length)
     {
-        if (len2 == 0)
-            fmpz_poly_zero(res);
-        else
-        {
-            if (fmpz_sgn(poly2->coeffs + (len2 - 1)) > 0)
-                fmpz_poly_set(res, poly2);
-            else
-                fmpz_poly_neg(res, poly2);
-        }
-        return 1;
+        return fmpz_poly_gcd_heuristic(res, poly2, poly1);
     }
-    else
+    else /* len1 >= len2 >= 0 */
     {
-        if (len2 == 0)
+        const slong len1 = poly1->length;
+        const slong len2 = poly2->length;
+        int done = 1; /* len1 = 0 or len2 = 0 need done = 1 */
+
+        if (len1 == 0) /* len1 = len2 = 0 */
+        {
+            fmpz_poly_zero(res);
+        } 
+        else if (len2 == 0) /* len1 > len2 = 0 */
         {
             if (fmpz_sgn(poly1->coeffs + (len1 - 1)) > 0)
                 fmpz_poly_set(res, poly1);
             else
                 fmpz_poly_neg(res, poly1);
-            return 1;
         }
-    }
-
-    rlen = FLINT_MIN(len1, len2);
-
-    if (res == poly1 || res == poly2)
-    {
-       fmpz_poly_t temp;
-       fmpz_poly_init2(temp, rlen);
-       if (len1 >= len2)
-          done = _fmpz_poly_gcd_heuristic(temp->coeffs, poly1->coeffs, len1,
+        else /* len1 >= len2 >= 1 */
+        {
+            /* underscore function automatically takes care of aliasing */
+           
+            fmpz_poly_fit_length(res, len2);
+                
+            done = _fmpz_poly_gcd_heuristic(res->coeffs, poly1->coeffs, len1,
                                     poly2->coeffs, len2);
-       else
-          done = _fmpz_poly_gcd_heuristic(temp->coeffs, poly2->coeffs, len2,
-                                    poly1->coeffs, len1);
-       fmpz_poly_swap(temp, res);
-       fmpz_poly_clear(temp);
-    }
-    else
-    {
-       fmpz_poly_fit_length(res, rlen);
-       if (len1 >= len2)
-          done = _fmpz_poly_gcd_heuristic(res->coeffs, poly1->coeffs, len1,
-                                    poly2->coeffs, len2);
-       else
-          done = _fmpz_poly_gcd_heuristic(res->coeffs, poly2->coeffs, len2,
-                                    poly1->coeffs, len1);
-    }
-    
-    if (done)
-    {
-       _fmpz_poly_set_length(res, rlen);
-       _fmpz_poly_normalise(res);
-    }
+            
+            if (done)
+            {
+                _fmpz_poly_set_length(res, len2);
+                _fmpz_poly_normalise(res);
+            }
+        }
 
-    return done;
+        return done;
+    }
 }

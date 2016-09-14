@@ -1,44 +1,30 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "flint.h"
 #include "nmod_poly.h"
 #include "nmod_poly_mat.h"
 
-long
+slong
 nmod_poly_mat_find_pivot_partial(const nmod_poly_mat_t mat,
-                                    long start_row, long end_row, long c)
+                                    slong start_row, slong end_row, slong c)
 {
-    long best_row, best_length, i;
+    slong best_row, best_length, i;
 
     best_row = start_row;
     best_length = nmod_poly_length(nmod_poly_mat_entry(mat, start_row, c));
 
     for (i = start_row + 1; i < end_row; i++)
     {
-        long l;
+        slong l;
 
         l = nmod_poly_length(nmod_poly_mat_entry(mat, i, c));
 

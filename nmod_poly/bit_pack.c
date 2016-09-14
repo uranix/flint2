@@ -1,31 +1,17 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2007 David Howden
     Copyright (C) 2010 William Hart
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
@@ -33,14 +19,14 @@
 
 /* Assumes length > 0, bits > 0. */
 void
-_nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
+_nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, slong len, mp_bitcnt_t bits)
 {
-    long i;
+    slong i;
     ulong current_bit = 0, current_limb = 0;
     ulong total_limbs = (len * bits - 1) / FLINT_BITS + 1;
     mp_limb_t temp_lower, temp_upper;
 
-    res[0] = 0L;
+    res[0] = WORD(0);
 
     if (bits < FLINT_BITS)
     {
@@ -73,7 +59,7 @@ _nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
                 {
                     current_limb++;
                     if (current_limb < total_limbs)
-                        res[current_limb] = 0L;
+                        res[current_limb] = WORD(0);
                     current_bit = 0;
                 }
             }
@@ -89,7 +75,7 @@ _nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
         for (i = 0; i < len; i++)
         {
             res[current_limb++] = poly[i];
-            res[current_limb++] = 0L;
+            res[current_limb++] = WORD(0);
         }
     }
     else if (bits < 2 * FLINT_BITS)
@@ -110,7 +96,7 @@ _nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
                 current_bit -= FLINT_BITS;
                 current_limb++;
                 if (current_limb < total_limbs)
-                    res[current_limb] = 0L;
+                    res[current_limb] = WORD(0);
             }
         }
     }
@@ -125,7 +111,7 @@ _nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
             res[current_limb++] = temp_upper;
 
             if (current_limb < total_limbs)
-                res[current_limb] = 0L;
+                res[current_limb] = WORD(0);
             current_bit += bits - 2 * FLINT_BITS;
 
             if (current_bit >= FLINT_BITS)
@@ -133,7 +119,7 @@ _nmod_poly_bit_pack(mp_ptr res, mp_srcptr poly, long len, mp_bitcnt_t bits)
                 current_bit -= FLINT_BITS;
                 current_limb++;
                 if (current_limb < total_limbs)
-                    res[current_limb] = 0L;
+                    res[current_limb] = WORD(0);
             }
         }
     }
@@ -143,9 +129,9 @@ void
 nmod_poly_bit_pack(fmpz_t f, const nmod_poly_t poly,
                    mp_bitcnt_t bit_size)
 {
-    long len, limbs;
+    slong len, limbs;
     __mpz_struct * mpz;
-    long i;
+    slong i;
 
     len = nmod_poly_length(poly);
 

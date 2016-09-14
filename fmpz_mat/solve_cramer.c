@@ -1,39 +1,19 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
-#include "fmpz_vec.h"
 #include "fmpz_mat.h"
-
 
 #define AA(i,j) fmpz_mat_entry(A, i, j)
 #define BB(i,j) fmpz_mat_entry(B, i, j)
 #define XX(i,j) fmpz_mat_entry(X, i, j)
-
 
 int
 _fmpz_mat_solve_cramer_3x3(fmpz_mat_t X, fmpz_t den,
@@ -64,7 +44,7 @@ _fmpz_mat_solve_cramer_3x3(fmpz_mat_t X, fmpz_t den,
     if (success)
     {
         fmpz_t t12, t13, t14, x0, x1, x2;
-        long i, n = fmpz_mat_ncols(B);
+        slong i, n = fmpz_mat_ncols(B);
 
         fmpz_init(t12);
         fmpz_init(t13);
@@ -120,9 +100,9 @@ int
 fmpz_mat_solve_cramer(fmpz_mat_t X, fmpz_t den,
                             const fmpz_mat_t A, const fmpz_mat_t B)
 {
-    long i, dim = fmpz_mat_nrows(A);
+    slong i, dim = fmpz_mat_nrows(A);
 
-    if (dim == 0)
+    if (dim == 0 || fmpz_mat_ncols(B) == 0)
     {
         fmpz_one(den);
         return 1;
@@ -172,7 +152,8 @@ fmpz_mat_solve_cramer(fmpz_mat_t X, fmpz_t den,
     }
     else
     {
-        printf("Exception: fmpz_mat_solve_cramer: dim > 3 not implemented");
-        abort();
+        flint_printf("Exception (fmpz_mat_solve_cramer). dim > 3 not implemented.");
+        flint_abort();
+        return 0; /* not reached, but silence compiler warning */
     }
 }

@@ -1,32 +1,18 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011, 2010 Sebastian Pancratz
     Copyright (C) 2009 William Hart
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_mod_poly.h"
@@ -35,11 +21,11 @@
 static int _check(fmpz_mod_poly_struct **B, 
                   const fmpz_mod_poly_t F, const fmpz_mod_poly_t R)
 {
-    const long lenF = F->length;
-    const long lenR = R->length;
-    const long N = (lenF - 1) / (lenR - 1);
+    const slong lenF = F->length;
+    const slong lenR = R->length;
+    const slong N = (lenF - 1) / (lenR - 1);
 
-    long i;
+    slong i;
     int result;
 
     fmpz_mod_poly_t S;
@@ -59,20 +45,20 @@ static int _check(fmpz_mod_poly_struct **B,
 int main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("radix....");
+    flint_printf("radix....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < 50 * flint_test_multiplier(); i++)
     {
         fmpz_t p;
         fmpz_mod_poly_t f, r;
         fmpz_mod_poly_struct **b;
         fmpz_mod_poly_radix_t D;
-        long j, N;
+        slong j, N;
 
         fmpz_init(p);
         fmpz_randtest_unsigned(p, state, 2 * FLINT_BITS);
@@ -115,15 +101,15 @@ int main(void)
         result = _check(b, f, r);
         if (!result)
         {
-            printf("FAIL:\n");
-            printf("result = %d\n", result);
-            printf("p = "), fmpz_print(p), printf("\n\n");
-            printf("f = "), fmpz_mod_poly_print(f), printf("\n\n");
-            printf("r = "), fmpz_mod_poly_print(r), printf("\n\n");
-            printf("N = %ld\n\n", N);
+            flint_printf("FAIL:\n");
+            flint_printf("result = %d\n", result);
+            flint_printf("p = "), fmpz_print(p), flint_printf("\n\n");
+            flint_printf("f = "), fmpz_mod_poly_print(f), flint_printf("\n\n");
+            flint_printf("r = "), fmpz_mod_poly_print(r), flint_printf("\n\n");
+            flint_printf("N = %wd\n\n", N);
             for (j = 0; j <= N; j++)
             {
-                printf("b[%ld] = ", j), fmpz_mod_poly_print(b[j]), printf("\n\n");
+                flint_printf("b[%wd] = ", j), fmpz_mod_poly_print(b[j]), flint_printf("\n\n");
             }
             abort();
         }
@@ -140,9 +126,9 @@ int main(void)
         fmpz_clear(p);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }
 

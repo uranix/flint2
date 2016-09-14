@@ -1,37 +1,23 @@
-/*=============================================================================
+/*
+    Copyright (C) 2012 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2012 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
 
 int
-_fmpz_poly_sqrt_classical(fmpz * res, const fmpz * poly, long len)
+_fmpz_poly_sqrt_classical(fmpz * res, const fmpz * poly, slong len)
 {
-    long i, m;
+    slong i, m;
     int result;
 
     /* the degree must be even */
@@ -64,7 +50,7 @@ _fmpz_poly_sqrt_classical(fmpz * res, const fmpz * poly, long len)
     fmpz_sqrt(res + m - 1, poly + len - 1);
     result = 1;
 
-    /* do long divison style 'square root with remainder' from top to bottom */
+    /* do slong divison style 'square root with remainder' from top to bottom */
     if (len > 1)
     {
         fmpz_t t, u;
@@ -105,7 +91,7 @@ _fmpz_poly_sqrt_classical(fmpz * res, const fmpz * poly, long len)
 int
 fmpz_poly_sqrt_classical(fmpz_poly_t b, const fmpz_poly_t a)
 {
-    long blen, len = a->length;
+    slong blen, len = a->length;
     int result;
 
     if (len % 2 == 0)
@@ -118,7 +104,7 @@ fmpz_poly_sqrt_classical(fmpz_poly_t b, const fmpz_poly_t a)
     {
         fmpz_poly_t tmp;
         fmpz_poly_init(tmp);
-        result = fmpz_poly_sqrt(tmp, a);
+        result = fmpz_poly_sqrt_classical(tmp, a);
         fmpz_poly_swap(b, tmp);
         fmpz_poly_clear(tmp);
         return result;

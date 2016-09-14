@@ -1,49 +1,24 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-    Inspired by code written for Sage by Jonathan Bober.
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <math.h>
-#include <mpir.h>
-#include <mpfr.h>
-#include "flint.h"
-#include "ulong_extras.h"
 #include "arith.h"
-#include "fmpz.h"
-#include "fmpz_poly.h"
-#include "profiler.h"
-
 
 #define DOUBLE_PREC 53
 #define PI 3.141592653589793238462643
+#define INV_LOG2 (1.44269504088896340735992468 + 1e-12)
 #define HRR_A (1.1143183348516376904 + 1e-12)  /* 44*pi^2/(225*sqrt(3)) */
 #define HRR_B (0.0592384391754448833 + 1e-12)  /* pi*sqrt(2)/75 */
 #define HRR_C (2.5650996603237281911 + 1e-12)  /* pi*sqrt(2/3) */
-
-#define PI_USE_CHUDNOVSKY 1
-#define PI_CHUDNOVSKY_CUTOFF 1000000
+#define HRR_D (1.2424533248940001551 + 1e-12)  /* log(2) + log(3)/2 */
 
 #define VERBOSE 0
 
@@ -73,24 +48,30 @@ partitions_remainder_bound_log2(double n, double N)
     t1 = log(HRR_A) - 0.5*log(N);
     t2 = log(HRR_B) + 0.5*(log(N) - log(n-1)) + log_sinh(HRR_C * sqrt(n)/N);
 
-    return (FLINT_MAX(t1, t2) + 1) * 1.4426950408889634074;
+    return (FLINT_MAX(t1, t2) + 1) * INV_LOG2;
 }
 
-long
+slong
 partitions_needed_terms(ulong n)
 {
-    long N;
+    slong N;
     for (N = 1; partitions_remainder_bound_log2(n, N) > 10; N++);
     for ( ; partitions_remainder_bound(n, N) > (n > 1500 ? 0.25 : 1); N++);
     return N;
+}
+
+static double
+partitions_term_bound(double n, double k)
+{
+    return ((PI*sqrt(24*n-1) / (6.0*k)) + HRR_D - log(24.0*n-1) + 0.5*log(k)) * INV_LOG2;
 }
 
 /* Bound number of prime factors in k */
 static mp_limb_t primorial_tab[] = {
     1, 2, 6, 30, 210, 2310, 30030, 510510, 9699690, 223092870,
 #if FLINT64
-    6469693230UL, 200560490130UL, 7420738134810UL, 304250263527210UL,
-    13082761331670030UL, 614889782588491410UL
+    UWORD(6469693230), UWORD(200560490130), UWORD(7420738134810), UWORD(304250263527210),
+    UWORD(13082761331670030), UWORD(614889782588491410)
 #endif
 };
 
@@ -107,20 +88,20 @@ bound_primes(ulong k)
 }
 
 
-static __inline__ long
+static __inline__ slong
 log2_ceil(double x)
 {
     /* ceil(log2(n)) = bitcount(n-1);
        this is too large if x is a power of two */
-    return FLINT_BIT_COUNT((long) x);
+    return FLINT_BIT_COUNT((slong) x);
 }
 
-static long
-partitions_prec_bound(ulong n, long k, long N)
+static slong
+partitions_prec_bound(ulong n, slong k, slong N)
 {
-    long prec;
+    slong prec;
 
-    prec = partitions_remainder_bound_log2(n, k);
+    prec = partitions_term_bound(n, k);
     prec += log2_ceil(8 * N * (26 * (sqrt(n) / k) + 7 * bound_primes(k) + 22));
 
     return prec;
@@ -147,7 +128,7 @@ void
 mpfr_sqrt_z(mpfr_t x, mpz_t z, mpfr_rnd_t rnd)
 {
     if (mpz_fits_ulong_p(z))
-        mpfr_sqrt_ui(x, mpz_get_ui(z), rnd);
+        mpfr_sqrt_ui(x, flint_mpz_get_ui(z), rnd);
     else
     {
         mpfr_set_z(x, z, rnd);
@@ -184,7 +165,7 @@ mpfr_add_fmpz(mpfr_t c, mpfr_srcptr a, const fmpz_t b)
 
 
 void
-_fmpz_poly_evaluate_mpfr(mpfr_t res, const fmpz * f, long len,
+_fmpz_poly_evaluate_mpfr(mpfr_t res, const fmpz * f, slong len,
                            const mpfr_t a)
 {
     if (len == 0)
@@ -193,7 +174,7 @@ _fmpz_poly_evaluate_mpfr(mpfr_t res, const fmpz * f, long len,
         mpfr_set_fmpz(res, f);
     else
     {
-        long i = len - 1;
+        slong i = len - 1;
         mpfr_t t;
         mpfr_init2(t, mpfr_get_prec(res));
         mpfr_set_fmpz(res, f + i);
@@ -226,8 +207,9 @@ fmpz_poly_evaluate_mpfr(mpfr_t res, const fmpz_poly_t f, const mpfr_t a)
 void
 findroot(mpfr_t x, fmpz_poly_t poly, double x0)
 {
-    long i, prec, initial_prec, target_prec, guard_bits;
-    long precs[FLINT_BITS];
+    slong i;
+    slong prec, initial_prec, target_prec, guard_bits;
+    slong precs[FLINT_BITS];
     fmpz_poly_t poly2;
     mpfr_t t, u, xn;
 
@@ -269,15 +251,15 @@ findroot(mpfr_t x, fmpz_poly_t poly, double x0)
     mpfr_clear(xn);
 }
 
-void cos_minpoly(fmpz_poly_t poly, long p, long q)
+void cos_minpoly(fmpz_poly_t poly, slong p, slong q)
 {
     if (p % 2 == 0)
-        cyclotomic_cos_polynomial(poly, q);
+        arith_cos_minpoly(poly, q);
     else
-        cyclotomic_cos_polynomial(poly, 2 * q);
+        arith_cos_minpoly(poly, 2 * q);
 }
 
-int use_newton(long prec, long q)
+int use_newton(slong prec, slong q)
 {
     if (q < 250 && prec > 400 + 4*q*q)
         return 1;
@@ -295,7 +277,7 @@ void mpfr_cos_pi_pq(mpfr_t t, mp_limb_signed_t p, mp_limb_signed_t q)
     if (use_newton(mpfr_get_prec(t), q))
     {
         fmpz_poly_t poly;
-        long d;
+        slong d;
         fmpz_poly_init(poly);
         d = n_gcd(q, p);
         q /= d;
@@ -337,7 +319,7 @@ eval_trig_prod(mpfr_t sum, trig_prod_t prod)
 
     if (prod->prefactor == 0)
     {
-        mpfr_set_ui(sum, 0UL, MPFR_RNDN);
+        mpfr_set_ui(sum, UWORD(0), MPFR_RNDN);
         return;
     }
 
@@ -356,8 +338,7 @@ eval_trig_prod(mpfr_t sum, trig_prod_t prod)
 
         mpfr_init2(t, mpfr_get_prec(sum));
         mpfr_set_si(sum, prod->prefactor, MPFR_RNDN);
-        v = n_gcd(FLINT_MAX(prod->sqrt_p, prod->sqrt_q),
-                  FLINT_MIN(prod->sqrt_p, prod->sqrt_q));
+        v = n_gcd(prod->sqrt_p, prod->sqrt_q);
         prod->sqrt_p /= v;
         prod->sqrt_q /= v;
 
@@ -384,7 +365,7 @@ eval_trig_prod(mpfr_t sum, trig_prod_t prod)
 }
 
 void
-sinh_cosh_divk_precomp(mpfr_t sh, mpfr_t ch, mpfr_t ex, long k)
+sinh_cosh_divk_precomp(mpfr_t sh, mpfr_t ch, mpfr_t ex, slong k)
 {
     mpfr_t t;
     mpfr_root(ch, ex, k, MPFR_RNDN);
@@ -401,13 +382,14 @@ sinh_cosh_divk_precomp(mpfr_t sh, mpfr_t ch, mpfr_t ex, long k)
 
 
 void
-_number_of_partitions_mpfr(mpfr_t x, ulong n, long N0, long N)
+_arith_number_of_partitions_mpfr(mpfr_t x, ulong n, slong N0, slong N)
 {
     trig_prod_t prod;
     mpfr_t acc, C, t1, t2, t3, t4, exp1;
     mpz_t n24;
     double Cd;
-    long k, prec, guard_bits;
+    slong k;
+    slong prec, guard_bits;
 #if VERBOSE
     timeit_t t0;
 #endif
@@ -435,21 +417,16 @@ _number_of_partitions_mpfr(mpfr_t x, ulong n, long N0, long N)
     mpfr_set_ui(acc, 0, MPFR_RNDN);
 
     mpz_init(n24);
-    mpz_set_ui(n24, n);
-    mpz_mul_ui(n24, n24, 24);
-    mpz_sub_ui(n24, n24, 1);
+    flint_mpz_set_ui(n24, n);
+    flint_mpz_mul_ui(n24, n24, 24);
+    flint_mpz_sub_ui(n24, n24, 1);
 
 #if VERBOSE
     timeit_start(t0);
 #endif
 
     /* C = (pi/6)*sqrt(24*n-1) */
-
-    if (PI_USE_CHUDNOVSKY && prec > PI_CHUDNOVSKY_CUTOFF)
-        mpfr_pi_chudnovsky(t1, MPFR_RNDN);
-    else
-        mpfr_const_pi(t1, MPFR_RNDN);
-
+    mpfr_const_pi(t1, MPFR_RNDN);
     mpfr_sqrt_z(t2, n24, MPFR_RNDN);
     mpfr_mul(t1, t1, t2, MPFR_RNDN);
     mpfr_div_ui(C, t1, 6, MPFR_RNDN);
@@ -460,19 +437,20 @@ _number_of_partitions_mpfr(mpfr_t x, ulong n, long N0, long N)
 
 #if VERBOSE
     timeit_stop(t0);
-    printf("TERM 1: %ld ms\n", t0->cpu);
+    flint_printf("TERM 1: %wd ms\n", t0->cpu);
 #endif
 
     for (k = N0; k <= N; k++)
     {
         trig_prod_init(prod);
-        dedekind_cosine_sum_factored(prod, k, n % k);
+        arith_hrr_expsum_factored(prod, k, n % k);
 
         if (prod->prefactor != 0)
         {
             if (prec > DOUBLE_PREC)
             {
                 prec = partitions_prec_bound(n, k, N);
+
                 mpfr_set_prec(t1, prec);
                 mpfr_set_prec(t2, prec);
                 mpfr_set_prec(t3, prec);
@@ -530,7 +508,7 @@ _number_of_partitions_mpfr(mpfr_t x, ulong n, long N0, long N)
 }
 
 void
-number_of_partitions_mpfr(mpfr_t x, ulong n)
+arith_number_of_partitions_mpfr(mpfr_t x, ulong n)
 {
-    _number_of_partitions_mpfr(x, n, 1, partitions_needed_terms(n));
+    _arith_number_of_partitions_mpfr(x, n, 1, partitions_needed_terms(n));
 }

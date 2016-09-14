@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -32,10 +18,10 @@
 
 void
 _fmpz_poly_pseudo_divrem_cohen(fmpz * Q, fmpz * R, const fmpz * A, 
-                               long lenA, const fmpz * B, long lenB)
+                               slong lenA, const fmpz * B, slong lenB)
 {
     const fmpz * leadB = B + (lenB - 1);
-    long e, lenQ;
+    slong e, lenQ;
     fmpz_t pow;
     
     if (lenB == 1)
@@ -91,18 +77,19 @@ void
 fmpz_poly_pseudo_divrem_cohen(fmpz_poly_t Q, fmpz_poly_t R, 
                               const fmpz_poly_t A, const fmpz_poly_t B)
 {
-    long lenq, lenr;
+    slong lenq, lenr;
     fmpz *q, *r;
     
     if (B->length == 0)
     {
-        printf("Exception: division by zero in fmpz_poly_pseudo_divrem_cohen\n");
-        abort();
+        flint_printf("Exception (fmpz_poly_pseudo_divrem_cohen). Division by zero.\n");
+        flint_abort();
     }
     if (Q == R)
     {
-        printf("Exception: output arguments Q and R may not be aliased\n");
-        abort();
+        flint_printf("Exception (fmpz_poly_pseudo_divrem_cohen). \n"
+                "Output arguments Q and R may not be aliased.\n");
+        flint_abort();
     }
     if (A->length < B->length)
     {
@@ -130,7 +117,7 @@ fmpz_poly_pseudo_divrem_cohen(fmpz_poly_t Q, fmpz_poly_t R,
     
     _fmpz_poly_pseudo_divrem_cohen(q, r, A->coeffs, A->length, B->coeffs, B->length);
     
-    for (lenr = B->length - 1; (lenr >= 0) && r[lenr] == 0L; lenr--) ;
+    for (lenr = B->length - 1; (lenr >= 0) && r[lenr] == WORD(0); lenr--) ;
     lenr++;
     
     if ((Q == A) || (Q == B))

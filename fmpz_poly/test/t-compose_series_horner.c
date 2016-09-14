@@ -1,33 +1,19 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2009 William Hart
     Copyright (C) 2010 Sebastian Pancratz
     Copyright (C) 2011 Fredrik Johansson
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
@@ -37,18 +23,18 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("compose_series_horner....");
+    flint_printf("compose_series_horner....");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing of the first argument */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t f, g, h;
-        long n;
+        slong n;
 
         fmpz_poly_init(f);
         fmpz_poly_init(g);
@@ -64,9 +50,9 @@ main(void)
         result = (fmpz_poly_equal(f, g));
         if (!result)
         {
-            printf("FAIL (aliasing 1):\n");
-            fmpz_poly_print(f), printf("\n\n");
-            fmpz_poly_print(g), printf("\n\n");
+            flint_printf("FAIL (aliasing 1):\n");
+            fmpz_poly_print(f), flint_printf("\n\n");
+            fmpz_poly_print(g), flint_printf("\n\n");
             abort();
         }
 
@@ -76,10 +62,10 @@ main(void)
     }
 
     /* Check aliasing of the second argument */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t f, g, h;
-        long n;
+        slong n;
 
         fmpz_poly_init(f);
         fmpz_poly_init(g);
@@ -95,9 +81,9 @@ main(void)
         result = (fmpz_poly_equal(f, h));
         if (!result)
         {
-            printf("FAIL (aliasing 2):\n");
-            fmpz_poly_print(f), printf("\n\n");
-            fmpz_poly_print(h), printf("\n\n");
+            flint_printf("FAIL (aliasing 2):\n");
+            fmpz_poly_print(f), flint_printf("\n\n");
+            fmpz_poly_print(h), flint_printf("\n\n");
             abort();
         }
 
@@ -107,10 +93,10 @@ main(void)
     }
 
     /* Compare with compose */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_t f, g, h, s, t;
-        long n;
+        slong n;
 
         fmpz_poly_init(f);
         fmpz_poly_init(g);
@@ -129,12 +115,12 @@ main(void)
         result = (fmpz_poly_equal(f, s));
         if (!result)
         {
-            printf("FAIL (comparison):\n");
-            printf("n = %ld\n", n);
-            printf("g = "), fmpz_poly_print(g), printf("\n\n");
-            printf("h = "), fmpz_poly_print(h), printf("\n\n");
-            printf("f = "), fmpz_poly_print(f), printf("\n\n");
-            printf("s = "), fmpz_poly_print(s), printf("\n\n");
+            flint_printf("FAIL (comparison):\n");
+            flint_printf("n = %wd\n", n);
+            flint_printf("g = "), fmpz_poly_print(g), flint_printf("\n\n");
+            flint_printf("h = "), fmpz_poly_print(h), flint_printf("\n\n");
+            flint_printf("f = "), fmpz_poly_print(f), flint_printf("\n\n");
+            flint_printf("s = "), fmpz_poly_print(s), flint_printf("\n\n");
             abort();
         }
 
@@ -145,8 +131,8 @@ main(void)
         fmpz_poly_clear(t);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return 0;
 }

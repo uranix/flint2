@@ -1,46 +1,32 @@
-/*=============================================================================
+/*
+    Copyright (C) 2008, 2009, 2011 William Hart
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2008, 2009, 2011 William Hart
-    Copyright (C) 2010 Sebastian Pancratz
-   
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "nmod_vec.h"
 #include "nmod_poly.h"
 
 void
 _nmod_poly_divrem_divconquer_recursive(mp_ptr Q, mp_ptr BQ, mp_ptr W, mp_ptr V,
-                          mp_srcptr A, mp_srcptr B, long lenB, nmod_t mod)
+                          mp_srcptr A, mp_srcptr B, slong lenB, nmod_t mod)
 {
     if (lenB <= NMOD_DIVREM_DIVCONQUER_CUTOFF)
     {
         mp_ptr t = V;
         mp_ptr w = t + 2*lenB - 1;
         
-        mpn_copyi(t + lenB - 1, A + lenB - 1, lenB);
-        mpn_zero(t, lenB - 1);
+        flint_mpn_copyi(t + lenB - 1, A + lenB - 1, lenB);
+        flint_mpn_zero(t, lenB - 1);
         
         _nmod_poly_divrem_basecase(Q, BQ, w, t, 2 * lenB - 1, B, lenB, mod);
         
@@ -49,8 +35,8 @@ _nmod_poly_divrem_divconquer_recursive(mp_ptr Q, mp_ptr BQ, mp_ptr W, mp_ptr V,
     }
     else
     {
-        const long n2 = lenB / 2;
-        const long n1 = lenB - n2;
+        const slong n2 = lenB / 2;
+        const slong n1 = lenB - n2;
 
         mp_ptr W1 = W;
         mp_ptr W2 = W + n2;
@@ -89,7 +75,7 @@ _nmod_poly_divrem_divconquer_recursive(mp_ptr Q, mp_ptr BQ, mp_ptr W, mp_ptr V,
            of length n2 at BQ.
          */
 
-        mpn_copyi(dq1, d2q1, n1 - 1);
+        flint_mpn_copyi(dq1, d2q1, n1 - 1);
         if (n2 > n1 - 1)
             BQ[0] = d2q1[n1 - 1];
 
@@ -131,7 +117,7 @@ _nmod_poly_divrem_divconquer_recursive(mp_ptr Q, mp_ptr BQ, mp_ptr W, mp_ptr V,
          */
 
         _nmod_vec_add(BQ + n1, BQ + n1, d3q2, n2 - 1, mod);
-        mpn_copyi(BQ, d4q2, n2);
+        flint_mpn_copyi(BQ, d4q2, n2);
         _nmod_vec_add(BQ + n2, BQ + n2, d4q2 + n2, n1 - 1, mod);
 
         /*

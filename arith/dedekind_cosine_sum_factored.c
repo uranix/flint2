@@ -1,35 +1,15 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <mpir.h>
-#include "flint.h"
 #include "arith.h"
-#include "ulong_extras.h"
 
 static const int mod4_tab[8] = { 2, 1, 3, 0, 0, 3, 1, 2 };
 
@@ -62,7 +42,7 @@ n_sqrtmod_2exp(mp_limb_t a, int k)
         x += (a - x * x) / 2;
 
     if (k < FLINT_BITS)
-        x &= ((1UL << k) - 1);
+        x &= ((UWORD(1) << k) - 1);
 
     return x;
 }
@@ -73,7 +53,8 @@ n_sqrtmod_ppow(mp_limb_t a, mp_limb_t p, int k, mp_limb_t pk, mp_limb_t pkinv)
     mp_limb_t r, t;
     int i;
 
-    r = n_sqrtmod(a, p);
+    /* n_sqrtmod assumes that a is reduced */
+    r = n_sqrtmod(a % p, p);
     if (r == 0)
         return r;
 
@@ -82,7 +63,7 @@ n_sqrtmod_ppow(mp_limb_t a, mp_limb_t p, int k, mp_limb_t pk, mp_limb_t pkinv)
     {
         t = n_mulmod2_preinv(r, r, pk, pkinv);
         t = n_submod(t, a, pk);
-        t = n_mulmod2_preinv(t, n_invmod((2*r) % pk, pk), pk, pkinv);
+        t = n_mulmod2_preinv(t, n_invmod(n_addmod(r, r, pk), pk), pk, pkinv);
         r = n_submod(r, t, pk);
         i *= 2;
     }
@@ -199,7 +180,7 @@ trigprod_mul_prime_power(trig_prod_t prod, mp_limb_t k, mp_limb_t n,
     prod->prefactor *= 2;
     prod->prefactor *= n_jacobi(3, k);
     prod->sqrt_p *= k;
-    prod->cos_p[prod->n] = 4 * n_mulmod2_preinv(m, n_invmod(24, k), k, inv);
+    prod->cos_p[prod->n] = 4 * n_mulmod2_preinv(m, n_invmod(24 >= k ? n_mod2_preinv(24, k, inv) : 24, k), k, inv);
     prod->cos_q[prod->n] = k;
     prod->n++;
 }
@@ -218,22 +199,22 @@ solve_n1(mp_limb_t n, mp_limb_t k1, mp_limb_t k2,
     inv = n_preinvert_limb(k1);
 
     umul_ppmm(t[1], t[0], k2, k2);
-    sub_ddmmss(t[1], t[0], t[1], t[0], 0UL, 1UL);
+    sub_ddmmss(t[1], t[0], t[1], t[0], UWORD(0), UWORD(1));
     mpn_divrem_1(t, 0, t, 2, d1);
 
     n1 = n_ll_mod_preinv(t[1], t[0], k1, inv);
     n1 = n_mod2_preinv(n1 + d2*e*n, k1, inv);
 
     u = n_mulmod2_preinv(k2, k2, k1, inv);
-    u = n_invmod(u * d2 * e, k1);
+    u = n_invmod(n_mod2_preinv(u * d2 * e, k1, inv), k1);
     n1 = n_mulmod2_preinv(n1, u, k1, inv);
-
+ 
     return n1;
 }
 
 
 void
-dedekind_cosine_sum_factored(trig_prod_t prod, mp_limb_t k, mp_limb_t n)
+arith_hrr_expsum_factored(trig_prod_t prod, mp_limb_t k, mp_limb_t n)
 {
     n_factor_t fac;
     int i;
@@ -255,12 +236,12 @@ dedekind_cosine_sum_factored(trig_prod_t prod, mp_limb_t k, mp_limb_t n)
         p = fac.p[i];
 
         /* k = 2 * k1 with k1 odd */
-        if (p == 2UL && fac.exp[i] == 1)
+        if (p == UWORD(2) && fac.exp[i] == 1)
         {
             k2 = k / 2;
             inv = n_preinvert_limb(k2);
 
-            n2 = n_invmod(32, k2);
+            n2 = n_invmod(32 >= k2 ? n_mod2_preinv(32, k2, inv) : 32, k2);
             n2 = n_mulmod2_preinv(n2,
                     n_mod2_preinv(8*n + 1, k2, inv), k2, inv);
             n1 = ((k2 % 8 == 3) || (k2 % 8 == 5)) ^ (n & 1);
@@ -270,12 +251,12 @@ dedekind_cosine_sum_factored(trig_prod_t prod, mp_limb_t k, mp_limb_t n)
             n = n2;
         }
         /* k = 4 * k1 with k1 odd */
-        else if (p == 2UL && fac.exp[i] == 2)
+        else if (p == UWORD(2) && fac.exp[i] == 2)
         {
             k2 = k / 4;
             inv = n_preinvert_limb(k2);
 
-            n2 = n_invmod(128, k2);
+            n2 = n_invmod(128 >= k2 ? n_mod2_preinv(128, k2, inv) : 128, k2);
             n2 = n_mulmod2_preinv(n2,
                 n_mod2_preinv(8*n + 5, k2, inv), k2, inv);
             n1 = (n + mod4_tab[(k2 / 2) % 8]) % 4;
@@ -299,7 +280,7 @@ dedekind_cosine_sum_factored(trig_prod_t prod, mp_limb_t k, mp_limb_t n)
 
             n1 = solve_n1(n, k1, k2, d1, d2, e);
             n2 = solve_n1(n, k2, k1, d2, d1, e);
-
+            
             trigprod_mul_prime_power(prod, k1, n1, fac.p[i], fac.exp[i]);
             k = k2;
             n = n2;

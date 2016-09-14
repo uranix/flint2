@@ -1,6 +1,19 @@
+/*
+    Copyright (C) 2013 Fredrik Johansson
+    Copyright (C) 2013 William Hart
+    Copyright (C) 2011 Sebastian Pancratz
+
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "fmpz_poly_q.h"
 #include "long_extras.h"
@@ -10,15 +23,15 @@ int
 main(void)
 {
     int i, result;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("derivative... ");
+    flint_printf("derivative... ");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
     /* Check aliasing */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a, b;
 
@@ -32,9 +45,9 @@ main(void)
         result = fmpz_poly_q_equal(a, b);
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpz_poly_q_print(a), printf("\n\n");
-            fmpz_poly_q_print(b), printf("\n\n");
+            flint_printf("FAIL:\n");
+            fmpz_poly_q_print(a), flint_printf("\n\n");
+            fmpz_poly_q_print(b), flint_printf("\n\n");
             abort();
         }
 
@@ -43,7 +56,7 @@ main(void)
     }
 
     /* Check constants have derivative zero */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a, b;
 
@@ -57,9 +70,9 @@ main(void)
         result = fmpz_poly_q_is_zero(b);
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpz_poly_q_print(a), printf("\n\n");
-            fmpz_poly_q_print(b), printf("\n\n");
+            flint_printf("FAIL:\n");
+            fmpz_poly_q_print(a), flint_printf("\n\n");
+            fmpz_poly_q_print(b), flint_printf("\n\n");
             abort();
         }
 
@@ -68,7 +81,7 @@ main(void)
     }
 
     /* Check (f g)' = f' g + f g' */
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a, b, c, d, lhs, rhs;
 
@@ -93,11 +106,11 @@ main(void)
                                              && fmpz_poly_q_is_canonical(rhs);
         if (!result)
         {
-            printf("FAIL:\n");
-            fmpz_poly_q_print(a), printf("\n\n");
-            fmpz_poly_q_print(b), printf("\n\n");
-            fmpz_poly_q_print(lhs), printf("\n\n");
-            fmpz_poly_q_print(rhs), printf("\n\n");
+            flint_printf("FAIL:\n");
+            fmpz_poly_q_print(a), flint_printf("\n\n");
+            fmpz_poly_q_print(b), flint_printf("\n\n");
+            fmpz_poly_q_print(lhs), flint_printf("\n\n");
+            fmpz_poly_q_print(rhs), flint_printf("\n\n");
             abort();
         }
 
@@ -109,8 +122,8 @@ main(void)
         fmpz_poly_q_clear(rhs);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return EXIT_SUCCESS;
 }

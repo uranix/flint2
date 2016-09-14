@@ -1,36 +1,22 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "mpn_extras.h"
 
 
-mp_size_t mpn_remove_power_ascending(mp_ptr x, mp_size_t xsize,
+mp_size_t flint_mpn_remove_power_ascending(mp_ptr x, mp_size_t xsize,
                                       mp_ptr p, mp_size_t psize, ulong *exp)
 {
     int i, maxi;
@@ -58,7 +44,7 @@ mp_size_t mpn_remove_power_ascending(mp_ptr x, mp_size_t xsize,
     for (i = 0; i < FLINT_BITS && xsize >= square_size[i]; i++)
     {
         mpn_tdiv_qr(div, rem, 0, x, xsize, square[i], square_size[i]);
-        if (!mpn_zero_p(rem, square_size[i]))
+        if (!flint_mpn_zero_p(rem, square_size[i]))
         {
             i -= 1;
             break;
@@ -68,7 +54,7 @@ mp_size_t mpn_remove_power_ascending(mp_ptr x, mp_size_t xsize,
         xsize = xsize - square_size[i] + 1;
         if (div[xsize-1] == 0)
             xsize--;
-        mpn_copyi(x, div, xsize);
+        flint_mpn_copyi(x, div, xsize);
 
         /* Form next square if needed */
         sqsize = square_size[i] * 2;
@@ -88,13 +74,13 @@ mp_size_t mpn_remove_power_ascending(mp_ptr x, mp_size_t xsize,
         if (xsize >= square_size[i])
         {
             mpn_tdiv_qr(div, rem, 0, x, xsize, square[i], square_size[i]);
-            if (mpn_zero_p(rem, square_size[i]))
+            if (flint_mpn_zero_p(rem, square_size[i]))
             {
                 *exp += (1 << i);
                 xsize = xsize - square_size[i] + 1;
                 if (div[xsize-1] == 0)
                     xsize--;
-                mpn_copyi(x, div, xsize);
+                flint_mpn_copyi(x, div, xsize);
             }
         }
     }

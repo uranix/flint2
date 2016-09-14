@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -89,39 +75,34 @@
  */
 
 void
-_fmpz_poly_compose_divconquer(fmpz * res, const fmpz * poly1, long len1, 
-                                          const fmpz * poly2, long len2)
+_fmpz_poly_compose_divconquer(fmpz * res, const fmpz * poly1, slong len1, 
+                                          const fmpz * poly2, slong len2)
 {
-    long i, j, k, n;
-    long *hlen, alloc, powlen;
+    slong i, j, k, n;
+    slong *hlen, alloc, powlen;
     fmpz *v, **h, *pow, *temp;
-    
-    if (len1 == 1)
+
+    if (len1 <= 2 || len2 <= 1)
     {
-        fmpz_set(res, poly1);
-        return;
-    }
-    if (len2 == 1)
-    {
-        _fmpz_poly_evaluate_fmpz(res, poly1, len1, poly2);
-        return;
-    }
-    if (len1 == 2)
-    {
-        _fmpz_poly_compose_horner(res, poly1, len1, poly2, len2);
+        if (len1 == 1)
+            fmpz_set(res, poly1);
+        else if (len2 == 1)
+            _fmpz_poly_evaluate_fmpz(res, poly1, len1, poly2);
+        else  /* len1 == 2 */
+            _fmpz_poly_compose_horner(res, poly1, len1, poly2, len2);
         return;
     }
 
     /* Initialisation */
     
-    hlen = (long *) flint_malloc(((len1 + 1) / 2) * sizeof(long));
+    hlen = (slong *) flint_malloc(((len1 + 1) / 2) * sizeof(slong));
     
-    for (k = 1; (2 << k) < len1; k++) ;
+    k = FLINT_CLOG2(len1) - 1;
     
     hlen[0] = hlen[1] = ((1 << k) - 1) * (len2 - 1) + 1;
     for (i = k - 1; i > 0; i--)
     {
-        long hi = (len1 + (1 << i) - 1) / (1 << i);
+        slong hi = (len1 + (1 << i) - 1) / (1 << i);
         for (n = (hi + 1) / 2; n < hi; n++)
             hlen[n] = ((1 << i) - 1) * (len2 - 1) + 1;
     }
@@ -147,35 +128,35 @@ _fmpz_poly_compose_divconquer(fmpz * res, const fmpz * poly1, long len1,
     
     for (i = 0, j = 0; i < len1 / 2; i++, j += 2)
     {
-        if (poly1[j + 1] != 0L)
+        if (poly1[j + 1] != WORD(0))
         {
             _fmpz_vec_scalar_mul_fmpz(h[i], poly2, len2, poly1 + j + 1);
             fmpz_add(h[i], h[i], poly1 + j);
             hlen[i] = len2;
         }
-        else if (poly1[j] != 0L)
+        else if (poly1[j] != WORD(0))
         {
             fmpz_set(h[i], poly1 + j);
             hlen[i] = 1;
         }
     }
-    if ((len1 & 1L))
+    if ((len1 & WORD(1)))
     {
-        if (poly1[j] != 0L)
+        if (poly1[j] != WORD(0))
         {
             fmpz_set(h[i], poly1 + j);
             hlen[i] = 1;
         }
     }
     
-    _fmpz_poly_mul(pow, poly2, len2, poly2, len2);
+    _fmpz_poly_sqr(pow, poly2, len2);
     powlen = 2 * len2 - 1;
     
     for (n = (len1 + 1) / 2; n > 2; n = (n + 1) / 2)
     {
         if (hlen[1] > 0)
         {
-            long templen = powlen + hlen[1] - 1;
+            slong templen = powlen + hlen[1] - 1;
             _fmpz_poly_mul(temp, pow, powlen, h[1], hlen[1]);
             _fmpz_poly_add(h[0], temp, templen, h[0], hlen[0]);
             hlen[0] = FLINT_MAX(hlen[0], templen);
@@ -192,13 +173,13 @@ _fmpz_poly_compose_divconquer(fmpz * res, const fmpz * poly1, long len1,
             _fmpz_poly_add(h[i], h[i], hlen[i], h[2*i], hlen[2*i]);
             hlen[i] = FLINT_MAX(hlen[i], hlen[2*i]);
         }
-        if ((n & 1L))
+        if ((n & WORD(1)))
         {
             _fmpz_vec_set(h[i], h[2*i], hlen[2*i]);
             hlen[i] = hlen[2*i];
         }
         
-        _fmpz_poly_mul(temp, pow, powlen, pow, powlen);
+        _fmpz_poly_sqr(temp, pow, powlen);
         powlen += powlen - 1;
         {
             fmpz * t = pow;
@@ -219,9 +200,9 @@ void
 fmpz_poly_compose_divconquer(fmpz_poly_t res, 
                              const fmpz_poly_t poly1, const fmpz_poly_t poly2)
 {
-    const long len1 = poly1->length;
-    const long len2 = poly2->length;
-    long lenr;
+    const slong len1 = poly1->length;
+    const slong len2 = poly2->length;
+    slong lenr;
     
     if (len1 == 0)
     {

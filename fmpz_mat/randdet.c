@@ -1,41 +1,21 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdlib.h>
-#include "flint.h"
-#include "fmpz.h"
 #include "fmpz_mat.h"
-#include "fmpz_vec.h"
-#include "fmpz_factor.h"
-#include "ulong_extras.h"
-
+#include "fmpz.h"
 
 void
 fmpz_mat_randdet(fmpz_mat_t mat, flint_rand_t state, const fmpz_t det)
 {
-    long i, j, k, n;
+    slong i, j, k, n;
     int parity;
     fmpz * diag;
     fmpz_factor_t factor;
@@ -43,8 +23,8 @@ fmpz_mat_randdet(fmpz_mat_t mat, flint_rand_t state, const fmpz_t det)
     n = mat->r;
     if (n != mat->c)
     {
-        printf("exception: fmpz_mat_randdet: need a square matrix\n");
-        abort();
+        flint_printf("Exception (fmpz_mat_randdet). Non-square matrix.\n");
+        flint_abort();
     }
 
     if (n < 1)
@@ -53,7 +33,7 @@ fmpz_mat_randdet(fmpz_mat_t mat, flint_rand_t state, const fmpz_t det)
     /* Start with the zero matrix */
     fmpz_mat_zero(mat);
 
-    if (*det == 0L)
+    if (*det == WORD(0))
         return;
 
     fmpz_factor_init(factor);
@@ -66,7 +46,7 @@ fmpz_mat_randdet(fmpz_mat_t mat, flint_rand_t state, const fmpz_t det)
     /* Form diagonal entries that multiply to the determinant */
     for (i = 0; i < factor->num; i++)
     {
-        for (j = 0; j < fmpz_get_ui(&factor->exp[i]); j++)
+        for (j = 0; j < factor->exp[i]; j++)
         {
             k = n_randint(state, n);
             fmpz_mul(&diag[k], &diag[k], &factor->p[i]);

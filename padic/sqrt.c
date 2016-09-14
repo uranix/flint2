@@ -1,28 +1,14 @@
-/*=============================================================================
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 Jan Tuitman
     Copyright (C) 2011, 2012 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
+
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include "padic.h"
 
@@ -35,7 +21,7 @@
 
     In the current implementation, allows aliasing.
  */
-static int _padic_sqrt_p(fmpz_t rop, const fmpz_t op, const fmpz_t p, long N)
+static int _padic_sqrt_p(fmpz_t rop, const fmpz_t op, const fmpz_t p, slong N)
 {
     int ans;
 
@@ -46,45 +32,16 @@ static int _padic_sqrt_p(fmpz_t rop, const fmpz_t op, const fmpz_t p, long N)
     }
     else
     {
-        long *e, i, n;
+        slong *e, i, n;
         fmpz *W, *pow, *u;
 
-        n = FLINT_CLOG2(N) + 1;
-
-        /* Compute sequence of exponents */
-        e = flint_malloc(n * sizeof(long));
-
-        for (e[i = 0] = N; e[i] > 1; i++)
-            e[i + 1] = (e[i] + 1) / 2;
+        e = _padic_lifts_exps(&n, N);
 
         W   = _fmpz_vec_init(2 + 2 * n);
         pow = W + 2;
         u   = W + (2 + n);
 
-        /* Compute powers of p */
-        {
-            fmpz_one(W);
-            fmpz_set(pow + i, p);
-        }
-        for (i--; i >= 1; i--)
-        {
-            if (e[i] & 1L)
-            {
-                fmpz_mul(pow + i, W, pow + (i + 1));
-                fmpz_mul(W, W, W);
-            }
-            else
-            {
-                fmpz_mul(W, W, pow + (i + 1));
-                fmpz_mul(pow + i, pow + (i + 1), pow + (i + 1));
-            }
-        }
-        {
-            if (e[i] & 1L)
-                fmpz_mul(pow + i, W, pow + (i + 1));
-            else
-                fmpz_mul(pow + i, pow + (i + 1), pow + (i + 1));
-        }
+        _padic_lifts_pows(pow, e, n, p);
 
         /* Compute reduced units */
         {
@@ -154,7 +111,7 @@ static int _padic_sqrt_p(fmpz_t rop, const fmpz_t op, const fmpz_t p, long N)
 
     In the current implementation, allows aliasing.
  */
-static int _padic_sqrt_2(fmpz_t rop, const fmpz_t op, long N)
+static int _padic_sqrt_2(fmpz_t rop, const fmpz_t op, slong N)
 {
     if (fmpz_fdiv_ui(op, 8) != 1)
         return 0;
@@ -165,13 +122,13 @@ static int _padic_sqrt_2(fmpz_t rop, const fmpz_t op, long N)
     }
     else
     {
-        long *e, i, n;
+        slong *e, i, n;
         fmpz *W, *u;
 
         i = FLINT_CLOG2(N);
 
         /* Compute sequence of exponents */
-        e = flint_malloc((i + 2) * sizeof(long));
+        e = flint_malloc((i + 2) * sizeof(slong));
         for (e[i = 0] = N; e[i] > 3; i++)
             e[i + 1] = (e[i] + 3) / 2;
         n = i + 1;
@@ -217,9 +174,9 @@ static int _padic_sqrt_2(fmpz_t rop, const fmpz_t op, long N)
     return 1;
 }
 
-int _padic_sqrt(fmpz_t rop, const fmpz_t op, const fmpz_t p, long N)
+int _padic_sqrt(fmpz_t rop, const fmpz_t op, const fmpz_t p, slong N)
 {
-    if (*p == 2L)
+    if (fmpz_equal_ui(p, 2))
     {
         return _padic_sqrt_2(rop, op, N);
     }
@@ -231,12 +188,12 @@ int _padic_sqrt(fmpz_t rop, const fmpz_t op, const fmpz_t p, long N)
 
 int padic_sqrt(padic_t rop, const padic_t op, const padic_ctx_t ctx)
 {
-    if (_padic_is_zero(op))
+    if (padic_is_zero(op))
     {
         padic_zero(rop);
         return 1;
     }
-    if (padic_val(op) & 1L)
+    if (padic_val(op) & WORD(1))
     {
         return 0;
     }
@@ -248,11 +205,11 @@ int padic_sqrt(padic_t rop, const padic_t op, const padic_ctx_t ctx)
         zero modulo $p^N$.  We only have to establish whether 
         or not the element \code{op} is a square.
      */
-    if (padic_val(rop) >= ctx->N)
+    if (padic_val(rop) >= padic_prec(rop))
     {
         int ans;
 
-        if (*(ctx->p) == 2L)
+        if (fmpz_equal_ui(ctx->p, 2))
         {
             ans = (fmpz_fdiv_ui(padic_unit(op), 8) == 1);
         }
@@ -266,6 +223,6 @@ int padic_sqrt(padic_t rop, const padic_t op, const padic_ctx_t ctx)
     }
 
     return _padic_sqrt(padic_unit(rop), 
-                       padic_unit(op), ctx->p, ctx->N - padic_val(rop));
+                       padic_unit(op), ctx->p, padic_prec(rop) - padic_val(rop));
 }
 

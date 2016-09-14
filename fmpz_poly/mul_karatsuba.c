@@ -1,30 +1,16 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 William Hart
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 William Hart
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
@@ -58,16 +44,16 @@
 */
 
 void _fmpz_poly_mul_kara_recursive(fmpz * out, fmpz * rev1, fmpz * rev2,
-                                   fmpz * temp, long bits);
+                                   fmpz * temp, slong bits);
 
 /*
    Switches the coefficients of poly in of length len into a 
    poly out of length 2^bits.
  */
 void
-revbin1(fmpz * out, const fmpz * in, long len, long bits)
+revbin1(fmpz * out, const fmpz * in, slong len, slong bits)
 {
-    long i;
+    slong i;
     for (i = 0; i < len; i++)
         out[n_revbin(i, bits)] = in[i];
 }
@@ -77,21 +63,21 @@ revbin1(fmpz * out, const fmpz * in, long len, long bits)
    poly out of length len.
  */
 void
-revbin2(fmpz * out, const fmpz * in, long len, long bits)
+revbin2(fmpz * out, const fmpz * in, slong len, slong bits)
 {
-    long i;
+    slong i;
     for (i = 0; i < len; i++)
         out[i] = in[n_revbin(i, bits)];
 }
 
 /* in1 += x*in2 assuming both in1 and in2 are revbin'd. */
 void
-_fmpz_vec_add_rev(fmpz * in1, fmpz * in2, long bits)
+_fmpz_vec_add_rev(fmpz * in1, fmpz * in2, slong bits)
 {
-    long i;
-    for (i = 0; i < (1L << bits) - 1; i++)
+    slong i;
+    for (i = 0; i < (WORD(1) << bits) - 1; i++)
     {
-        long j = n_revbin(n_revbin(i, bits) + 1, bits);
+        slong j = n_revbin(n_revbin(i, bits) + 1, bits);
         fmpz_add(in1 + j, in1 + j, in2 + i);
     }
 }
@@ -104,10 +90,10 @@ _fmpz_vec_add_rev(fmpz * in1, fmpz * in2, long bits)
  */
 void
 _fmpz_poly_mul_kara_recursive(fmpz * out, fmpz * rev1, fmpz * rev2,
-                              fmpz * temp, long bits)
+                              fmpz * temp, slong bits)
 {
-    long length = (1L << bits);
-    long m = length / 2;
+    slong length = (WORD(1) << bits);
+    slong m = length / 2;
 
     if (length == 1)
     {
@@ -136,10 +122,10 @@ _fmpz_poly_mul_kara_recursive(fmpz * out, fmpz * rev1, fmpz * rev2,
 /* Assumes poly1 and poly2 are not length 0 and len1 >= len2. */
 void
 _fmpz_poly_mul_karatsuba(fmpz * res, const fmpz * poly1,
-                         long len1, const fmpz * poly2, long len2)
+                         slong len1, const fmpz * poly2, slong len2)
 {
     fmpz *rev1, *rev2, *out, *temp;
-    long length, loglen = 0;
+    slong length, loglen = 0;
 
     if (len1 == 1)
     {
@@ -147,9 +133,9 @@ _fmpz_poly_mul_karatsuba(fmpz * res, const fmpz * poly1,
         return;
     }
 
-    while ((1L << loglen) < len1)
+    while ((WORD(1) << loglen) < len1)
         loglen++;
-    length = (1L << loglen);
+    length = (WORD(1) << loglen);
 
     rev1 = (fmpz *) flint_calloc(4 * length, sizeof(fmpz *));
     rev2 = rev1 + length;
@@ -172,7 +158,7 @@ void
 fmpz_poly_mul_karatsuba(fmpz_poly_t res,
                         const fmpz_poly_t poly1, const fmpz_poly_t poly2)
 {
-    long len_out;
+    slong len_out;
 
     if ((poly1->length == 0) || (poly2->length == 0))
     {

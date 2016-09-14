@@ -1,43 +1,23 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <stdio.h>
-#include <mpir.h>
-#include <mpfr.h>
-#include "flint.h"
 #include "arith.h"
-#include "ulong_extras.h"
 
-
-void _bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
+void _arith_bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
 {
     mpz_t r;
     mpfr_t t, u, z, pi;
-    long prec, pi_prec;
+    mp_bitcnt_t prec, pi_prec;
 
-    bernoulli_number_denom(den, n);
+    arith_bernoulli_number_denom(den, n);
 
     if (n % 2)
     {
@@ -51,8 +31,10 @@ void _bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
         return;
     }
 
-    prec = bernoulli_number_size(n) + fmpz_bits(den) + 10;
-    pi_prec = prec + FLINT_BIT_COUNT(n);
+    prec = arith_bernoulli_number_size(n) + fmpz_bits(den);
+    prec += 10 + 2*FLINT_BIT_COUNT(n);
+    prec = prec * 1.001;
+    pi_prec = prec;
 
     mpz_init(r);
     mpfr_init2(t, prec);
@@ -61,7 +43,7 @@ void _bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
     mpfr_init2(pi, pi_prec);
 
     /* t = 2 * n! / (2*pi)^n */
-    mpz_fac_ui(r, n);
+    flint_mpz_fac_ui(r, n);
     mpfr_set_z(t, r, GMP_RNDN);
     mpfr_mul_2exp(t, t, 1, GMP_RNDN);
     mpfr_const_pi(pi, GMP_RNDN);
@@ -70,7 +52,7 @@ void _bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
     mpfr_div(t, t, pi, GMP_RNDN);
 
     /* t = t / zeta(n) */
-    _zeta_inv_euler_product(z, n, 0);
+    mpfr_zeta_inv_euler_product(z, n, 0);
     mpfr_div(t, t, z, GMP_RNDN);
 
     /* round numerator */
@@ -89,3 +71,4 @@ void _bernoulli_number_zeta(fmpz_t num, fmpz_t den, ulong n)
     mpfr_clear(z);
     mpfr_clear(pi);
 }
+

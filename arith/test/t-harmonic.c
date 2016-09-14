@@ -1,32 +1,18 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010,2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010,2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "arith.h"
 #include "fmpz.h"
@@ -35,7 +21,7 @@
 #include "profiler.h"
 
 
-void numerical_test(fmpq_t res, long n, double ans)
+void numerical_test(fmpq_t res, slong n, double ans)
 {
     const double tol = 1e-13;
     double err;
@@ -43,14 +29,14 @@ void numerical_test(fmpq_t res, long n, double ans)
     mpq_t tmp;
     mpq_init(tmp);
 
-    harmonic_number(res, n);
+    arith_harmonic_number(res, n);
     fmpq_get_mpq(tmp, res);
     err = mpq_get_d(tmp) - ans;
     err = FLINT_ABS(err);
 
     if (err > tol)
     {
-        printf("FAIL: %ld %.16f %.16f\n", n, mpq_get_d(tmp), ans);
+        flint_printf("FAIL: %wd %.16f %.16f\n", n, mpq_get_d(tmp), ans);
         abort();
     }
 
@@ -58,19 +44,19 @@ void numerical_test(fmpq_t res, long n, double ans)
 }
 
 void
-mpq_harmonic_balanced(mpq_t res, long a, long b)
+mpq_harmonic_balanced(mpq_t res, slong a, slong b)
 {
-    long k;
+    slong k;
     mpq_t t;
 
     mpq_init(t);
 
     if (b - a < 50)
     {
-        mpq_set_ui(res, 0, 1UL);
+        flint_mpq_set_ui(res, 0, UWORD(1));
         for (k = a; k <= b; k++)
         {
-            mpq_set_ui(t, 1UL, k);
+            flint_mpq_set_ui(t, UWORD(1), k);
             mpq_add(res, res, t);
         }
     }
@@ -87,11 +73,13 @@ mpq_harmonic_balanced(mpq_t res, long a, long b)
 
 int main(void)
 {
-    long i;
+    slong i;
     mpq_t x, y;
     fmpq_t t;
 
-    printf("harmonic_number....");
+    FLINT_TEST_INIT(state);
+
+    flint_printf("harmonic_number....");
     fflush(stdout);
 
     fmpq_init(t);
@@ -101,12 +89,12 @@ int main(void)
     for (i = -2; i < 1000; i++)
     {
         mpq_harmonic_balanced(x, 1, i);
-        harmonic_number(t, i);
+        arith_harmonic_number(t, i);
         fmpq_get_mpq(y, t);
 
         if (!mpq_equal(x, y))
         {
-            printf("FAIL: %ld\n", i);
+            flint_printf("FAIL: %wd\n", i);
             abort();
         }
     }
@@ -146,6 +134,7 @@ int main(void)
     mpq_clear(y);
     fmpq_clear(t);
 
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

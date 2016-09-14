@@ -1,38 +1,24 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
-
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpq_poly.h"
 
 void _fmpq_poly_integral(fmpz * rpoly, fmpz_t rden, 
-                           const fmpz * poly, const fmpz_t den, long len)
+                           const fmpz * poly, const fmpz_t den, slong len)
 {
-    long k;
+    slong k;
     fmpz_t t;
 
     fmpz_init(t);
@@ -46,7 +32,7 @@ void _fmpq_poly_integral(fmpz * rpoly, fmpz_t rden,
 
     fmpz_mul(rden, den, t);
 
-    fmpz_set_ui(t, 2UL);
+    fmpz_set_ui(t, UWORD(2));
     for (k = 3; k < len; k++)
     {
         fmpz_mul(rpoly + k, rpoly + k, t);
@@ -60,7 +46,7 @@ void _fmpq_poly_integral(fmpz * rpoly, fmpz_t rden,
 
 void fmpq_poly_integral(fmpq_poly_t res, const fmpq_poly_t poly)
 {
-    long len = poly->length;
+    slong len = poly->length;
 
     if (len == 0)
     {

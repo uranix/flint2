@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "flint.h"
@@ -31,7 +17,7 @@
 #include "fmpq_poly.h"
 
 void _fmpq_poly_lcm(fmpz *L, fmpz_t denL, 
-                    const fmpz *A, long lenA, const fmpz *B, long lenB)
+                    const fmpz *A, slong lenA, const fmpz *B, slong lenB)
 {
     if (lenA == 1)  /* lenA == lenB == 1 */
     {
@@ -42,7 +28,7 @@ void _fmpq_poly_lcm(fmpz *L, fmpz_t denL,
     {
         fmpz *copyA, *copyB;
         fmpz_t s, t;
-        long lenL;
+        slong lenL;
 
         fmpz_init(s);
         fmpz_init(t);
@@ -100,7 +86,7 @@ void _fmpq_poly_lcm(fmpz *L, fmpz_t denL,
 
 void fmpq_poly_lcm(fmpq_poly_t L, const fmpq_poly_t A, const fmpq_poly_t B)
 {
-    long lenA = A->length, lenB = B->length, lenL = lenA + lenB - 1;
+    slong lenA = A->length, lenB = B->length, lenL = lenA + lenB - 1;
 
     if (lenA == 0 || lenB == 0)
     {

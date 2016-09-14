@@ -1,27 +1,13 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include "flint.h"
@@ -30,9 +16,9 @@
 
 void
 fmpz_poly_mat_pow_trunc(fmpz_poly_mat_t B, const fmpz_poly_mat_t A, ulong exp,
-                            long len)
+                            slong len)
 {
-    long d = fmpz_poly_mat_nrows(A);
+    slong d = fmpz_poly_mat_nrows(A);
 
     if (len < 1)
     {
@@ -59,17 +45,17 @@ fmpz_poly_mat_pow_trunc(fmpz_poly_mat_t B, const fmpz_poly_mat_t A, ulong exp,
     else
     {
         fmpz_poly_mat_t T, U;
-        long i;
+        slong i;
 
         fmpz_poly_mat_init_set(T, A);
         fmpz_poly_mat_truncate(T, len);
         fmpz_poly_mat_init(U, d, d);
 
-        for (i = ((long) FLINT_BIT_COUNT(exp)) - 2; i >= 0; i--)
+        for (i = ((slong) FLINT_BIT_COUNT(exp)) - 2; i >= 0; i--)
         {
             fmpz_poly_mat_sqrlow(U, T, len);
 
-            if (exp & (1L << i))
+            if (exp & (WORD(1) << i))
                 fmpz_poly_mat_mullow(T, U, A, len);
             else
                 fmpz_poly_mat_swap(T, U);

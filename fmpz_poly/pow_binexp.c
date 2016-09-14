@@ -1,41 +1,27 @@
-/*=============================================================================
+/*
+    Copyright (C) 2010 Sebastian Pancratz
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2010 Sebastian Pancratz
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
 #include "fmpz_poly.h"
 
 void
-_fmpz_poly_pow_binexp(fmpz * res, const fmpz * poly, long len, ulong e)
+_fmpz_poly_pow_binexp(fmpz * res, const fmpz * poly, slong len, ulong e)
 {
-    ulong bit = ~((~0UL) >> 1);
-    long rlen;
-    long alloc = (long) e * (len - 1) + 1;
+    ulong bit = ~((~UWORD(0)) >> 1);
+    slong rlen;
+    slong alloc = (slong) e * (len - 1) + 1;
     fmpz *v = _fmpz_vec_init(alloc);
     fmpz *R, *S, *T;
 
@@ -43,7 +29,7 @@ _fmpz_poly_pow_binexp(fmpz * res, const fmpz * poly, long len, ulong e)
        Set bits to the bitmask with a 1 one place lower than the msb of e
      */
     
-    while ((bit & e) == 0UL)
+    while ((bit & e) == UWORD(0))
         bit >>= 1;
     
     bit >>= 1;
@@ -59,7 +45,7 @@ _fmpz_poly_pow_binexp(fmpz * res, const fmpz * poly, long len, ulong e)
         if ((bit2 & e))
             swaps = ~swaps;
         while (bit2 >>= 1)
-            if ((bit2 & e) == 0UL)
+            if ((bit2 & e) == UWORD(0))
                 swaps = ~swaps;
         
         if (swaps == 0U)
@@ -114,12 +100,12 @@ _fmpz_poly_pow_binexp(fmpz * res, const fmpz * poly, long len, ulong e)
 void
 fmpz_poly_pow_binexp(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
 {
-    const long len = poly->length;
-    long rlen;
+    const slong len = poly->length;
+    slong rlen;
 
-    if ((len < 2) | (e < 3UL))
+    if ((len < 2) | (e < UWORD(3)))
     {
-        if (e == 0UL)
+        if (e == UWORD(0))
             fmpz_poly_set_ui(res, 1);
         else if (len == 0)
             fmpz_poly_zero(res);
@@ -129,14 +115,14 @@ fmpz_poly_pow_binexp(fmpz_poly_t res, const fmpz_poly_t poly, ulong e)
             fmpz_pow_ui(res->coeffs, poly->coeffs, e);
             _fmpz_poly_set_length(res, 1);
         }
-        else if (e == 1UL)
+        else if (e == UWORD(1))
             fmpz_poly_set(res, poly);
-        else  /* e == 2UL */
+        else  /* e == UWORD(2) */
             fmpz_poly_sqr(res, poly);
         return;
     }
 
-    rlen = (long) e * (len - 1) + 1;
+    rlen = (slong) e * (len - 1) + 1;
 
     if (res != poly)
     {

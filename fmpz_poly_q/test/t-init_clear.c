@@ -1,11 +1,18 @@
-/******************************************************************************
+/*
+    Copyright (C) 2013 Fredrik Johansson
+    Copyright (C) 2013 William Hart
+    Copyright (C) 2011 Sebastian Pancratz
 
-    Copyright (C) 2010 Sebastian Pancratz
+    This file is part of FLINT.
 
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
-#include <mpir.h>
+#include <gmp.h>
 
 #include "fmpz_poly_q.h"
 #include "ulong_extras.h"
@@ -14,18 +21,18 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
+    FLINT_TEST_INIT(state);
 
-    printf("init/clear... ");
+    flint_printf("init/clear... ");
     fflush(stdout);
 
-    flint_randinit(state);
+    
 
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10 * flint_test_multiplier(); i++)
     {
         fmpz_poly_q_t a;
-        long len1 = n_randint(state, 50);
-        long len2 = n_randint(state, 50);
+        slong len1 = n_randint(state, 50);
+        slong len2 = n_randint(state, 50);
         mp_bitcnt_t bits1 = n_randint(state, 50);
         mp_bitcnt_t bits2 = n_randint(state, 50);
 
@@ -34,8 +41,8 @@ main(void)
         fmpz_poly_q_clear(a);
     }
 
-    flint_randclear(state);
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    
+    flint_printf("PASS\n");
     return EXIT_SUCCESS;
 }

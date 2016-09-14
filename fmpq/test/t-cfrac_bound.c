@@ -1,31 +1,17 @@
-/*=============================================================================
+/*
+    Copyright (C) 2011 Fredrik Johansson
 
     This file is part of FLINT.
 
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
-    Copyright (C) 2011 Fredrik Johansson
-
-******************************************************************************/
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpq.h"
@@ -36,17 +22,17 @@ int
 main(void)
 {
     int i;
-    flint_rand_t state;
-    flint_randinit(state);
+    FLINT_TEST_INIT(state);
+    
 
-    printf("cfrac_bound....");
+    flint_printf("cfrac_bound....");
     fflush(stdout);
 
     for (i = 0; i < 10000; i++)
     {
         fmpq_t x, r;
         fmpz * c;
-        long n, bound;
+        slong n, bound;
 
         fmpq_init(x);
         fmpq_init(r);
@@ -54,7 +40,7 @@ main(void)
         /* Test worst case (quotient of Fibonacci numbers) */
         if (n_randint(state, 50) == 1)
         {
-            long v = 1 + n_randint(state, 1000);
+            slong v = 1 + n_randint(state, 1000);
             fmpz_fib_ui(fmpq_numref(x), v + 1);
             fmpz_fib_ui(fmpq_denref(x), v);
         }
@@ -69,7 +55,7 @@ main(void)
 
         if (n > bound)
         {
-            printf("FAIL: length=%ld > bound=%ld\n", n, bound);
+            flint_printf("FAIL: length=%wd > bound=%wd\n", n, bound);
             abort();
         }
 
@@ -78,9 +64,9 @@ main(void)
         fmpq_clear(r);
     }
 
-    flint_randclear(state);
+    
 
-    _fmpz_cleanup();
-    printf("PASS\n");
+    FLINT_TEST_CLEANUP(state);
+    flint_printf("PASS\n");
     return 0;
 }

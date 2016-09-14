@@ -1,42 +1,27 @@
-/*=============================================================================
-
-
-    This file is part of FLINT.
-
-    FLINT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    FLINT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with FLINT; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-=============================================================================*/
-/******************************************************************************
-
+/*
     Copyright (C) 2011 Andy Novocin
     Copyright (C) 2011 Sebastian Pancratz
 
-******************************************************************************/
+    This file is part of FLINT.
 
-#include <mpir.h>
+    FLINT is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 2.1 of the License, or
+    (at your option) any later version.  See <http://www.gnu.org/licenses/>.
+*/
+
+#include <gmp.h>
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_poly.h"
 
-void fmpz_poly_hensel_build_tree(long *link, fmpz_poly_t *v, fmpz_poly_t *w, 
+void fmpz_poly_hensel_build_tree(slong *link, fmpz_poly_t *v, fmpz_poly_t *w, 
                                  const nmod_poly_factor_t fac)
 {
-    const long r = fac->num;
+    const slong r = fac->num;
     const nmod_t mod = (fac->p + 0)->mod;
 
-    long i, j;
+    slong i, j;
 
     nmod_poly_t d;
     nmod_poly_t *V = flint_malloc((2*r - 2)*sizeof(nmod_poly_t));
@@ -58,9 +43,9 @@ void fmpz_poly_hensel_build_tree(long *link, fmpz_poly_t *v, fmpz_poly_t *w,
 
     for (i = r, j = 0; j < 2*r - 4; i++, j += 2)
     {
-        long s;
-        long minp, mind;
-        long tmp;
+        slong s;
+        slong minp, mind;
+        slong tmp;
 
         minp = j;
         mind = nmod_poly_degree(V[j]);
