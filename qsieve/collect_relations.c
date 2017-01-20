@@ -150,9 +150,12 @@ void qsieve_do_sieving2(qs_t qs_inf, unsigned char * sieve)
     slong num_primes = qs_inf->num_primes;
     int * soln1 = qs_inf->soln1;
     int * soln2 = qs_inf->soln2;
-    int * posn1 = qs_inf->posn1;
-    int * posn2 = qs_inf->posn2;
+    int * temp1 = qs_inf->posn1;
+    int * temp2 = qs_inf->posn2;
+    int * posn1, * posn2;
+    int * blockp = qs_inf->blockp;
     prime_t * factor_base = qs_inf->factor_base;
+    slong bp;
 
     unsigned char * B;
     register unsigned char * Bp;
@@ -161,15 +164,66 @@ void qsieve_do_sieving2(qs_t qs_inf, unsigned char * sieve)
     memset(sieve, qs_inf->sieve_fill, qs_inf->sieve_size + sizeof(ulong));
     sieve[qs_inf->sieve_size] = (char) 255;
 
-    for (i = 0; i < num_primes; i++)
+    for (i = qs_inf->small_primes; i < num_primes; i++)
     {
-        posn1[i] = soln1[i];
-        posn2[i] = soln2[i] - posn1[i];
+        temp1[i] = soln1[i];
+        temp2[i] = soln2[i];
     }
 
-    for (b = 1; b <= qs_inf->sieve_size / BLOCK_SIZE; b++)
+    posn1 = temp1;
+    posn2 = temp2;
+    bp = BLOCK_SIZE;
+             
+    for (b = 1; b < qs_inf->sieve_size / BLOCK_SIZE; b++)
     {
-        B = sieve + b * BLOCK_SIZE;
+        for (i = qs_inf->small_primes; i < num_primes; i++)
+        {
+           p = factor_base[i].p;
+
+           posn1[i + num_primes] = posn1[i] + blockp[i];
+              if (posn1[i + num_primes] < bp)
+                 posn1[i + num_primes] += p;
+               
+           posn2[i + num_primes] = posn2[i] + blockp[i];
+              if (posn2[i + num_primes] < bp)
+                 posn2[i + num_primes] += p;
+        }
+        
+        posn1 += num_primes;
+        posn2 += num_primes;
+        bp += BLOCK_SIZE;
+     }
+    
+     posn1 = temp1;
+     posn2 = temp2;
+     for (b = 0; b < qs_inf->sieve_size / BLOCK_SIZE; b++) 
+     {
+         int t;
+
+         for (i = qs_inf->small_primes; i < num_primes; i++)
+         {
+            if (posn2[i] < posn1[i])
+            {
+               t = posn1[i];
+               posn1[i] = posn2[i];
+               posn2[i] = t;
+            }
+
+            posn2[i] = posn2[i] - posn1[i];
+
+        }
+
+        posn1 += num_primes;
+        posn2 += num_primes;
+    }
+
+#pragma omp parallel for private(b, B, p, size, d1, d2, Bp, pos, posn1, posn2, pind, i)
+    for (b = 0; b < qs_inf->sieve_size / BLOCK_SIZE; b++)
+    {
+        B = sieve + (b + 1) * BLOCK_SIZE;
+
+        posn1 = temp1 + b*num_primes;
+        posn2 = temp2 + b*num_primes;
 
         for (pind = qs_inf->small_primes; pind < qs_inf->second_prime; pind++)
         {
@@ -198,13 +252,7 @@ void qsieve_do_sieving2(qs_t qs_inf, unsigned char * sieve)
             }
 
             if (pos < B)
-            {
                 (*pos) += size, pos += d1;
-                posn2[pind] = d2;
-            }
-            else { posn2[pind] = d1; }
-
-            posn1[pind] = (pos - sieve);
         }
 
         for (pind = qs_inf->second_prime; pind < num_primes; pind++)
@@ -223,15 +271,8 @@ void qsieve_do_sieving2(qs_t qs_inf, unsigned char * sieve)
                 pos += posn2[pind];
 
                 if (pos < B)
-                {
                     (*pos) += size;
-                    pos += p - posn2[pind];
-                }
-                else { posn2[pind] = p - posn2[pind]; }
-
-                posn1[pind] = (pos - sieve);
             }
-            else { posn1[pind] = (pos - sieve); }
         }
     }
 }

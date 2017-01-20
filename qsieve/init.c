@@ -49,6 +49,7 @@ void qsieve_init(qs_t qs_inf, const fmpz_t n)
 
     qs_inf->factor_base = NULL;
     qs_inf->sqrts       = NULL;
+    qs_inf->blockp      = NULL;
 
     qs_inf->s = 0;
 }

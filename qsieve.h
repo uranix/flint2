@@ -29,7 +29,7 @@
  extern "C" {
 #endif
 
-#define QS_DEBUG 0
+#define QS_DEBUG 1
 
 #define BITS_ADJUST 25 /* added to sieve entries to compensate for approximations */
 
@@ -89,6 +89,7 @@ typedef struct qs_s
    prime_t * factor_base;  /* data about factor base primes */
 
    int * sqrts;            /* square roots of kn mod factor base primes */
+   int * blockp;           /* (BLOCK_SIZE/p)*p for each p in factor base */
 
    slong small_primes;     /* number of primes to not sieve with */
    slong second_prime;     /* index of first prime bigger than block size */
@@ -236,7 +237,7 @@ static const mp_limb_t qsieve_tune[][6] =
    {200, 200,  4000, 12,   2 *  32000, 80}, /* 60 digits */
    {210, 100,  3600, 12,   2 *  32000, 83}, /* */
    {220, 300,  6000, 15,   2 *  65536, 87}, /* */
-   {230, 350,  8500, 17,   3 *  65536, 90}, /* 70 digits */
+   {230, 350,  8500, 17,   4 *  65536, 90}, /* 70 digits */
    {240, 400, 10000, 19,   4 *  65536, 93}, /* */
    {250, 500, 15000, 19,   4 *  65536, 97}, /* 75 digits */
    {260, 600, 25000, 25,   4 *  65536, 100}, /* 80 digits */

@@ -22,6 +22,7 @@ compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, slong num_primes)
     slong fb_prime = 2;
     prime_t * factor_base = NULL;
     int * sqrts;
+    int * blockp;
     int kron;
     n_primes_t iter;
 
@@ -33,8 +34,10 @@ compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, slong num_primes)
 
     /* allocate space for square roots kn mod factor base primes */
     sqrts = flint_realloc(qs_inf->sqrts, sizeof(int)*num_primes);
-
     qs_inf->sqrts = sqrts;
+
+    blockp = flint_realloc(qs_inf->blockp, sizeof(int)*num_primes);
+    qs_inf->blockp = blockp;
 
     /* compute the last prime in factor base */
     p = num == 0 ? 2 : factor_base[num - 1].p;
@@ -78,6 +81,8 @@ compute_factor_base(mp_limb_t * small_factor, qs_t qs_inf, slong num_primes)
             factor_base[fb_prime].p = p;
             factor_base[fb_prime].pinv = pinv;
             factor_base[fb_prime].size = FLINT_BIT_COUNT(p);
+
+            blockp[fb_prime] = n_div2_preinv(BLOCK_SIZE, p, pinv)*p;
             sqrts[fb_prime] = n_sqrtmod(nmod, p);
             fb_prime++;
         }
