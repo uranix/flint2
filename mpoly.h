@@ -384,6 +384,20 @@ void mpoly_max_degrees_tight(slong * max_exp,
 
 /* Monomial arrays ***********************************************************/
 
+void _mpoly_average_monomial_lex(ulong * x, ulong * a, ulong * b,
+                                                   ulong * max, slong nfields);
+
+void _mpoly_average_monomial_deglex(ulong * x, ulong * a, ulong * b,
+                                                   ulong * max, slong nfields);
+
+void _mpoly_average_monomial_degrevlex(ulong * x, ulong * a, ulong * b,
+                                                   ulong * max, slong nfields);
+
+
+void mpoly_get_monomial(ulong * exps, const ulong * poly_exps,
+                                        slong bits, slong n, int deg, int rev);
+
+
 FLINT_DLL void mpoly_get_monomial(ulong * exps, const ulong * poly_exps,
                                         slong bits, slong n, int deg, int rev);
 
