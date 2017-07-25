@@ -23,14 +23,16 @@
         lower <= score(e) <= upper
     or is as close as possible and store its score in e_score
     e is returned in the same format as a and b
+    e_ind is assumed to have space for a_len slongs
 */
 void
 fmpz_mpoly_search_monomials(
-    ulong * e, slong * e_score, slong lower, slong upper,
+    ulong * e, slong * e_score, slong * e_ind,
+    slong lower, slong upper,
     ulong * a, slong a_len, ulong * b, slong b_len,
-    slong ab_bits, slong ab_elems, ulong maskhi, ulong masklo)
+    slong N, ulong maskhi, ulong masklo)
 {
-    slong t, i, u, v, N;
+    slong i, j, x;
     slong maxdiff, maxind;
     /*
         for each i, there is an integer 0 <= find[i] <= blen such that
@@ -45,10 +47,9 @@ fmpz_mpoly_search_monomials(
     slong * find, * gind, * hind, * tind;
     ulong * temp_exp;
 
-    assert(a_len > 0);
-    assert(b_len > 0);
-    assert(lower <= upper);
-    N = (ab_bits*ab_elems - 1)/FLINT_BITS + 1;
+    FLINT_ASSERT(a_len > 0);
+    FLINT_ASSERT(b_len > 0);
+    FLINT_ASSERT(lower <= upper);
 
     /* set f to correspond to an upperbound on all products */
     fscore = a_len * b_len;
@@ -63,24 +64,19 @@ fmpz_mpoly_search_monomials(
     gexp = (ulong *) flint_malloc(N*sizeof(ulong));
     gind = (slong *) flint_malloc(a_len*sizeof(ulong));
     mpoly_monomial_add(gexp, a + (a_len - 1)*N, b + (b_len - 1)*N, N);
-    for (i = 0; i < N; i++)
-        gexp[i] = 0;
     for (i = 0; i < a_len; i++)
-        find[i] = b_len;
-    find[a_len - 1] = b_len - 1;
+        gind[i] = b_len;
+    gind[a_len - 1] = b_len - 1;
 
     /* just allocate h */
     hexp = (ulong *) flint_malloc(N*sizeof(ulong));
     hind = (slong *) flint_malloc(a_len*sizeof(ulong));
+
     temp_exp = (ulong *) flint_malloc(N*sizeof(ulong));
 
     /* early exit */
     if (fscore == gscore)
-    {
-        mpoly_monomial_set(e, fexp, N);
-        * e_score = fscore;
-        return;
-    }
+        goto return_f;
 
     /* main loop */
     while (gscore < lower && upper < fscore)
@@ -93,7 +89,7 @@ fmpz_mpoly_search_monomials(
             if (maxdiff < gind[i] - find[i])
             {
                 maxdiff = gind[i] - find[i];
-                maxind = -1;
+                maxind = i;
             }
         }
 
@@ -111,7 +107,7 @@ fmpz_mpoly_search_monomials(
                 if (gind[i] > find[i])
                 {
                     mpoly_monomial_add(temp_exp, a + i*N, b + find[i]*N, N);
-                    if (mpoly_monomial_eq(temp_exp, fexp, N) == 0)
+                    if (mpoly_monomial_equal(temp_exp, fexp, N) == 0)
                     {
                         maxind = i;
                         hind[maxind] = find[i];
@@ -129,14 +125,15 @@ fmpz_mpoly_search_monomials(
             hind[maxind] = (gind[maxind] + find[maxind])/2;    
         }
 
+
         /*
             the point (maxind, hind[maxind)) is now set to a bisector
             get the corresponding monomial into hexp
         */
         mpoly_monomial_add(hexp, a + maxind*N, b + hind[maxind]*N, N);
 
-        assert(mpoly_monomial_lt(fexp, hexp, N, maskhi, masklo));
-        assert(mpoly_monomial_lt(hexp, gexp, N, maskhi, masklo));
+        FLINT_ASSERT(mpoly_monomial_lt(fexp, hexp, N, maskhi, masklo));
+        FLINT_ASSERT(mpoly_monomial_lt(hexp, gexp, N, maskhi, masklo));
 
         /*
             find new path for h through the point
@@ -146,16 +143,18 @@ fmpz_mpoly_search_monomials(
         /*
             find new path for h to the right of the point
         */
-        for (i = maxind + 1; i < a_len, i++)
+        for (i = maxind + 1; i < a_len; i++)
         {
             x = find[i];
-            for (j = FLINT_MIN(hind[i-1], gind[i]) - 1; j >= find[i], j--)
+            for (j = FLINT_MIN(hind[i-1], gind[i]) - 1; j >= find[i]; j--)
             {
                 mpoly_monomial_add(temp_exp, a + i*N, b + j*N, N);
+
                 if (mpoly_monomial_lt(temp_exp, hexp, N, maskhi, masklo))
+                {
                     x = j + 1;
-                else
                     break;
+                }
             }
             hind[i] = x;
             hscore += gind[i] - hind[i];            
@@ -167,7 +166,7 @@ fmpz_mpoly_search_monomials(
         for (i = maxind - 1; i >= 0; i--)
         {
             x = FLINT_MAX(hind[i+1], find[i]);
-            for (j = FLINT_MAX(hind[i+1], find[i]); j < gind[i], j++)
+            for (j = FLINT_MAX(hind[i+1], find[i]); j < gind[i]; j++)
             {
                 mpoly_monomial_add(temp_exp, a + i*N, b + j*N, N);
                 if (mpoly_monomial_lt(temp_exp, hexp, N, maskhi, masklo))
@@ -179,47 +178,49 @@ fmpz_mpoly_search_monomials(
             hscore += gind[i] - hind[i];            
         }
 
-
         if (hscore <= upper) 
         {
             tind = gind; tscore = gscore; texp = gexp;
             gind = hind; gscore = hscore; gexp = hexp;
             hind = tind; hscore = tscore; hexp = texp;
         } else {
-            tind = gind; tscore = gscore; texp = gexp;
+            tind = find; tscore = fscore; texp = fexp;
             find = hind; fscore = hscore; fexp = hexp;
             hind = tind; hscore = tscore; hexp = texp;
         }
     }
 
+
     /* upper and lower bounds are out of range */
     if (fscore <= lower)
-    {
-        mpoly_monomial_set(e, fexp, N);
-        *e_score = fscore;
-    } else if (gscore >= upper)
-    {
-        mpoly_monomial_set(e, gexp, N);
-        *e_score = gscore;
+        goto return_f;
+    else if (gscore >= upper)
+        goto return_g;
     /* found something in range */
-    } else if (fscore <= upper)
-    {
-        mpoly_monomial_set(e, fexp, N);
-        *e_score = fscore;
-    } else if (gscore >= lower)
-    {
-        mpoly_monomial_set(e, gexp, N);
-        *e_score = gscore;
+    else if (fscore <= upper)
+        goto return_f;
+    else if (gscore >= lower)
+        goto return_g;
     /* could not get in range - choose closest one */
-    } else if (fscore - upper < lower - gscore)
-    {
-        mpoly_monomial_set(e, fexp, N);
-        *e_score = fscore;
-    } else {
-        mpoly_monomial_set(e, gexp, N);
-        *e_score = gscore;
-    }
+    else if (fscore - upper < lower - gscore)
+        goto return_f;
+    else
+        goto return_g;
 
+return_g:
+    mpoly_monomial_set(e, gexp, N);
+    *e_score = gscore;
+    for (i=0; i < a_len; i++)
+        e_ind[i] = gind[i];
+    goto cleanup;
+
+return_f:
+    mpoly_monomial_set(e, fexp, N);
+    *e_score = fscore;
+    for (i=0; i < a_len; i++)
+        e_ind[i] = find[i];
+
+cleanup:
     flint_free(temp_exp);
     flint_free(hind);
     flint_free(hexp);
