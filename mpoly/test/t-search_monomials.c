@@ -80,8 +80,8 @@ main(void)
         temp = (ulong *) flint_malloc(N*sizeof(ulong));
         e_ind = (slong *) flint_malloc(f->length*N*sizeof(slong));
 
-        mpoly_unpack_monomials_noalloc(fexp, fg_bits, f->exps, f->bits, f->length, ctx->n);
-        mpoly_unpack_monomials_noalloc(gexp, fg_bits, g->exps, g->bits, g->length, ctx->n);
+        mpoly_unpack_monomials(fexp, fg_bits, f->exps, f->bits, f->length, ctx->n);
+        mpoly_unpack_monomials(gexp, fg_bits, g->exps, g->bits, g->length, ctx->n);
 
         lower = n_randint(state, f->length*g->length);
         upper = n_randint(state, f->length*g->length);
@@ -289,8 +289,8 @@ main(void)
             e = (ulong *) flint_malloc(N*sizeof(ulong));
             e_ind = (slong *) flint_malloc(f->length*N*sizeof(slong));
 
-            mpoly_unpack_monomials_noalloc(fexp, fg_bits, f->exps, f->bits, f->length, ctx->n);
-            mpoly_unpack_monomials_noalloc(gexp, fg_bits, g->exps, g->bits, g->length, ctx->n);
+            mpoly_unpack_monomials(fexp, fg_bits, f->exps, f->bits, f->length, ctx->n);
+            mpoly_unpack_monomials(gexp, fg_bits, g->exps, g->bits, g->length, ctx->n);
 
             lower = (i*f->length*g->length) / 20;
             upper = lower + 10;
