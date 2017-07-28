@@ -26,7 +26,40 @@ main(void)
     flint_printf("mul_heap_parallel....\n");
     fflush(stdout);
 
-    /* Check mul_johnson matches mul_array */
+
+
+{
+        fmpz_mpoly_ctx_t ctx;
+        fmpz_mpoly_t f, g, h, X, Y, Z, T;
+
+        fmpz_mpoly_ctx_init(ctx, 4, ORD_DEGLEX);
+
+        fmpz_mpoly_init(f, ctx);
+        fmpz_mpoly_init(g, ctx);
+        fmpz_mpoly_init(h, ctx);
+
+        fmpz_mpoly_init(X, ctx);
+        fmpz_mpoly_init(Y, ctx);
+        fmpz_mpoly_init(Z, ctx);
+        fmpz_mpoly_init(T, ctx);
+
+        fmpz_mpoly_gen(X, 0, ctx);
+        fmpz_mpoly_gen(Y, 1, ctx);
+        fmpz_mpoly_gen(Z, 2, ctx);
+        fmpz_mpoly_gen(T, 3, ctx);
+
+        fmpz_mpoly_add(f, X, Y, ctx);
+        fmpz_mpoly_add(g, Z, T, ctx);
+
+        printf("f = ");fmpz_mpoly_print_pretty(f,NULL,ctx);printf("\n");
+        printf("g = ");fmpz_mpoly_print_pretty(g,NULL,ctx);printf("\n");
+
+        flint_set_num_threads(4);
+        fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+
+}
+
+/*
     for (i = 0; i < 1; i++)
     {
         fmpz_mpoly_ctx_t ctx;
@@ -69,7 +102,7 @@ main(void)
             fmpz_mpoly_randtest(h, state, len, exp_bound, coeff_bits, ctx);
             fmpz_mpoly_randtest(k, state, len, exp_bound, coeff_bits, ctx);
 
-            flint_set_num_threads(10);
+            flint_set_num_threads(4);
             fmpz_mpoly_mul_heap_threaded(k, f, g, ctx);
         }
 
@@ -78,6 +111,7 @@ main(void)
         fmpz_mpoly_clear(h, ctx);  
         fmpz_mpoly_clear(k, ctx);  
     }
+*/
 
     FLINT_TEST_CLEANUP(state);
     
