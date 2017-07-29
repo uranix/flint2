@@ -494,20 +494,27 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
     }
 
     /* do second task */
-    if (arg->idx == 0)
+    if (arg->idx > 0)
+    {
+        arg->len1 = _fmpz_mpoly_mul_heap_part(
+                     &arg->coeff1, &arg->exp1, &arg->alloc1,
+                      arg->coeff2,  arg->exp2,  arg->len2,
+                      arg->coeff3,  arg->exp3,  arg->len3,
+                   arg->dexp_ind, parg->dexp_ind,
+                                             arg->N, arg->maskhi, arg->masklo);
+    } else
     {
         dummy = flint_malloc(arg->len2*sizeof(slong));
         for (i = 0; i < arg->len2; i++)
             dummy[i] = arg->len3;
-    }
-    arg->len1 = _fmpz_mpoly_mul_heap_part(
+        arg->len1 = _fmpz_mpoly_mul_heap_part(
                      &arg->coeff1, &arg->exp1, &arg->alloc1,
                       arg->coeff2,  arg->exp2,  arg->len2,
                       arg->coeff3,  arg->exp3,  arg->len3,
-                   arg->dexp_ind, ((arg->idx == 0) ? dummy : (parg->dexp_ind)),
+                   arg->dexp_ind, dummy,
                                              arg->N, arg->maskhi, arg->masklo);
-    if (arg->idx == 0)
         flint_free(dummy);
+    }
 
     return NULL;
 }
