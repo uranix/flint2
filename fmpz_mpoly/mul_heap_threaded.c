@@ -59,28 +59,16 @@ slong _fmpz_mpoly_mul_heap_part1(fmpz ** poly1, ulong ** exp1, slong * alloc,
     next_free = 0;
 
     /* put all the starting nodes on the heap */
-    first = 1;
     for (i = 0; i < len2; i++)
-    {
         if (start[i] < end[i])
         {
             x = chain + next_free++;
             x->i = i;
             x->j = start[i];
             x->next = NULL;
-
-            if (first)
-            {
-                HEAP_ASSIGN(heap[1], exp2[x->i] + exp3[x->j], x);
-                heap_len = 2;
-                first = 0;
-            } else
-            {
-                _mpoly_heap_insert1(heap, exp2[x->i] + exp3[x->j], x, &heap_len,
+            _mpoly_heap_insert1(heap, exp2[x->i] + exp3[x->j], x, &heap_len,
                                                                        maskhi);
-            }
         }
-    }
 
     /* output poly index starts at -1, will be immediately updated to 0 */
     k = -WORD(1);
@@ -265,31 +253,19 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
     exp_next = 0;
 
     /* put all the starting nodes on the heap */
-    first = 1;
     for (i = 0; i < len2; i++)
-    {
         if (start[i] < end[i])
         {
             x = chain + next_free++;
             x->i = i;
             x->j = start[i];
             x->next = NULL;
-
-            if (first)
-            {
-                heap[1].next = x;
-                heap[1].exp = exp_list[exp_next++];
-                mpoly_monomial_add(heap[1].exp, exp2 + x->i*N, exp3 + x->j*N, N);
-                heap_len = 2;                
-                first = 0;
-            } else
-            {
-                mpoly_monomial_add(exp_list[exp_next], exp2 + x->i*N, exp3 + x->j*N, N);
-                if (!_mpoly_heap_insert(heap, exp_list[exp_next++], x, &heap_len, N, maskhi, masklo))
-                   exp_next--;
-            }
+            mpoly_monomial_add(exp_list[exp_next], exp2 + x->i*N,
+                                                             exp3 + x->j*N, N);
+            if (!_mpoly_heap_insert(heap, exp_list[exp_next++], x, &heap_len,
+                                                            N, maskhi, masklo))
+               exp_next--;
         }
-    }
 
     /* output poly index starts at -1, will be immediately updated to 0 */
     k = -WORD(1);
