@@ -29,7 +29,7 @@ void
 fmpz_mpoly_search_monomials(
     ulong * e, slong * e_score, slong * e_ind,
     slong lower, slong upper,
-    ulong * a, slong a_len, ulong * b, slong b_len,
+    const ulong * a, slong a_len, const ulong * b, slong b_len,
     slong N, ulong maskhi, ulong masklo)
 {
     slong i, j, x;

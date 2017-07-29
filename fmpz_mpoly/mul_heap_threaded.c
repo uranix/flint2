@@ -20,6 +20,194 @@
 /*
     Set poly1 to poly2*poly3 using Johnson's heap method. The function
     realocates its output and returns the length of the product. This
+    version of the function assumes the exponent vectors all fit in a
+    single word. Assumes input polys are nonzero.
+    Only terms t with start >= t > end are written;
+    "start" and "end" are not monomials but arrays of indicides into exp3
+*/
+slong _fmpz_mpoly_mul_heap_part1(fmpz ** poly1, ulong ** exp1, slong * alloc,
+              const fmpz * poly2, const ulong * exp2, slong len2,
+              const fmpz * poly3, const ulong * exp3, slong len3,
+                                      slong * start, slong * end, ulong maskhi)
+{
+    slong i, k;
+    slong next_free, Q_len = 0, heap_len = 1; /* heap zero index unused */
+    mpoly_heap1_s * heap;
+    mpoly_heap_t * chain;
+    mpoly_heap_t ** Q;
+    mpoly_heap_t * x;
+    fmpz * p1 = *poly1;
+    ulong * e1 = *exp1;
+    ulong exp, cy;
+    ulong c[3], p[2]; /* for accumulating coefficients */
+    int first, small;
+    TMP_INIT;
+
+    TMP_START;
+
+    /* whether input coeffs are small, thus output coeffs fit in three words */
+    small = _fmpz_mpoly_fits_small(poly2, len2) &&
+                                           _fmpz_mpoly_fits_small(poly3, len3);
+
+    heap = (mpoly_heap1_s *) TMP_ALLOC((len2 + 1)*sizeof(mpoly_heap1_s));
+    /* alloc array of heap nodes which can be chained together */
+    chain = (mpoly_heap_t *) TMP_ALLOC(len2*sizeof(mpoly_heap_t));
+    /* space for temporary storage of pointers to heap nodes */
+    Q = (mpoly_heap_t **) TMP_ALLOC(len2*sizeof(mpoly_heap_t *));
+   
+    /* start with no heap nodes in use */
+    next_free = 0;
+
+    /* put all the starting nodes on the heap */
+    first = 1;
+    for (i = 0; i < len2; i++)
+    {
+        if (start[i] < end[i])
+        {
+            x = chain + next_free++;
+            x->i = i;
+            x->j = start[i];
+            x->next = NULL;
+
+            if (first)
+            {
+                HEAP_ASSIGN(heap[1], exp2[x->i] + exp3[x->j], x);
+                heap_len = 2;
+                first = 0;
+            } else
+            {
+                _mpoly_heap_insert1(heap, exp2[x->i] + exp3[x->j], x, &heap_len,
+                                                                       maskhi);
+            }
+        }
+    }
+
+    /* output poly index starts at -1, will be immediately updated to 0 */
+    k = -WORD(1);
+
+    /* while heap is nonempty */
+    while (heap_len > 1)
+    {
+        /* get exponent field of heap top */
+        exp = heap[1].exp;
+      
+        /* realloc output poly ready for next product term */
+        k++;
+        _fmpz_mpoly_fit_length(&p1, &e1, alloc, k + 1, 1);
+
+        /* whether we are on first coeff product for this output exponent */
+        first = 1;
+
+        /* set temporary coeff to zero */
+        c[0] = c[1] = c[2] = 0;
+
+        /* while heap nonempty and contains chain with current output exponent */
+        while (heap_len > 1 && heap[1].exp == exp)
+        {
+            /* pop chain from heap */
+            x = _mpoly_heap_pop1(heap, &heap_len, maskhi);
+
+            /* if output coeffs will fit in three words */
+            if (small)
+            {
+                /* compute product of input poly coeffs */
+                if (first)
+                {
+                    smul_ppmm(c[1], c[0], poly2[x->i], poly3[x->j]);
+                    c[2] = -(c[1] >> (FLINT_BITS - 1));
+
+                    /* set output monomial */
+                    e1[k] = exp;
+                    first = 0; 
+                } else /* addmul product of input poly coeffs */
+                {
+                    smul_ppmm(p[1], p[0], poly2[x->i], poly3[x->j]);
+                    add_sssaaaaaa(cy, c[1], c[0], 0, c[1], c[0], 0, p[1], p[0]);
+                    c[2] += (0 <= (slong) p[1]) ? cy : cy - 1;
+                }
+      
+                /* temporarily store pointer to this node */
+                if (x->j < len3 - 1)
+                    Q[Q_len++] = x;
+
+                /* for every node in this chain */
+                while ((x = x->next) != NULL)
+                {          
+                    /* addmul product of input poly coeffs */
+                    smul_ppmm(p[1], p[0], poly2[x->i], poly3[x->j]);
+                    add_sssaaaaaa(cy, c[1], c[0], 0, c[1], c[0], 0, p[1], p[0]);
+                    c[2] += (0 <= (slong) p[1]) ? cy : cy - 1;
+
+                    /* temporarily store pointer to this node */
+                    if (x->j < len3 - 1)
+                        Q[Q_len++] = x;
+                }
+           } else /* output coeffs require multiprecision */
+           {
+                if (first) /* compute product of input poly coeffs */
+                {
+                    fmpz_mul(p1 + k, poly2 + x->i, poly3 + x->j);
+               
+                    e1[k] = exp;
+                    first = 0; 
+                } else /* addmul product of input poly coeffs */
+                    fmpz_addmul(p1 + k, poly2 + x->i, poly3 + x->j);
+
+                /* temporarily store pointer to this node */
+                if (x->j < len3 - 1 || x->j == 0)
+                    Q[Q_len++] = x;
+
+               /* for each node in this chain */
+               while ((x = x->next) != NULL)
+               {
+                    /* addmul product of input poly coeffs */
+                    fmpz_addmul(p1 + k, poly2 + x->i, poly3 + x->j);
+
+                    /* temporarily store pointer to this node */
+                    if (x->j < len3 - 1 || x->j == 0)
+                        Q[Q_len++] = x;
+                }
+            }
+        }
+
+        /* for each node temporarily stored */
+        while (Q_len > 0)
+        {
+            /* take node from store */
+            x = Q[--Q_len];
+
+            if (x->j + 1 < end[x->i])
+            {
+                x->j++;
+                x->next = NULL;
+                _mpoly_heap_insert1(heap, exp2[x->i] + exp3[x->j], x, &heap_len,
+                                                                       maskhi);
+            }
+        }
+
+        /* set output poly coeff from temporary accumulation, if not multiprec */
+        if (small)
+            fmpz_set_signed_uiuiui(p1 + k, c[2], c[1], c[0]);
+
+        if (fmpz_is_zero(p1 + k))
+            k--;
+    }
+
+    k++;
+
+    (*poly1) = p1;
+    (*exp1) = e1;
+   
+    TMP_END;
+
+    return k;
+}
+
+
+
+/*
+    Set poly1 to poly2*poly3 using Johnson's heap method. The function
+    realocates its output and returns the length of the product. This
     version of the function assumes the exponent vectors take N words.
     Only terms t with start >= t > end are written;
     "start" and "end" are not monomials but arrays of indicides into exp3
@@ -45,6 +233,13 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
     int first, small;
 
     TMP_INIT;
+
+    /* if exponent vectors fit in single word, call special version */
+    if (N == 1)
+        return _fmpz_mpoly_mul_heap_part1(poly1, exp1, alloc,
+                                          poly2, exp2, len2,
+                                          poly3, exp3, len3,
+                                                    start, end, maskhi);
 
     TMP_START;
 
@@ -231,9 +426,16 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
 
 
 
-
-
-
+/*
+    The workers receive their data via mul_heap_threaded_arg_t.
+    The i^th worker (i = 0, ... , n - 1) computes a monomial that divides
+    the output into roughly equal portions. This computation is trivial for
+    i = n - 1 as it simply grabs the product of the leading monomials in poly2
+    and poly . The i^th worker then computes terms that lie between the i^th
+    monomial and the (i-1)^st monomial. The i = 0 worker does not need any
+    computation to know where to stop and hence does not need to wait on any
+    other workers.
+*/
 
 typedef struct
 {
@@ -244,8 +446,8 @@ typedef struct
     slong * dexp_ind;
     slong dexp_score;
     slong score;
-    fmpz * coeff2; ulong * exp2; slong len2;
-    fmpz * coeff3; ulong * exp3; slong len3;
+    const fmpz * coeff2; const ulong * exp2; slong len2;
+    const fmpz * coeff3; const ulong * exp3; slong len3;
     slong len1;
     slong alloc1;
     ulong * exp1;
@@ -263,7 +465,6 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
 {
     mul_heap_threaded_arg_t * arg = (mul_heap_threaded_arg_t *) arg_ptr;
     mul_heap_threaded_arg_t *parg = (mul_heap_threaded_arg_t *) arg_ptr - 1;
-    mul_heap_threaded_arg_t *narg = (mul_heap_threaded_arg_t *) arg_ptr + 1;
     slong i, lower, upper, * dummy;
 
     /* do first task */
@@ -303,7 +504,7 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
                      &arg->coeff1, &arg->exp1, &arg->alloc1,
                       arg->coeff2,  arg->exp2,  arg->len2,
                       arg->coeff3,  arg->exp3,  arg->len3,
-                       arg->dexp_ind, ((arg->idx == 0) ? dummy : (parg->dexp_ind)),
+                   arg->dexp_ind, ((arg->idx == 0) ? dummy : (parg->dexp_ind)),
                                              arg->N, arg->maskhi, arg->masklo);
     if (arg->idx == 0)
         flint_free(dummy);
@@ -312,6 +513,10 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
 }
 
 
+/*
+    start the workers from low to high and join from high to low
+    after joining a worker, the output is streamed to poly1
+*/
 slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
                  const fmpz * coeff2, const ulong * exp2, slong len2,
                  const fmpz * coeff3, const ulong * exp3, slong len3,
