@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <gmp.h>
 #include "flint.h"
+#include "profiler.h"
 #include "fmpz.h"
 #include "fmpz_mpoly.h"
 #include "ulong_extras.h"
@@ -23,8 +24,142 @@ main(void)
     int i, j, result, max_threads = 20;
     FLINT_TEST_INIT(state);
 
-    flint_printf("mul_heap_threaded....");
+    flint_printf("mul_heap_threaded....\n");
     fflush(stdout);
+
+    {
+
+    fmpz_mpoly_ctx_t ctx;
+    fmpz_mpoly_t f, g, h, X, Y, Z, T, U;
+    timeit_t time;
+
+
+    fmpz_mpoly_ctx_init(ctx, 5, ORD_DEGLEX);
+
+    fmpz_mpoly_init(f, ctx);
+    fmpz_mpoly_init(g, ctx);
+    fmpz_mpoly_init(h, ctx);
+
+    fmpz_mpoly_init(X, ctx);
+    fmpz_mpoly_init(Y, ctx);
+    fmpz_mpoly_init(Z, ctx);
+    fmpz_mpoly_init(T, ctx);
+    fmpz_mpoly_init(U, ctx);
+
+    fmpz_mpoly_gen(X, 4, ctx);
+    fmpz_mpoly_gen(Y, 3, ctx);
+    fmpz_mpoly_gen(Z, 2, ctx);
+    fmpz_mpoly_gen(T, 1, ctx);
+    fmpz_mpoly_gen(U, 0, ctx);
+
+    fmpz_mpoly_set_si(f, WORD(1), ctx);
+
+    fmpz_mpoly_pow_fps(h, X, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_add(f, f, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, Y, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_add(f, f, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, Z, WORD(2), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(2), ctx);
+    fmpz_mpoly_add(f, f, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, T, WORD(3), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(3), ctx);
+    fmpz_mpoly_add(f, f, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, U, WORD(5), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(5), ctx);
+    fmpz_mpoly_add(f, f, h, ctx);
+
+
+    fmpz_mpoly_set_si(g, WORD(1), ctx);
+
+    fmpz_mpoly_pow_fps(h, U, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_add(g, g, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, T, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_add(g, g, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, Z, WORD(2), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(2), ctx);
+    fmpz_mpoly_add(g, g, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, Y, WORD(3), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(3), ctx);
+    fmpz_mpoly_add(g, g, h, ctx);
+
+    fmpz_mpoly_pow_fps(h, X, WORD(5), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(5), ctx);
+    fmpz_mpoly_add(g, g, h, ctx);
+
+    printf("f = "); fmpz_mpoly_print_pretty(f, NULL, ctx); printf("\n");
+    printf("g = "); fmpz_mpoly_print_pretty(g, NULL, ctx); printf("\n");
+
+    fmpz_mpoly_pow_fps(f, f, WORD(13), ctx);
+    fmpz_mpoly_pow_fps(g, g, WORD(13), ctx);
+
+    flint_printf("multiplying f^13 * g^13 using mul_johnson\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_johnson(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_printf("multiplying f^13 * g^13 using mul_johnson\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_johnson(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_set_num_threads(1);
+    flint_printf("multiplying f^13 * g^13 using mul_heap_threaded 1\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_set_num_threads(2);
+    flint_printf("multiplying f^13 * g^13 using mul_heap_threaded 2\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_set_num_threads(3);
+    flint_printf("multiplying f^13 * g^13 using mul_heap_threaded 3\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_set_num_threads(4);
+    flint_printf("multiplying f^13 * g^13 using mul_heap_threaded 4\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    flint_set_num_threads(5);
+    flint_printf("multiplying f^13 * g^13 using mul_heap_threaded 5\n");
+    timeit_start(time);
+    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
+    timeit_stop(time);
+    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+
+    fmpz_mpoly_clear(U, ctx);
+    fmpz_mpoly_clear(T, ctx);
+    fmpz_mpoly_clear(Z, ctx);
+    fmpz_mpoly_clear(Y, ctx);
+    fmpz_mpoly_clear(X, ctx);
+    fmpz_mpoly_clear(h, ctx);
+    fmpz_mpoly_clear(g, ctx);
+    fmpz_mpoly_clear(f, ctx);
+
+    }
 
     /* Check mul_heap_threaded matches mul_johnson */
     for (i = 0; i < 10 * flint_test_multiplier(); i++)
