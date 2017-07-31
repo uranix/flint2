@@ -393,8 +393,8 @@ void _mpoly_average_monomial_deglex(ulong * x, ulong * a, ulong * b,
 void _mpoly_average_monomial_degrevlex(ulong * x, ulong * a, ulong * b,
                                                    ulong * max, slong nfields);
 
-FLINT_DLL void fmpz_mpoly_search_monomials(
-                ulong * e, slong * e_score, slong * e_ind,
+FLINT_DLL slong * mpoly_search_monomials(
+                ulong * e, slong * e_score, slong * t1, slong * t2, slong *t3,
                 slong lower, slong upper,
                 const ulong * a, slong a_len, const ulong * b, slong b_len,
                                           slong N, ulong maskhi, ulong masklo);

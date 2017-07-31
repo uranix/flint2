@@ -27,7 +27,7 @@ main(void)
 
     FLINT_TEST_INIT(state);
 
-    flint_printf("search_monomial....\n");
+    flint_printf("search_monomial....");
     fflush(stdout);
 
     /* get two random polys and test output of search */
@@ -39,7 +39,7 @@ main(void)
         slong nvars, len1, len2, exp_bound1, exp_bound2;
         slong coeff_bits, exp_bits1, exp_bits2, fg_bits;
         ulong * e, * fexp, * gexp, * temp;
-        slong e_score, * e_ind, score, x;
+        slong e_score, * e_ind, *t1, *t2, *t3, score, x;
         slong lower, upper, N;
         ulong maskhi, masklo;
 
@@ -78,7 +78,9 @@ main(void)
         gexp = (ulong *) flint_malloc(g->length*N*sizeof(ulong));
         e = (ulong *) flint_malloc(N*sizeof(ulong));
         temp = (ulong *) flint_malloc(N*sizeof(ulong));
-        e_ind = (slong *) flint_malloc(f->length*N*sizeof(slong));
+        t1 = (slong *) flint_malloc(f->length*N*sizeof(slong));
+        t2 = (slong *) flint_malloc(f->length*N*sizeof(slong));
+        t3 = (slong *) flint_malloc(f->length*N*sizeof(slong));
 
         mpoly_unpack_monomials(fexp, fg_bits, f->exps, f->bits, f->length, ctx->n);
         mpoly_unpack_monomials(gexp, fg_bits, g->exps, g->bits, g->length, ctx->n);
@@ -92,8 +94,8 @@ main(void)
             upper = x;
         }
 
-        fmpz_mpoly_search_monomials(e, &e_score, e_ind, lower, upper,
-                                fexp, f->length, gexp, g->length, N, maskhi, masklo);
+        e_ind = mpoly_search_monomials(e, &e_score, t1, t2, t3, lower, upper,
+                          fexp, f->length, gexp, g->length, N, maskhi, masklo);
 
         /* make sure that e_ind is correct for e */
         score = 0;
@@ -176,7 +178,9 @@ main(void)
         flint_free(gexp);
 
         flint_free(temp);
-        flint_free(e_ind);
+        flint_free(t3);
+        flint_free(t2);
+        flint_free(t1);
         flint_free(e);
 
         fmpz_mpoly_clear(f, ctx);

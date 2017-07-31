@@ -17,17 +17,21 @@
 
 /*
     a and b are arrays of packed monomials
-    set
+    define
         score(e) = (# cross products in a X b <= e)
     finds a monomial e such that
         lower <= score(e) <= upper
-    or is as close as possible and store its score in e_score
-    e is returned in the same format as a and b
-    e_ind is assumed to have space for a_len slongs
+        or is as close as possible and store its score in e_score
+    e is written in the same format as a and b
+    three arrays find, gind, and hind, each of length a_len
+        are need for working space
+    the return pointer is one of find, gind, or hind
+        the elements of this array are indices into b where the first monomial
+        <= e was found
 */
-void
-fmpz_mpoly_search_monomials(
-    ulong * e, slong * e_score, slong * e_ind,
+slong * mpoly_search_monomials(
+    ulong * e, slong * e_score,
+    slong * find, slong * gind, slong * hind,
     slong lower, slong upper,
     const ulong * a, slong a_len, const ulong * b, slong b_len,
     slong N, ulong maskhi, ulong masklo)
@@ -44,7 +48,7 @@ fmpz_mpoly_search_monomials(
     */
     slong fscore, gscore, hscore, tscore;
     ulong * fexp, * gexp, * hexp, * texp;
-    slong * find, * gind, * hind, * tind;
+    slong * tind;
     ulong * temp_exp;
 
     FLINT_ASSERT(a_len > 0);
@@ -54,7 +58,6 @@ fmpz_mpoly_search_monomials(
     /* set f to correspond to an upperbound on all products */
     fscore = a_len * b_len;
     fexp = (ulong *) flint_malloc(N*sizeof(ulong));
-    find = (slong *) flint_malloc(a_len*sizeof(slong));
     mpoly_monomial_add(fexp, a + 0*N, b + 0*N, N);
     for (i = 0; i < a_len; i++)
         find[i] = 0;
@@ -62,7 +65,6 @@ fmpz_mpoly_search_monomials(
     /* set g to correspond to a lowerbound on all products */
     gscore = 1;
     gexp = (ulong *) flint_malloc(N*sizeof(ulong));
-    gind = (slong *) flint_malloc(a_len*sizeof(ulong));
     mpoly_monomial_add(gexp, a + (a_len - 1)*N, b + (b_len - 1)*N, N);
     for (i = 0; i < a_len; i++)
         gind[i] = b_len;
@@ -70,7 +72,6 @@ fmpz_mpoly_search_monomials(
 
     /* just allocate h */
     hexp = (ulong *) flint_malloc(N*sizeof(ulong));
-    hind = (slong *) flint_malloc(a_len*sizeof(ulong));
 
     temp_exp = (ulong *) flint_malloc(N*sizeof(ulong));
 
@@ -210,23 +211,24 @@ fmpz_mpoly_search_monomials(
 return_g:
     mpoly_monomial_set(e, gexp, N);
     *e_score = gscore;
-    for (i=0; i < a_len; i++)
-        e_ind[i] = gind[i];
+    tind = gind;
     goto cleanup;
 
 return_f:
     mpoly_monomial_set(e, fexp, N);
     *e_score = fscore;
-    for (i=0; i < a_len; i++)
-        e_ind[i] = find[i];
+    tind = find;
 
 cleanup:
     flint_free(temp_exp);
-    flint_free(hind);
     flint_free(hexp);
-    flint_free(gind);
     flint_free(gexp);
-    flint_free(find);
     flint_free(fexp);
+/*
+    flint_free(hind);
+    flint_free(gind);
+    flint_free(find);
+*/
+    return tind;
 }
 

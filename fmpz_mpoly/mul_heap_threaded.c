@@ -12,6 +12,7 @@
 #include <gmp.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include "profiler.h"
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_mpoly.h"
@@ -420,8 +421,14 @@ typedef struct
     volatile slong stage;
     ulong * dexp;
     slong * dexp_ind;
+    slong * t1;
+    slong * t2;
+    slong * t3;
     slong dexp_score;
     slong score;
+/*
+    ulong time;
+*/
     const fmpz * coeff2; const ulong * exp2; slong len2;
     const fmpz * coeff3; const ulong * exp3; slong len3;
     slong len1;
@@ -442,11 +449,16 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
     mul_heap_threaded_arg_t * arg = (mul_heap_threaded_arg_t *) arg_ptr;
     mul_heap_threaded_arg_t *parg = (mul_heap_threaded_arg_t *) arg_ptr - 1;
     slong i, lower, upper, * dummy;
+/*
+    timeit_t time;
 
+    timeit_start(time);
+*/
     /* do first task */
     lower = ((arg->idx + 1)*arg->len2*arg->len3) / arg->nthreads;
     upper = lower;
-    fmpz_mpoly_search_monomials(arg->dexp, &arg->dexp_score, arg->dexp_ind,
+    arg->dexp_ind = mpoly_search_monomials(arg->dexp, &arg->dexp_score,
+                            arg->t1, arg->t2, arg->t3,
                             lower, upper,
                             arg->exp2, arg->len2, arg->exp3, arg->len3,
                                      arg->N, arg->maskhi, arg->masklo);
@@ -469,6 +481,10 @@ void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
         pthread_mutex_unlock(&parg->mutex);
     }
 
+/*
+    timeit_stop(time);
+    arg->time = time->wall;
+*/
     /* do second task */
     if (arg->idx > 0)
     {
@@ -507,7 +523,7 @@ slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
 {
     pthread_t * threads;
     mul_heap_threaded_arg_t * args;
-    slong i, j, k, num_threads;
+    slong i, j, k = 0, num_threads;
     fmpz * p1;
     ulong * e1;
 
@@ -522,7 +538,10 @@ slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
         args[i].nthreads = num_threads;
         args[i].stage = 0;
         args[i].dexp = (ulong *) flint_malloc(N*sizeof(ulong));
-        args[i].dexp_ind = (slong *) flint_malloc(len2*sizeof(slong));
+        args[i].dexp_ind = NULL;
+        args[i].t1 = (slong *) flint_malloc(len2*sizeof(slong));
+        args[i].t2 = (slong *) flint_malloc(len2*sizeof(slong));
+        args[i].t3 = (slong *) flint_malloc(len2*sizeof(slong));
 
         args[i].coeff2 = coeff2;
         args[i].exp2 = exp2;
@@ -535,9 +554,18 @@ slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
         args[i].maskhi = maskhi;
         args[i].masklo = masklo;
         args[i].len1 = 0;
-        args[i].alloc1 = len2 + len3/num_threads;
-        args[i].exp1 = (ulong *) flint_malloc(args[i].alloc1*N*sizeof(ulong)); 
-        args[i].coeff1 = (fmpz *) flint_calloc(args[i].alloc1, sizeof(fmpz));
+        if (i + 1 < num_threads)
+        {
+            /* lower threads write to a new worker poly */
+            args[i].alloc1 = len2 + len3/num_threads;
+            args[i].exp1 = (ulong *) flint_malloc(args[i].alloc1*N*sizeof(ulong)); 
+            args[i].coeff1 = (fmpz *) flint_calloc(args[i].alloc1, sizeof(fmpz));
+        } else {
+            /* highest thread writes to original poly */
+            args[i].alloc1 = *alloc;
+            args[i].exp1 = *exp1;
+            args[i].coeff1 = *poly1;
+        }
 
         pthread_mutex_init(&args[i].mutex, NULL);
         pthread_cond_init(&args[i].cond, NULL);
@@ -547,20 +575,24 @@ slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
     }
 
     /* read from the threads from highest to lowest */
-    k = 0;
-    p1 = *poly1;
-    e1 = *exp1;
     for (i = num_threads - 1; i >= 0; i--)
     {
         /* ok to cleanup thread[i] since only thread[i+1] depended on it */
         pthread_join(threads[i], NULL);
+/*
+flint_printf("thread %wd time to start computing products %wd\n",i,args[i].time);
+*/
+        flint_free(args[i].t3);
+        flint_free(args[i].t2);
+        flint_free(args[i].t1);
+        flint_free(args[i].dexp);
+        pthread_cond_destroy(&args[i].cond);
+        pthread_mutex_destroy(&args[i].mutex);
 
-        for (j = 0; j < args[i].len1; j++)
+        if (i + 1 < num_threads)
         {
-            if (fmpz_is_zero(args[i].coeff1 + j))
-            {
-                fmpz_clear(args[i].coeff1 + j);
-            } else
+            /* transfer from worker poly to original poly */
+            for (j = 0; j < args[i].len1; j++)
             {
                 _fmpz_mpoly_fit_length(&p1, &e1, alloc, k+1, N);
                 fmpz_swap(p1 + k, args[i].coeff1 + j);
@@ -568,22 +600,22 @@ slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
                 mpoly_monomial_set(e1 + N*k, args[i].exp1 + N*j, N);
                 k++;
             }
+            flint_free(args[i].coeff1);
+            flint_free(args[i].exp1);
+        } else {
+            /* highest thread used original poly */
+            k = args[num_threads - 1].len1;
+            p1 = args[num_threads - 1].coeff1;
+            e1 = args[num_threads - 1].exp1;
+            *alloc = args[num_threads - 1].alloc1;
         }
-
-        pthread_cond_destroy(&args[i].cond);
-        pthread_mutex_destroy(&args[i].mutex);
-
-        flint_free(args[i].coeff1);
-        flint_free(args[i].exp1);
-        flint_free(args[i].dexp_ind);
-        flint_free(args[i].dexp);
     }
 
     flint_free(threads);
     flint_free(args);
 
-    (*poly1) = p1;
-    (*exp1) = e1;
+    *poly1 = p1;
+    *exp1  = e1;
     return k;
 }
 

@@ -27,7 +27,7 @@ main(void)
     flint_printf("mul_heap_threaded....\n");
     fflush(stdout);
 
-    {
+    if (0){
 
     fmpz_mpoly_ctx_t ctx;
     fmpz_mpoly_t f, g, h, X, Y, Z, T, U;
@@ -100,8 +100,8 @@ main(void)
     printf("f = "); fmpz_mpoly_print_pretty(f, NULL, ctx); printf("\n");
     printf("g = "); fmpz_mpoly_print_pretty(g, NULL, ctx); printf("\n");
 
-    fmpz_mpoly_pow_fps(f, f, WORD(13), ctx);
-    fmpz_mpoly_pow_fps(g, g, WORD(13), ctx);
+    fmpz_mpoly_pow_fps(f, f, WORD(12), ctx);
+    fmpz_mpoly_pow_fps(g, g, WORD(12), ctx);
 
     flint_printf("multiplying f^13 * g^13 using mul_johnson\n");
     timeit_start(time);
