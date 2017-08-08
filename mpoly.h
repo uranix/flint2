@@ -399,6 +399,13 @@ FLINT_DLL slong * mpoly_search_monomials(
                 const ulong * a, slong a_len, const ulong * b, slong b_len,
                                           slong N, ulong maskhi, ulong masklo);
 
+FLINT_DLL void mpoly_search_monomialsB(
+                slong ** e_ind, ulong * e, slong * e_score,
+                slong * t1, slong * t2, slong *t3,
+                slong lower, slong upper,
+                const ulong * a, slong a_len, const ulong * b, slong b_len,
+                                          slong N, ulong maskhi, ulong masklo);
+
 
 FLINT_DLL void mpoly_get_monomial(ulong * exps, const ulong * poly_exps,
                                         slong bits, slong n, int deg, int rev);
