@@ -530,6 +530,7 @@ void * _fmpz_mpoly_mul_heap_threadedB_worker(void * arg_ptr)
     timeit_stop(time);
     arg->time = time->wall;
 */
+    flint_cleanup();
     return NULL;
 }
 
@@ -569,12 +570,12 @@ slong _fmpz_mpoly_mul_heap_threadedB(fmpz ** poly1, ulong ** exp1, slong * alloc
     base->len3 = len3;
     base->N = N;
     base->maskhi = maskhi;
+    base->masklo = masklo;
     base->idx = base->ndivs;
 
     divs    = flint_malloc(sizeof(mul_heap_threadedB_div_t) * base->ndivs);
     threads = flint_malloc(sizeof(pthread_t) * base->nthreads);
     args    = flint_malloc(sizeof(mul_heap_threadedB_arg_t) * base->nthreads);
-
 
     for (i = 0; i < base->ndivs; i++)
     {
@@ -619,8 +620,8 @@ slong _fmpz_mpoly_mul_heap_threadedB(fmpz ** poly1, ulong ** exp1, slong * alloc
         timeit_stop(time);
         flint_printf("search %wd: %p score %wd, time %wd\n", i, divs[i].line, divs[i].score, time->wall);
 */
-    }
 
+    }
 
     pthread_mutex_init(&base->mutex, NULL);
     for (i = 0; i < base->nthreads; i++)
@@ -651,7 +652,7 @@ slong _fmpz_mpoly_mul_heap_threadedB(fmpz ** poly1, ulong ** exp1, slong * alloc
         flint_free(divs[i].exp);
 
         if (i + 1 < base->ndivs)
-        {    
+        {
             /* transfer from worker poly to original poly */
             for (j = 0; j < divs[i].len1; j++)
             {
@@ -661,6 +662,9 @@ slong _fmpz_mpoly_mul_heap_threadedB(fmpz ** poly1, ulong ** exp1, slong * alloc
                 mpoly_monomial_set(e1 + N*k, divs[i].exp1 + N*j, N);
                 k++;
             }
+            /* clear remaining coeffs */
+            for ( ; j < divs[i].alloc1; j++)
+                fmpz_clear(divs[i].coeff1 + j);
             flint_free(divs[i].coeff1);
             flint_free(divs[i].exp1);
         } else

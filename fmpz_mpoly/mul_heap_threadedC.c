@@ -12,6 +12,7 @@
 #include <gmp.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <assert.h>
 #include "profiler.h"
 #include "flint.h"
 #include "fmpz.h"
@@ -26,7 +27,7 @@
     Only terms t with start >= t > end are written;
     "start" and "end" are not monomials but arrays of indicides into exp3
 */
-slong _fmpz_mpoly_mul_heap_part1(fmpz ** poly1, ulong ** exp1, slong * alloc,
+slong _fmpz_mpoly_mul_heap_part1C(fmpz ** poly1, ulong ** exp1, slong * alloc,
               const fmpz * poly2, const ulong * exp2, slong len2,
               const fmpz * poly3, const ulong * exp3, slong len3,
                                       slong * start, slong * end, ulong maskhi)
@@ -201,7 +202,7 @@ slong _fmpz_mpoly_mul_heap_part1(fmpz ** poly1, ulong ** exp1, slong * alloc,
     Only terms t with start >= t > end are written;
     "start" and "end" are not monomials but arrays of indicides into exp3
 */
-slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
+slong _fmpz_mpoly_mul_heap_partC(fmpz ** poly1, ulong ** exp1, slong * alloc,
                  const fmpz * poly2, const ulong * exp2, slong len2,
                  const fmpz * poly3, const ulong * exp3, slong len3,
             slong * start, slong * end, slong N, ulong maskhi, ulong masklo)
@@ -225,7 +226,7 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
 
     /* if exponent vectors fit in single word, call special version */
     if (N == 1)
-        return _fmpz_mpoly_mul_heap_part1(poly1, exp1, alloc,
+        return _fmpz_mpoly_mul_heap_part1C(poly1, exp1, alloc,
                                           poly2, exp2, len2,
                                           poly3, exp3, len3,
                                                     start, end, maskhi);
@@ -235,6 +236,7 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
     /* whether input coeffs are small, thus output coeffs fit in three words */
     small = _fmpz_mpoly_fits_small(poly2, len2) &&
                                            _fmpz_mpoly_fits_small(poly3, len3);
+
 
     heap = (mpoly_heap_s *) TMP_ALLOC((len2 + 1)*sizeof(mpoly_heap_s));
     /* alloc array of heap nodes which can be chained together */
@@ -247,11 +249,14 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
     exp_list = (ulong **) TMP_ALLOC(len2*sizeof(ulong *));
 
     for (i = 0; i < len2; i++)
+    {
       exp_list[i] = exps + i*N;
+    }
 
     /* start with no heap nodes and no exponent vectors in use */
     next_free = 0;
     exp_next = 0;
+
 
     /* put all the starting nodes on the heap */
     for (i = 0; i < len2; i++)
@@ -402,7 +407,6 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
 }
 
 
-
 /*
     The workers receive their data via mul_heap_threaded_arg_t.
     The i^th worker (i = 0, ... , n - 1) computes a monomial that divides
@@ -416,214 +420,360 @@ slong _fmpz_mpoly_mul_heap_part(fmpz ** poly1, ulong ** exp1, slong * alloc,
 
 typedef struct
 {
-    slong idx;
+    pthread_mutex_t mutex;
     slong nthreads;
-    volatile slong stage;
-    ulong * dexp;
-    slong * dexp_ind;
-    slong * t1;
-    slong * t2;
-    slong * t3;
-    slong dexp_score;
-    slong score;
-/*
-    ulong time;
-*/
+    slong adivs, bdivs;
     const fmpz * coeff2; const ulong * exp2; slong len2;
     const fmpz * coeff3; const ulong * exp3; slong len3;
+    slong N;
+    ulong maskhi; ulong masklo;    
+    volatile int idx;
+}
+mul_heap_threadedC_base_t;
+
+typedef struct
+{
+    slong eat;
+    slong eat_idx;
+    slong apstart, aplen;
+    slong * t1, * t2, *t3;
+    slong * line;
+    ulong * exp;
+    slong score;
+    slong lower;
+    slong upper;
+    slong threadidx;
+    slong time;
     slong len1;
     slong alloc1;
     ulong * exp1;
     fmpz * coeff1;
+}
+mul_heap_threadedC_div_t;
 
-    slong N;
-    ulong maskhi; ulong masklo;
+
+typedef struct
+{
+    slong idx;
+    slong time;
+    mul_heap_threadedC_base_t * basep;
+    mul_heap_threadedC_div_t * divp;
+    volatile slong stage;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 }
-mul_heap_threaded_arg_t;
+mul_heap_threadedC_arg_t;
 
 
-void * _fmpz_mpoly_mul_heap_threaded_worker(void * arg_ptr)
+
+
+void * _fmpz_mpoly_mul_heap_threadedC_worker(void * arg_ptr)
 {
-    mul_heap_threaded_arg_t * arg = (mul_heap_threaded_arg_t *) arg_ptr;
-    mul_heap_threaded_arg_t *parg = (mul_heap_threaded_arg_t *) arg_ptr - 1;
-    slong i, lower, upper, * dummy;
+    mul_heap_threadedC_arg_t * arg = (mul_heap_threadedC_arg_t *) arg_ptr;
+    mul_heap_threadedC_div_t * divs;
+    mul_heap_threadedC_base_t * base;
+    slong k, m, * dummy;
 /*
-    timeit_t time;
+    timeit_t time, time2;
+*/
 
+    divs = arg->divp;
+    base = arg->basep;
+/*
     timeit_start(time);
 */
-    /* do first task */
-    lower = ((arg->idx + 1)*arg->len2*arg->len3) / arg->nthreads;
-    upper = lower;
-    arg->dexp_ind = mpoly_search_monomials(arg->dexp, &arg->dexp_score,
-                            arg->t1, arg->t2, arg->t3,
-                            lower, upper,
-                            arg->exp2, arg->len2, arg->exp3, arg->len3,
-                                     arg->N, arg->maskhi, arg->masklo);
+    pthread_mutex_lock(&base->mutex);
+    k = base->idx - 1;
+    base->idx = k;
+    pthread_mutex_unlock(&base->mutex);
 
-    /* signal first task done */
-    arg->stage = 1;
-    if (arg->idx + 1 < arg->nthreads)
+    while (k >= 0)
     {
-        pthread_mutex_lock(&arg->mutex);
-        pthread_cond_signal(&arg->cond);
-        pthread_mutex_unlock(&arg->mutex);
-    }
+/*
+    pthread_mutex_lock(&base->mutex);
+*/
+/*
+        divs[i].threadidx = arg->idx;
+        timeit_start(time2);
+*/
 
-    /* wait on previous thread to finish first task */
-    if (arg->idx > 0)
-    {
-        pthread_mutex_lock(&parg->mutex);
-        while (parg->stage < 1)
-            pthread_cond_wait(&parg->cond, &parg->mutex);
-        pthread_mutex_unlock(&parg->mutex);
-    }
+        if (k >= base->adivs)
+        {
+            divs[k].len1 = _fmpz_mpoly_mul_heap_partC(
+                         &divs[k].coeff1, &divs[k].exp1, &divs[k].alloc1,
+                          base->coeff2 + divs[k].apstart,  base->exp2 + base->N * divs[k].apstart,  divs[k].aplen,
+                          base->coeff3,  base->exp3,  base->len3,
+                           divs[k].line, divs[k - base->adivs].line,
+                                                 base->N, base->maskhi, base->masklo);
+        } else
+        {
+            dummy = flint_malloc(base->len2*sizeof(slong));
+            for (m = 0; m < base->len2; m++)
+                dummy[m] = base->len3;
 
+            divs[k].len1 = _fmpz_mpoly_mul_heap_partC(
+                         &divs[k].coeff1, &divs[k].exp1, &divs[k].alloc1,
+                          base->coeff2 + divs[k].apstart,  base->exp2 + base->N * divs[k].apstart, divs[k].aplen,
+                          base->coeff3,  base->exp3,  base->len3,
+                           divs[k].line, dummy,
+                                                 base->N, base->maskhi, base->masklo);
+            flint_free(dummy);
+        }
+/*
+        timeit_stop(time2);
+        divs[i].time = time2->wall;
+*/
+/*
+    pthread_mutex_unlock(&base->mutex);
+*/
+
+        pthread_mutex_lock(&base->mutex);
+        k = base->idx - 1;
+        base->idx = k;
+        pthread_mutex_unlock(&base->mutex);
+    }
 /*
     timeit_stop(time);
     arg->time = time->wall;
 */
-    /* do second task */
-    if (arg->idx > 0)
-    {
-        arg->len1 = _fmpz_mpoly_mul_heap_part(
-                     &arg->coeff1, &arg->exp1, &arg->alloc1,
-                      arg->coeff2,  arg->exp2,  arg->len2,
-                      arg->coeff3,  arg->exp3,  arg->len3,
-                   arg->dexp_ind, parg->dexp_ind,
-                                             arg->N, arg->maskhi, arg->masklo);
-    } else
-    {
-        dummy = flint_malloc(arg->len2*sizeof(slong));
-        for (i = 0; i < arg->len2; i++)
-            dummy[i] = arg->len3;
-        arg->len1 = _fmpz_mpoly_mul_heap_part(
-                     &arg->coeff1, &arg->exp1, &arg->alloc1,
-                      arg->coeff2,  arg->exp2,  arg->len2,
-                      arg->coeff3,  arg->exp3,  arg->len3,
-                   arg->dexp_ind, dummy,
-                                             arg->N, arg->maskhi, arg->masklo);
-        flint_free(dummy);
-    }
-
     flint_cleanup();
     return NULL;
 }
+
+
+
+
 
 
 /*
     start the workers from low to high and join from high to low
     after joining a worker, the output is streamed to poly1
 */
-slong _fmpz_mpoly_mul_heap_threaded(fmpz ** poly1, ulong ** exp1, slong * alloc,
+slong _fmpz_mpoly_mul_heap_threadedC(fmpz ** poly1, ulong ** exp1, slong * alloc,
                  const fmpz * coeff2, const ulong * exp2, slong len2,
                  const fmpz * coeff3, const ulong * exp3, slong len3,
                                            slong N, ulong maskhi, ulong masklo)
 {
+    slong alen = len2, blen = len3;
+    slong i, j, k, l, m;
     pthread_t * threads;
-    mul_heap_threaded_arg_t * args;
-    slong i, j, k = 0, num_threads;
-    fmpz * p1;
-    ulong * e1;
+    mul_heap_threadedC_arg_t * args;
+    mul_heap_threadedC_base_t * base;
+    mul_heap_threadedC_div_t * divs;
+    fmpz * p1 = * poly1;
+    ulong * e1 = * exp1;
+    ulong * max_exp;
+    int first, not_done;
 
-    num_threads = flint_get_num_threads();
-    threads = flint_malloc(sizeof(pthread_t) * num_threads);
-    args = flint_malloc(sizeof(mul_heap_threaded_arg_t) * num_threads);
+/*
+    timeit_t time;
+*/
+    base = flint_malloc(sizeof(mul_heap_threadedC_base_t));
+    base->nthreads = flint_get_num_threads();
+    base->bdivs    = base->nthreads*2;
+    base->adivs    = alen < 4 ? 1 : alen < 12 ? 2 : 3;
+    base->coeff2 = coeff2;
+    base->exp2 = exp2;
+    base->len2 = len2;
+    base->coeff3 = coeff3;
+    base->exp3 = exp3;
+    base->len3 = len3;
+    base->N = N;
+    base->maskhi = maskhi;
+    base->masklo = masklo;
+    base->idx = base->adivs * base->bdivs;
 
-    /* start the threads from lowest to highest */
-    for (i = 0; i < num_threads; i++)
+    divs    = flint_malloc(sizeof(mul_heap_threadedC_div_t) * base->adivs * base->bdivs);
+    threads = flint_malloc(sizeof(pthread_t) * base->nthreads);
+    args    = flint_malloc(sizeof(mul_heap_threadedC_arg_t) * base->nthreads);
+
+    for (i = 0; i < base->bdivs; i++)
+    {
+    for (j = 0; j < base->adivs; j++)
+    {
+/*flint_printf("i: %wd  j: %wd\n",i,j);*/
+
+        k = j + i * base->adivs;
+
+        divs[k].apstart = j * alen / base->adivs;
+        divs[k].aplen = (j + 1) * alen / base->adivs - divs[k].apstart;
+
+        divs[k].lower = ((i + 1)*(i + 1)*divs[k].aplen*blen) / (base->bdivs*base->bdivs);
+        divs[k].upper = divs[k].lower;
+
+        divs[k].line = NULL;
+        divs[k].exp = (ulong *) flint_malloc(N*sizeof(ulong));
+        divs[k].t1 = (slong *) flint_malloc(alen*sizeof(slong));
+        divs[k].t2 = (slong *) flint_malloc(alen*sizeof(slong));
+        divs[k].t3 = (slong *) flint_malloc(alen*sizeof(slong));
+        divs[k].eat = 0;
+
+        divs[k].len1   = 0;
+        /* everything writes to a new worker poly */
+        divs[k].alloc1 = 1 + alen/base->adivs + blen/base->bdivs;
+        divs[k].exp1 = (ulong *) flint_malloc(divs[i].alloc1*N*sizeof(ulong)); 
+        divs[k].coeff1 = (fmpz *) flint_calloc(divs[i].alloc1, sizeof(fmpz));
+    }
+    }
+
+/*flint_printf("done alloc divs\n");*/
+
+    for (k = 0; k < base->adivs * base->bdivs; k++)
+    {
+/*
+        timeit_start(time);
+*/
+        mpoly_search_monomialsB(
+            &divs[k].line, divs[k].exp, &divs[k].score,
+                            divs[k].t1, divs[k].t2, divs[k].t3,
+                            divs[k].lower, divs[k].upper,
+                            base->exp2 + N*divs[k].apstart, divs[k].aplen, base->exp3, base->len3,
+                                     base->N, base->maskhi, base->masklo);
+/*
+        timeit_stop(time);
+        flint_printf("search %wd: %p score %wd, time %wd\n", i, divs[i].line, divs[i].score, time->wall);
+*/
+/*        flint_printf("search %wd: %p score %wd\n", k, divs[k].line, divs[k].score);*/
+
+    }
+
+
+
+
+    pthread_mutex_init(&base->mutex, NULL);
+    for (i = 0; i < base->nthreads; i++)
     {
         args[i].idx = i;
-        args[i].nthreads = num_threads;
-        args[i].stage = 0;
-        args[i].dexp = (ulong *) flint_malloc(N*sizeof(ulong));
-        args[i].dexp_ind = NULL;
-        args[i].t1 = (slong *) flint_malloc(len2*sizeof(slong));
-        args[i].t2 = (slong *) flint_malloc(len2*sizeof(slong));
-        args[i].t3 = (slong *) flint_malloc(len2*sizeof(slong));
-
-        args[i].coeff2 = coeff2;
-        args[i].exp2 = exp2;
-        args[i].len2 = len2;
-        args[i].coeff3 = coeff3;
-        args[i].exp3 = exp3;
-        args[i].len3 = len3;
-
-        args[i].N = N;
-        args[i].maskhi = maskhi;
-        args[i].masklo = masklo;
-        args[i].len1 = 0;
-        if (i + 1 < num_threads)
-        {
-            /* lower threads write to a new worker poly */
-            args[i].alloc1 = len2 + len3/num_threads;
-            args[i].exp1 = (ulong *) flint_malloc(args[i].alloc1*N*sizeof(ulong)); 
-            args[i].coeff1 = (fmpz *) flint_calloc(args[i].alloc1, sizeof(fmpz));
-        } else {
-            /* highest thread writes to original poly */
-            args[i].alloc1 = *alloc;
-            args[i].exp1 = *exp1;
-            args[i].coeff1 = *poly1;
-        }
-
-        pthread_mutex_init(&args[i].mutex, NULL);
-        pthread_cond_init(&args[i].cond, NULL);
-
-        /* ok to start thread[i] since it only depends on thread[i-1] */
-        pthread_create(&threads[i], NULL, _fmpz_mpoly_mul_heap_threaded_worker, &args[i]);
+        args[i].basep = base;
+        args[i].divp = divs;
+        pthread_create(&threads[i], NULL, _fmpz_mpoly_mul_heap_threadedC_worker, &args[i]);
     }
-
-    /* read from the threads from highest to lowest */
-    for (i = num_threads - 1; i >= 0; i--)
+    for (i = 0; i < base->nthreads; i++)
     {
-        /* ok to cleanup thread[i] since only thread[i+1] depended on it */
         pthread_join(threads[i], NULL);
 /*
-flint_printf("thread %wd time to start computing products %wd\n",i,args[i].time);
+        flint_printf("thread %wd time %wd\n",i,args[i].time);
 */
-        flint_free(args[i].t3);
-        flint_free(args[i].t2);
-        flint_free(args[i].t1);
-        flint_free(args[i].dexp);
-        pthread_cond_destroy(&args[i].cond);
-        pthread_mutex_destroy(&args[i].mutex);
+    }
+    pthread_mutex_destroy(&base->mutex);
 
-        if (i + 1 < num_threads)
+
+
+/*
+for (k = base->adivs * base->bdivs - 1; k >= 0; k--)
+{
+for (i = 0; i < divs[k].len1; i++)
+{
+    flint_printf("div %wd coeff %wx, exponent %wx\n", k, *((ulong*)(divs[k].coeff1 + i)),*(divs[k].exp1 + N*i));
+}
+}
+*/
+
+    k = 0;
+    max_exp = (ulong *) flint_malloc(N*sizeof(ulong));
+
+    /* initialize tops */
+    for (j = base->adivs - 1; j >= 0; j--)
+    {
+        /* find j with largest term on top */
+        divs[j].eat_idx = j + (base->bdivs - 1) * base->adivs;
+        /* all divs[-].eat have already been set to zero */
+        l = divs[j].eat_idx;
+        while (l >= 0 && divs[l].eat >= divs[l].len1)
         {
-            /* transfer from worker poly to original poly */
-            for (j = 0; j < args[i].len1; j++)
-            {
-                _fmpz_mpoly_fit_length(&p1, &e1, alloc, k+1, N);
-                fmpz_swap(p1 + k, args[i].coeff1 + j);
-                fmpz_clear(args[i].coeff1 + j);
-                mpoly_monomial_set(e1 + N*k, args[i].exp1 + N*j, N);
-                k++;
-            }
-            /* clear remaining coeffs */
-            for ( ; j < args[i].alloc1; j++ )
-                fmpz_clear(args[i].coeff1 + j);
-            flint_free(args[i].coeff1);
-            flint_free(args[i].exp1);
-        } else {
-            /* highest thread used original poly */
-            k = args[num_threads - 1].len1;
-            p1 = args[num_threads - 1].coeff1;
-            e1 = args[num_threads - 1].exp1;
-            *alloc = args[num_threads - 1].alloc1;
+            for (m = divs[l].eat; m < divs[l].alloc1; m++)
+                fmpz_clear(divs[l].coeff1 + m);
+            flint_free(divs[l].coeff1);
+            flint_free(divs[l].exp1);
+            flint_free(divs[l].t3);
+            flint_free(divs[l].t2);
+            flint_free(divs[l].t1);
+            flint_free(divs[l].exp);
+            l = l - base->adivs;
+            divs[j].eat_idx = l;
+            /* divs[l].eat is zero because it was initialized to zero */
         }
     }
 
-    flint_free(threads);
+    do {
+        not_done = 0;
+        for (m = 0; m < N; m++)
+            max_exp[m] = 0;
+        for (j = base->adivs - 1; j >= 0; j--)
+        {
+            /* find j with largest term on top */
+            i = divs[j].eat_idx;
+            if (i >= 0 && divs[i].eat < divs[i].len1)
+            {
+                not_done = 1;
+                if (mpoly_monomial_lt(divs[i].exp1 + N*divs[i].eat, max_exp, N, maskhi, masklo))
+                    mpoly_monomial_set(max_exp, divs[i].exp1 + N*divs[i].eat, N);
+            }
+        }
+
+
+
+        if (not_done)
+        {
+            first = 1;
+            for (j = base->adivs - 1; j >= 0; j--)
+            {
+                /* find j with largest term on top */
+                i = divs[j].eat_idx;
+                if (i >= 0 && divs[i].eat < divs[i].len1)
+                {
+                    if (mpoly_monomial_equal(max_exp, divs[i].exp1 + N*divs[i].eat, N))
+                    {
+                        _fmpz_mpoly_fit_length(&p1, &e1, alloc, k+1, N);
+                        if (first)
+                        {
+                            fmpz_swap(p1 + k, divs[i].coeff1 + divs[i].eat);
+                            mpoly_monomial_set(e1 + N*k, divs[i].exp1 + N*divs[i].eat, N);
+                            first = 0;
+                        } else {
+                            fmpz_add(p1 + k, p1 + k, divs[i].coeff1 + divs[i].eat);
+                        }
+                        fmpz_clear(divs[i].coeff1 + divs[i].eat);
+                        divs[i].eat++;
+
+                        /* all divs[-].eat have already been set to zero */
+                        l = divs[j].eat_idx;
+                        while (l >= 0 && divs[l].eat >= divs[l].len1)
+                        {
+                            for (m = divs[l].eat; m < divs[l].alloc1; m++)
+                                fmpz_clear(divs[l].coeff1 + m);
+                            flint_free(divs[l].coeff1);
+                            flint_free(divs[l].exp1);
+                            flint_free(divs[l].t3);
+                            flint_free(divs[l].t2);
+                            flint_free(divs[l].t1);
+                            flint_free(divs[l].exp);
+                            l = l - base->adivs;
+                            divs[j].eat_idx = l;
+                            /* divs[l].eat is zero because it was initialized to zero */
+                        }
+                    }
+                }
+            }
+            assert(first == 0);
+            k++;
+
+        }
+    } while (not_done);
+
+    flint_free(max_exp);
+
     flint_free(args);
+    flint_free(threads);
+    flint_free(divs);
+    flint_free(base);
 
     *poly1 = p1;
     *exp1  = e1;
     return k;
 }
 
-void fmpz_mpoly_mul_heap_threaded(fmpz_mpoly_t poly1, const fmpz_mpoly_t poly2,
+void fmpz_mpoly_mul_heap_threadedC(fmpz_mpoly_t poly1, const fmpz_mpoly_t poly2,
                           const fmpz_mpoly_t poly3, const fmpz_mpoly_ctx_t ctx)
 {
     slong i, bits, exp_bits, N, len = 0;
@@ -709,13 +859,13 @@ void fmpz_mpoly_mul_heap_threaded(fmpz_mpoly_t poly1, const fmpz_mpoly_t poly2,
 
         /* algorithm more efficient if smaller poly first */
         if (poly2->length >= poly3->length)
-            len = _fmpz_mpoly_mul_heap_threaded(
+            len = _fmpz_mpoly_mul_heap_threadedC(
                                     &temp->coeffs, &temp->exps, &temp->alloc,
                                       poly3->coeffs, exp3, poly3->length,
                                       poly2->coeffs, exp2, poly2->length,
                                                N, maskhi, masklo);
         else
-            len = _fmpz_mpoly_mul_heap_threaded(
+            len = _fmpz_mpoly_mul_heap_threadedC(
                                    &temp->coeffs, &temp->exps, &temp->alloc,
                                       poly2->coeffs, exp2, poly2->length,
                                       poly3->coeffs, exp3, poly3->length,
@@ -732,13 +882,13 @@ void fmpz_mpoly_mul_heap_threaded(fmpz_mpoly_t poly1, const fmpz_mpoly_t poly2,
 
         /* algorithm more efficient if smaller poly first */
         if (poly2->length > poly3->length)
-            len = _fmpz_mpoly_mul_heap_threaded(
+            len = _fmpz_mpoly_mul_heap_threadedC(
                                 &poly1->coeffs, &poly1->exps, &poly1->alloc,
                                       poly3->coeffs, exp3, poly3->length,
                                       poly2->coeffs, exp2, poly2->length,
                                                N, maskhi, masklo);
         else
-            len = _fmpz_mpoly_mul_heap_threaded(
+            len = _fmpz_mpoly_mul_heap_threadedC(
                                 &poly1->coeffs, &poly1->exps, &poly1->alloc,
                                       poly2->coeffs, exp2, poly2->length,
                                       poly3->coeffs, exp3, poly3->length,

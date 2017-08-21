@@ -27,14 +27,15 @@ main(void)
     flint_printf("mul_heap_threaded....\n");
     fflush(stdout);
 
-    if (1){
+if (1){
 
+    slong power;
     fmpz_mpoly_ctx_t ctx;
     fmpz_mpoly_t f, g, h, h1, X, Y, Z, T, U;
     timeit_t time;
 
 
-    fmpz_mpoly_ctx_init(ctx, 5, ORD_DEGLEX);
+    fmpz_mpoly_ctx_init(ctx, 5, ORD_LEX);
 
     fmpz_mpoly_init(f, ctx);
     fmpz_mpoly_init(g, ctx);
@@ -47,11 +48,11 @@ main(void)
     fmpz_mpoly_init(T, ctx);
     fmpz_mpoly_init(U, ctx);
 
-    fmpz_mpoly_gen(X, 4, ctx);
-    fmpz_mpoly_gen(Y, 3, ctx);
+    fmpz_mpoly_gen(X, 0, ctx);
+    fmpz_mpoly_gen(Y, 1, ctx);
     fmpz_mpoly_gen(Z, 2, ctx);
-    fmpz_mpoly_gen(T, 1, ctx);
-    fmpz_mpoly_gen(U, 0, ctx);
+    fmpz_mpoly_gen(T, 3, ctx);
+    fmpz_mpoly_gen(U, 4, ctx);
 
     fmpz_mpoly_set_si(f, WORD(1), ctx);
 
@@ -64,15 +65,15 @@ main(void)
     fmpz_mpoly_add(f, f, h, ctx);
 
     fmpz_mpoly_pow_fps(h, Z, WORD(2), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(2), ctx);
     fmpz_mpoly_add(f, f, h, ctx);
 
-    fmpz_mpoly_pow_fps(h, T, WORD(2), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_pow_fps(h, T, WORD(3), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(3), ctx);
     fmpz_mpoly_add(f, f, h, ctx);
 
-    fmpz_mpoly_pow_fps(h, U, WORD(1), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_pow_fps(h, U, WORD(5), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(5), ctx);
     fmpz_mpoly_add(f, f, h, ctx);
 
 
@@ -87,113 +88,51 @@ main(void)
     fmpz_mpoly_add(g, g, h, ctx);
 
     fmpz_mpoly_pow_fps(h, Z, WORD(2), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(2), ctx);
     fmpz_mpoly_add(g, g, h, ctx);
 
-    fmpz_mpoly_pow_fps(h, Y, WORD(2), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_pow_fps(h, Y, WORD(3), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(3), ctx);
     fmpz_mpoly_add(g, g, h, ctx);
 
-    fmpz_mpoly_pow_fps(h, X, WORD(1), ctx);
-    fmpz_mpoly_scalar_mul_si(h, h, WORD(1), ctx);
+    fmpz_mpoly_pow_fps(h, X, WORD(5), ctx);
+    fmpz_mpoly_scalar_mul_si(h, h, WORD(5), ctx);
     fmpz_mpoly_add(g, g, h, ctx);
 
     printf("f = "); fmpz_mpoly_print_pretty(f, NULL, ctx); printf("\n");
     printf("g = "); fmpz_mpoly_print_pretty(g, NULL, ctx); printf("\n");
 
-    fmpz_mpoly_pow_fps(f, f, WORD(14), ctx);
-    fmpz_mpoly_pow_fps(g, g, WORD(14), ctx);
+    power = 2;
+    fmpz_mpoly_pow_fps(f, f, power, ctx);
+    fmpz_mpoly_pow_fps(g, g, power, ctx);
+    flint_printf("power: %wd\n", power);
 
-    flint_printf("mul_johnson\n");
+    flint_printf("mul_johnson          ... ");
     timeit_start(time);
     fmpz_mpoly_mul_johnson(h1, f, g, ctx);
     timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+    flint_printf("wall %wd\n", time->wall);
 
-
-    flint_printf("mul_johnson\n");
+    flint_printf("mul_johnson          ... ");
     timeit_start(time);
     fmpz_mpoly_mul_johnson(h, f, g, ctx);
     timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+    flint_printf("wall %wd\n", time->wall);
 
-    flint_set_num_threads(1);
-    flint_printf("mul_heap_threaded 1\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
+    for (i = 1; i <= max_threads; i++)
+    {
+        flint_set_num_threads(i);
+        flint_printf("mul_heap_threadedC %wd ... ",i);
+        fflush(stdout);
+        timeit_start(time);
+        fmpz_mpoly_mul_heap_threadedC(h, f, g, ctx);
+        timeit_stop(time);
+        flint_printf("wall %wd\n", time->wall);
+        fmpz_mpoly_test(h, ctx);
+        if (!fmpz_mpoly_equal(h,h1,ctx))
+            printf("h != h1\n");
+    }
 
-    if (!fmpz_mpoly_equal(h, h1, ctx))
-        printf("failed\n");
-
-
-    flint_set_num_threads(2);
-    flint_printf("mul_heap_threaded 2\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    if (!fmpz_mpoly_equal(h, h1, ctx))
-        printf("failed\n");
-
-    flint_set_num_threads(2);
-    flint_printf("mul_heap_threadedB 2\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threadedB(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    if (!fmpz_mpoly_equal(h, h1, ctx))
-        printf("failed\n");
-
-
-
-    flint_set_num_threads(3);
-    flint_printf("mul_heap_threaded 3\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threaded(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    if (!fmpz_mpoly_equal(h, h1, ctx))
-        printf("failed\n");
-
-    flint_set_num_threads(3);
-    flint_printf("mul_heap_threadedB 3\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threadedB(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    if (!fmpz_mpoly_equal(h, h1, ctx))
-        printf("failed\n");
-
-
-
-/*
-    flint_set_num_threads(4);
-    flint_printf("mul_heap_threadedA 4\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threadedA(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    flint_set_num_threads(8);
-    flint_printf("mul_heap_threadedA 8\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threadedA(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-
-    flint_set_num_threads(16);
-    flint_printf("mul_heap_threadedA 16\n");
-    timeit_start(time);
-    fmpz_mpoly_mul_heap_threadedA(h, f, g, ctx);
-    timeit_stop(time);
-    flint_printf("cpu: %wd  wall: %wd\n", time->cpu, time->wall);
-*/
     fmpz_mpoly_clear(U, ctx);
     fmpz_mpoly_clear(T, ctx);
     fmpz_mpoly_clear(Z, ctx);
@@ -204,7 +143,7 @@ main(void)
     fmpz_mpoly_clear(g, ctx);
     fmpz_mpoly_clear(f, ctx);
 
-    }
+}
 
     /* Check mul_heap_threaded matches mul_johnson */
     for (i = 0; i < 10 * flint_test_multiplier(); i++)
@@ -253,7 +192,7 @@ main(void)
             fmpz_mpoly_mul_johnson(h, f, g, ctx);
             fmpz_mpoly_test(h, ctx);
 
-            fmpz_mpoly_mul_heap_threaded(k, f, g, ctx);
+            fmpz_mpoly_mul_heap_threadedB(k, f, g, ctx);
             fmpz_mpoly_test(k, ctx);
 
             result = fmpz_mpoly_equal(h, k, ctx);
@@ -277,6 +216,7 @@ main(void)
 
                 flint_abort();
             }
+
         }
 
         fmpz_mpoly_clear(f, ctx);  
@@ -284,6 +224,7 @@ main(void)
         fmpz_mpoly_clear(h, ctx);  
         fmpz_mpoly_clear(k, ctx);  
     }
+
 
     /* Check aliasing first argument */
     for (i = 0; i < 10 * flint_test_multiplier(); i++)
@@ -331,7 +272,7 @@ main(void)
             fmpz_mpoly_mul_johnson(h, f, g, ctx);
             fmpz_mpoly_test(h, ctx);
   
-            fmpz_mpoly_mul_heap_threaded(f, f, g, ctx);
+            fmpz_mpoly_mul_heap_threadedB(f, f, g, ctx);
             fmpz_mpoly_test(f, ctx);
 
             result = fmpz_mpoly_equal(h, f, ctx);
@@ -408,7 +349,7 @@ main(void)
             fmpz_mpoly_mul_johnson(h, f, g, ctx);
             fmpz_mpoly_test(h, ctx);
   
-            fmpz_mpoly_mul_heap_threaded(g, f, g, ctx);
+            fmpz_mpoly_mul_heap_threadedB(g, f, g, ctx);
             fmpz_mpoly_test(g, ctx);
 
             result = fmpz_mpoly_equal(h, g, ctx);
