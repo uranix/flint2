@@ -756,7 +756,10 @@ for (i = 0; i < divs[k].len1; i++)
                 }
             }
             assert(first == 0);
-            k++;
+            if (fmpz_is_zero(p1 + k))
+                fmpz_clear(p1 + k);
+            else
+                k++;
 
         }
     } while (not_done);

@@ -192,7 +192,7 @@ if (1){
             fmpz_mpoly_mul_johnson(h, f, g, ctx);
             fmpz_mpoly_test(h, ctx);
 
-            fmpz_mpoly_mul_heap_threadedB(k, f, g, ctx);
+            fmpz_mpoly_mul_heap_threadedC(k, f, g, ctx);
             fmpz_mpoly_test(k, ctx);
 
             result = fmpz_mpoly_equal(h, k, ctx);
@@ -349,7 +349,7 @@ if (1){
             fmpz_mpoly_mul_johnson(h, f, g, ctx);
             fmpz_mpoly_test(h, ctx);
   
-            fmpz_mpoly_mul_heap_threadedB(g, f, g, ctx);
+            fmpz_mpoly_mul_heap_threadedC(g, f, g, ctx);
             fmpz_mpoly_test(g, ctx);
 
             result = fmpz_mpoly_equal(h, g, ctx);
