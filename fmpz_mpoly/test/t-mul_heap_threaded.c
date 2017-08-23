@@ -21,7 +21,7 @@
 int
 main(void)
 {
-    int i, j, result, max_threads = 5;
+    int i, j, result, max_threads = 24;
     FLINT_TEST_INIT(state);
 
     flint_printf("mul_heap_threaded....\n");
@@ -102,7 +102,7 @@ if (1){
     printf("f = "); fmpz_mpoly_print_pretty(f, NULL, ctx); printf("\n");
     printf("g = "); fmpz_mpoly_print_pretty(g, NULL, ctx); printf("\n");
 
-    power = 2;
+    power = 16;
     fmpz_mpoly_pow_fps(f, f, power, ctx);
     fmpz_mpoly_pow_fps(g, g, power, ctx);
     flint_printf("power: %wd\n", power);
@@ -122,10 +122,10 @@ if (1){
     for (i = 1; i <= max_threads; i++)
     {
         flint_set_num_threads(i);
-        flint_printf("mul_heap_threadedC %wd ... ",i);
+        flint_printf("mul_heap_threadedB %wd ... ",i);
         fflush(stdout);
         timeit_start(time);
-        fmpz_mpoly_mul_heap_threadedC(h, f, g, ctx);
+        fmpz_mpoly_mul_heap_threadedB(h, f, g, ctx);
         timeit_stop(time);
         flint_printf("wall %wd\n", time->wall);
         fmpz_mpoly_test(h, ctx);
