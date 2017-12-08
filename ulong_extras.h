@@ -437,6 +437,9 @@ FLINT_DLL ulong n_primitive_root_prime(ulong p);
 
 FLINT_DLL ulong n_discrete_log_bsgs(ulong b, ulong a, ulong n);
 
+FLINT_DLL void n_discrete_log_multi_bsgs(ulong * r, const ulong * b, ulong a,
+                                         ulong num, ulong ord, ulong n);
+
 FLINT_DLL ulong n_root_estimate(double a, int n);
 
 FLINT_DLL ulong n_rootrem(ulong* remainder, ulong n, ulong root);

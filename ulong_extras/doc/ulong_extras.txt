@@ -1374,6 +1374,14 @@ ulong n_discrete_log_bsgs(ulong b, ulong a, ulong n)
     $p^k$, or $2p^k$ where $p$ is an odd prime and $k$ is a positive
     integer.
 
+void n_discrete_log_multi_bsgs(ulong * r, const ulong * b, ulong a, ulong num, ulong ord, ulong n)
+
+    Fills in the array $r$ with discrete logarithms of each element of
+    $b$ to the base $a$ modulo $n$. num is the common length of $r$ and
+    $b$. ord is the multiplicative order of $a$ modulo n, or $0$ if the
+    order of $a$ is unknown. After the computation, for each $0\le i <
+    num$, $a^{r_i} \bmod n = b_i$.
+
 
 *******************************************************************************
 
