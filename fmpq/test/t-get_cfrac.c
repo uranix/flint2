@@ -18,6 +18,8 @@
 #include "fmpz_vec.h"
 #include "ulong_extras.h"
 
+#include "profiler.h"
+
 int
 main(void)
 {
@@ -28,7 +30,7 @@ main(void)
     flint_printf("get_cfrac....");
     fflush(stdout);
 
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 1000 * flint_test_multiplier(); i++)
     {
         fmpq_t x, r;
         fmpz *c1, *c2;
@@ -37,7 +39,7 @@ main(void)
         fmpq_init(x);
         fmpq_init(r);
 
-        fmpq_randtest(x, state, 1 + n_randint(state, 1000));
+        fmpq_randtest(x, state, 1 + n_randint(state, 2000));
         bound = fmpq_cfrac_bound(x);
 
         c1 = _fmpz_vec_init(bound);
@@ -63,7 +65,7 @@ main(void)
 
         if (n1 != n2)
         {
-            flint_printf("FAIL: n1 = %wd, n2 = %wd\n", n1, n2);
+            flint_printf("FAIL: i = %wd, n1 = %wd, n2 = %wd\n", i, n1, n2);
             abort();
         }
 
@@ -81,7 +83,68 @@ main(void)
         fmpq_clear(r);
     }
 
-    
+
+    for (i = 0; i <= 20; i++)
+    {
+        fmpq_t x, r;
+        fmpz *c1, *c2;
+        slong n1, n2, bound;
+        slong gcd_time;
+timeit_t timer;
+
+        fmpq_init(x);
+        fmpq_init(r);
+
+        fmpz_fib_ui(fmpq_numref(x), (1 << i) + 1);
+        fmpz_fib_ui(fmpq_denref(x), (1 << i));
+
+flint_printf("--- fib i = %wd (numerator bits = %wu) ---\n", i, fmpz_bits(fmpq_numref(x)));
+
+timeit_start(timer);
+        fmpq_canonicalise(x);
+timeit_stop(timer);
+gcd_time = timer->wall;
+flint_printf("gcd: %wd\n", timer->wall);
+
+        bound = fmpq_cfrac_bound(x);
+        c1 = _fmpz_vec_init(bound);
+        c2 = _fmpz_vec_init(bound);
+
+timeit_start(timer);
+        n1 = fmpq_get_cfrac(c1, r, x, bound);
+timeit_stop(timer);
+        if (!fmpq_is_zero(r))
+        {
+            flint_printf("FAIL1: expected zero remainder\n");
+            abort();
+        }
+gcd_time = FLINT_MAX(1, gcd_time);
+flint_printf("new: %wd  (new/gcd: %f)\n", timer->wall, (double)(timer->wall)/(double)(gcd_time));
+
+
+timeit_start(timer);
+        n2 = fmpq_get_cfracOLD(c2, r, x, bound);
+timeit_stop(timer);
+        if (!fmpq_is_zero(r))
+        {
+            flint_printf("FAIL2: expected zero remainder\n");
+            abort();
+        }
+
+flint_printf("old: %wd\n", timer->wall);
+
+        if (n1 != n2)
+        {
+            flint_printf("FAIL3: n1 != n2\n");
+            abort();
+        }
+
+        _fmpz_vec_clear(c1, bound);
+        _fmpz_vec_clear(c2, bound);
+        fmpq_clear(x);
+        fmpq_clear(r);
+
+    }
 
     FLINT_TEST_CLEANUP(state);
     flint_printf("PASS\n");
