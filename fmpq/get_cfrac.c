@@ -15,12 +15,13 @@
 /*
     ball representing the closed interval
 
-         a        a + da
-    [ -------- , -------- ]
-       b + db       b
+             a        a + da
+    x = [ -------- , -------- ]
+           b + db       b
 
     Most functions assume a>0, b>0, db>=0, da>=0 with the notable
-    exception fmpq_ball_ge_one
+    exception fmpq_ball_gt_one. The only arithmetic for which these balls are
+    well-suited is the calculation of M(x) for M in GL2(ZZ)
 */
 typedef struct {
     fmpz_t a, b, db, da;
@@ -37,7 +38,7 @@ typedef struct {
 typedef fmpz_mat22_struct fmpz_mat22_t[1];
 
 
-static void fmpz_mat22_print(const fmpz_mat22_t M)
+void fmpz_mat22_print(const fmpz_mat22_t M)
 {
     printf("mat[\n   ");
     fmpz_print(M->_11); printf(",\n   ");
@@ -47,7 +48,7 @@ static void fmpz_mat22_print(const fmpz_mat22_t M)
     printf("\n]\n");
 }
 
-static void fmpz_mat22_init(fmpz_mat22_t M)
+void fmpz_mat22_init(fmpz_mat22_t M)
 {
     fmpz_init(M->_11);
     fmpz_init(M->_12);
@@ -56,7 +57,7 @@ static void fmpz_mat22_init(fmpz_mat22_t M)
     M->det = 0;
 }
 
-static void fmpz_mat22_clear(fmpz_mat22_t M)
+void fmpz_mat22_clear(fmpz_mat22_t M)
 {
     fmpz_clear(M->_11);
     fmpz_clear(M->_12);
@@ -64,7 +65,7 @@ static void fmpz_mat22_clear(fmpz_mat22_t M)
     fmpz_clear(M->_22);
 }
 
-static void fmpz_mat22_one(fmpz_mat22_t M)
+void fmpz_mat22_one(fmpz_mat22_t M)
 {
     fmpz_one(M->_11);
     fmpz_zero(M->_12);
@@ -73,7 +74,7 @@ static void fmpz_mat22_one(fmpz_mat22_t M)
     M->det = 1;
 }
 
-static int fmpz_mat22_is_one(fmpz_mat22_t M)
+int fmpz_mat22_is_one(fmpz_mat22_t M)
 {
     return fmpz_is_one(M->_11)
         && fmpz_is_zero(M->_12)
@@ -82,7 +83,7 @@ static int fmpz_mat22_is_one(fmpz_mat22_t M)
 }
 
 /* M = M.N */
-static void fmpz_mat22_rmul(fmpz_mat22_t M, const fmpz_mat22_t N)
+void fmpz_mat22_rmul(fmpz_mat22_t M, const fmpz_mat22_t N)
 {
     fmpz_t a, b, c, d;
     fmpz_init(a);
@@ -105,7 +106,7 @@ static void fmpz_mat22_rmul(fmpz_mat22_t M, const fmpz_mat22_t N)
 }
 
 /* M = M->[q 1; 1 0] */
-static void fmpz_mat22_rmul_elem(fmpz_mat22_t M, const fmpz_t q)
+void fmpz_mat22_rmul_elem(fmpz_mat22_t M, const fmpz_t q)
 {
     fmpz_addmul(M->_12, M->_11, q);
     fmpz_addmul(M->_22, M->_21, q);
@@ -115,7 +116,7 @@ static void fmpz_mat22_rmul_elem(fmpz_mat22_t M, const fmpz_t q)
 }
 
 
-static void fmpq_ball_init(fmpq_ball_t x)
+void fmpq_ball_init(fmpq_ball_t x)
 {
     fmpz_init(x->a);
     fmpz_init(x->b);
@@ -123,7 +124,7 @@ static void fmpq_ball_init(fmpq_ball_t x)
     fmpz_init(x->da);
 }
 
-static void fmpq_ball_clear(fmpq_ball_t x)
+void fmpq_ball_clear(fmpq_ball_t x)
 {
     fmpz_clear(x->a);
     fmpz_clear(x->b);
@@ -131,7 +132,7 @@ static void fmpq_ball_clear(fmpq_ball_t x)
     fmpz_clear(x->da);
 }
 
-static void fmpq_ball_print(const fmpq_ball_t x)
+void fmpq_ball_print(const fmpq_ball_t x)
 {
     printf("Ball[");
     fmpz_print(x->a);
@@ -148,7 +149,7 @@ static void fmpq_ball_print(const fmpq_ball_t x)
     flint_printf("]");
 }
 
-static void fmpq_ball_swap(fmpq_ball_t x, fmpq_ball_t y)
+void fmpq_ball_swap(fmpq_ball_t x, fmpq_ball_t y)
 {
    fmpq_ball_struct t = *x;
    *x = *y;
@@ -156,7 +157,7 @@ static void fmpq_ball_swap(fmpq_ball_t x, fmpq_ball_t y)
 }
 
 /* is x canonical and bounded away from 1, i.e. 1 < x ? */
-static int fmpq_ball_ge_one(const fmpq_ball_t x)
+int fmpq_ball_gt_one(const fmpq_ball_t x)
 {
     fmpz_t temp;
     int r;
@@ -181,7 +182,7 @@ static int fmpq_ball_ge_one(const fmpq_ball_t x)
 }
 
 /* does y contain x? */
-static int fmpq_ball_contains(const fmpq_ball_t y, const fmpq_ball_t x)
+int fmpq_ball_contains(const fmpq_ball_t y, const fmpq_ball_t x)
 {
     int ans = 0;
     fmpz_t t1, t2, t3;
@@ -217,7 +218,7 @@ cleanup:
 
 
 /* y = m^-1(x) */
-static void fmpq_ball_apply_mat22_inv(
+void fmpq_ball_apply_mat22_inv(
     fmpq_ball_t y,
     const fmpz_mat22_t M,
     const fmpq_ball_t x)
@@ -234,6 +235,7 @@ static void fmpq_ball_apply_mat22_inv(
     else
     {
         FLINT_ASSERT(M->det == -1);
+        /* det = -1 swaps the endpoints */
         fmpz_mul(y->a, x->b, M->_12);
         fmpz_submul(y->a, x->a, M->_22);
         fmpz_submul(y->a, x->da, M->_22);
@@ -248,7 +250,7 @@ static void fmpq_ball_apply_mat22_inv(
 }
 
 /* y = [q 1; 1 0]^-1(x) */
-static void fmpq_ball_apply_mat22_inv_elem(
+void fmpq_ball_apply_mat22_inv_elem(
     fmpq_ball_t y,
     const fmpz_t q,
     const fmpq_ball_t x)
@@ -265,8 +267,7 @@ static void fmpq_ball_apply_mat22_inv_elem(
 
 /*
     The interface is entirely mutable and the terms are streamed to s
-    The input x is assumed to be 1 < x
-    The output x' will be 1 < x'
+    The input x is assumed to be 1 < x and the output x' will be 1 < x'
                  1
     x = s1 + ----------
                          1
@@ -275,14 +276,26 @@ static void fmpq_ball_apply_mat22_inv_elem(
                         sn + ---
                               x'
 
+    M will be multiplied on the right by the [si 1; 1 0] for the si appended.
+
     There is a ton of room for improvement in this function, but it already
     seems to be subquadratic, that is,
 
         time(cf(Fibonacci[2^n + 1]/Fibonacci[2^n])) << n^2
 
-    Should try to approach the speed of gcd(x.a, x.b)
+    Should try to approach the speed of gcd(x->a, x->b)
+
+    Things to try:
+    - the gauss iteration accumulates directly into M, which might not be that great
+    - M is not necessarily needed when this function is called from the top level
+    - after splitting, the fmpq_ball_apply_mat22_inv(y, N, x) can probably be
+      optimized because we should know some of the leading bits of y
+    - when k < 10000, say, it is probably better to use lemher, which is still
+      quadratic, and let y be x >> (k - 2*FLINT_BITS) instead of x >> (k/2).
+      The recursive call to fmpq_ball_get_cfrac(s, N, y, limit) will produce
+      an N with entries probably bounded by FLINT_BITS.
 */
-static void fmpq_ball_get_cfrac(
+void fmpq_ball_get_cfrac(
     fmpz_poly_t s,
     fmpz_mat22_t M,
     fmpq_ball_t x,
@@ -299,15 +312,11 @@ static void fmpq_ball_get_cfrac(
     fmpz_init(r);
     fmpq_ball_init(y);
     fmpz_mat22_init(N);
-/*
-printf("fmpq_ball_get_cfrac called x: "); fmpq_ball_print(x); printf("\n");
-*/
+
 again:
-/*
-printf("x: "); fmpq_ball_print(x); printf("\n");
-*/
+
     FLINT_ASSERT(s->length <= limit);
-    FLINT_ASSERT(fmpq_ball_ge_one(x));
+    FLINT_ASSERT(fmpq_ball_gt_one(x));
 
     if (s->length >= limit)       
         goto cleanup;
@@ -317,23 +326,19 @@ printf("x: "); fmpq_ball_print(x); printf("\n");
         goto split;
 
 gauss:
-/*
-printf("doing gauss map\n");
-*/
+
     fmpz_fdiv_qr(q, r, x->a, x->b);
     FLINT_ASSERT(fmpz_sgn(q) > 0);
 
     fmpq_ball_apply_mat22_inv_elem(y, q, x);
-    if (!fmpq_ball_ge_one(y))
+    if (!fmpq_ball_gt_one(y))
         goto cleanup;
 
     fmpq_ball_swap(x, y);
     fmpz_mat22_rmul_elem(M, q);
     fmpz_poly_fit_length(s, s->length + 1);
     fmpz_swap(s->coeffs + s->length, q);
-/*
-printf("gauss quotient: "); fmpz_print(s->coeffs + s->length); printf("\n");
-*/
+
     s->length++;
     goto again;
     
@@ -343,11 +348,11 @@ split:
     fmpz_fdiv_q_2exp(y->b, x->b, k/2);
     fmpz_fdiv_q_2exp(y->db, x->db, k/2);
     fmpz_fdiv_q_2exp(y->da, x->da, k/2);
-    fmpz_add_ui(y->db, y->db, 2);
-    fmpz_add_ui(y->da, y->da, 2);
-    if (!fmpq_ball_ge_one(y))
+    fmpz_add_ui(y->db, y->db, 2); /* 1 for b and 1 for db */
+    fmpz_add_ui(y->da, y->da, 2); /* ditto */
+    if (!fmpq_ball_gt_one(y))
         goto gauss;
-/*    FLINT_ASSERT(fmpq_ball_contains(y, x)); */
+    FLINT_ASSERT(fmpq_ball_contains(y, x));
     fmpz_mat22_one(N);
     fmpq_ball_get_cfrac(s, N, y, limit);
     if (fmpz_mat22_is_one(N))
@@ -433,7 +438,7 @@ slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t f, slong limit)
             fmpq_ball_get_cfrac(s, M, x, limit);
     }
 
-    FLINT_ASSERT(fmpz_is_zero(x->b) || fmpq_ball_ge_one(x));
+    FLINT_ASSERT(fmpz_is_zero(x->b) || fmpq_ball_gt_one(x));
     FLINT_ASSERT(fmpz_is_zero(x->db));
     FLINT_ASSERT(fmpz_is_zero(x->da));
 
@@ -448,8 +453,9 @@ slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t f, slong limit)
     FLINT_ASSERT(!fmpz_is_zero(x->a));
     fmpz_swap(fmpq_numref(rem), x->b);
     fmpz_swap(fmpq_denref(rem), x->a);
-    FLINT_ASSERT(fmpq_is_canonical(rem)); /* yes! */
+    FLINT_ASSERT(fmpq_is_canonical(rem));
 
+    FLINT_ASSERT(s->length <= limit);
     for (i = 0; i < s->length; i++)
         fmpz_swap(c + i, s->coeffs + i);
 
@@ -462,7 +468,7 @@ slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t f, slong limit)
 
 
 
-slong fmpq_get_cfracOLD(fmpz * c, fmpq_t rem, const fmpq_t x, slong n)
+slong fmpq_get_cfrac_naive(fmpz * c, fmpq_t rem, const fmpq_t x, slong n)
 {
     fmpz_t p, q;
     slong i;
