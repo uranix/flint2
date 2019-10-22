@@ -290,7 +290,7 @@ void fmpq_ball_apply_mat22_inv_elem(
     - M is not necessarily needed when this function is called from the top level
     - after splitting, the fmpq_ball_apply_mat22_inv(y, N, x) can probably be
       optimized because we should know some of the leading bits of y
-    - when k < 10000, say, it is probably better to use lemher, which is still
+    - when k < 10000, say, it is probably better to use lehmer, which is still
       quadratic, and let y be x >> (k - 2*FLINT_BITS) instead of x >> (k/2).
       The recursive call to fmpq_ball_get_cfrac(s, N, y, limit) will produce
       an N with entries probably bounded by FLINT_BITS.
@@ -338,7 +338,6 @@ gauss:
     fmpz_mat22_rmul_elem(M, q);
     fmpz_poly_fit_length(s, s->length + 1);
     fmpz_swap(s->coeffs + s->length, q);
-
     s->length++;
     goto again;
     
@@ -350,13 +349,17 @@ split:
     fmpz_fdiv_q_2exp(y->da, x->da, k/2);
     fmpz_add_ui(y->db, y->db, 2); /* 1 for b and 1 for db */
     fmpz_add_ui(y->da, y->da, 2); /* ditto */
+
     if (!fmpq_ball_gt_one(y))
         goto gauss;
+
     FLINT_ASSERT(fmpq_ball_contains(y, x));
     fmpz_mat22_one(N);
     fmpq_ball_get_cfrac(s, N, y, limit);
+
     if (fmpz_mat22_is_one(N))
         goto gauss;
+
     fmpq_ball_apply_mat22_inv(y, N, x);
     fmpq_ball_swap(x, y);
     fmpz_mat22_rmul(M, N);
@@ -376,43 +379,52 @@ cleanup:
 
 slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t f, slong limit)
 {
-    int cmp;
     slong i;
+    int cmp, num_sign, den_sign;
     fmpq_ball_t x;
     fmpz_poly_t s;
     fmpz_mat22_t M;
+#if WANT_ASSERT
+    int input_is_canonical;
+#endif
 
-    /* handle infinite input */
-    if (fmpz_is_zero(fmpq_denref(f)))
+    num_sign = fmpz_sgn(fmpq_denref(f));
+    den_sign = fmpz_sgn(fmpq_denref(f));
+
+    if (limit <= 0 || den_sign == 0)
     {
-        fmpz_zero(fmpq_numref(rem));
-        fmpz_one(fmpq_denref(rem));
-        return 0;
-    }
-
-    FLINT_ASSERT(fmpq_is_canonical(f));
-
-    if (limit <= 0)
-    {
-        if (fmpq_is_zero(f))
+        if (num_sign < 0)
         {
-            /* produce infinite output */
-            fmpz_one(fmpq_numref(rem));
-            fmpz_zero(fmpq_denref(rem));
+            fmpz_neg(fmpq_numref(rem), fmpq_numref(f));
+            fmpz_neg(fmpq_denref(rem), fmpq_denref(f));
         }
         else
         {
-            fmpq_inv(rem, f);
+            fmpz_set(fmpq_numref(rem), fmpq_numref(f));
+            fmpz_set(fmpq_denref(rem), fmpq_denref(f));
         }
+        fmpz_swap(fmpq_numref(rem), fmpq_denref(rem));
         return 0;
     }
+
+#if WANT_ASSERT
+    input_is_canonical = fmpq_is_canonical(f);
+#endif
 
     fmpz_mat22_init(M);
     fmpz_mat22_one(M);
 
     fmpq_ball_init(x);
-    fmpz_set(x->a, fmpq_numref(f));
-    fmpz_set(x->b, fmpq_denref(f));
+    if (den_sign > 0)
+    {
+        fmpz_set(x->a, fmpq_numref(f));
+        fmpz_set(x->b, fmpq_denref(f));
+    }
+    else
+    {
+        fmpz_neg(x->a, fmpq_numref(f));
+        fmpz_neg(x->b, fmpq_denref(f));
+    }
     fmpz_zero(x->db);
     fmpz_zero(x->da);
 
@@ -450,11 +462,13 @@ slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t f, slong limit)
         fmpz_swap(x->a, x->b);
     }
 
+    /* write remainder */
     FLINT_ASSERT(!fmpz_is_zero(x->a));
     fmpz_swap(fmpq_numref(rem), x->b);
     fmpz_swap(fmpq_denref(rem), x->a);
-    FLINT_ASSERT(fmpq_is_canonical(rem));
+    FLINT_ASSERT(!input_is_canonical || fmpq_is_canonical(rem));
 
+    /* write terms */
     FLINT_ASSERT(s->length <= limit);
     for (i = 0; i < s->length; i++)
         fmpz_swap(c + i, s->coeffs + i);

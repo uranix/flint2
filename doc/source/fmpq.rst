@@ -574,6 +574,8 @@ Continued fractions
 
 .. function:: slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, slong n)
 
+.. function:: slong fmpq_get_cfrac_naive(fmpz * c, fmpq_t rem, const fmpq_t x, slong n)
+
     Generates up to `n` terms of the (simple) continued fraction expansion
     of `x`, writing the coefficients to the vector `c` and the remainder `r`
     to the ``rem`` variable. The return value is the number `k` of
@@ -595,11 +597,14 @@ Continued fractions
     expansion can be obtained by replacing the last coefficient
     `a_{k-1}` by the pair of coefficients `a_{k-1} - 1, 1`.
 
-    As a special case, the continued fraction expansion of zero consists
-    of a single zero (and not the empty sequence).
+    The behaviour of this function in corner cases is as follows:
+        - if `x` is infinite (anything over 0), ``rem`` will be zero and the return is `k=0` regardless of `n`.
+        - else (if `x` is finite),
+            - if `n <= 0`, ``rem`` will be `1/x` (allowing for infinite in the case `x=0`) and the return is `k=0`
+            - else (if `n > 0`), ``rem`` will finite and the return is `0 < k \le n`.
 
-    This function implements a simple algorithm, performing repeated
-    divisions. The running time is quadratic.
+    Essentially, if this function is called with canonical `x` and `n > 0`, then ``rem`` will be canonical.
+    Therefore, applications relying on canonical ``fmpq_t``'s should not call this function with `n <= 0`.
 
 .. function:: void fmpq_set_cfrac(fmpq_t x, const fmpz * c, slong n)
 
