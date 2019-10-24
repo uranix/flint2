@@ -333,6 +333,10 @@ FLINT_DLL void fmpq_next_signed_minimal(fmpq_t res, const fmpq_t x);
 FLINT_DLL void fmpq_farey_neighbors(fmpq_t left, fmpq_t right
                                            , const fmpq_t mid, const fmpz_t Q);
 
+FLINT_DLL void fmpq_simplest_between(fmpq_t mid, const fmpq_t l, const fmpq_t r);
+
+FLINT_DLL void _fmpq_simplest_between(fmpz_t mid_num, fmpz_t mid_den, const fmpz_t l_num, const fmpz_t l_den, const fmpz_t r_num, const fmpz_t r_den);
+
 FLINT_DLL slong fmpq_get_cfrac_naive(fmpz * c, fmpq_t rem, const fmpq_t x, slong n);
 
 FLINT_DLL slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, slong n);

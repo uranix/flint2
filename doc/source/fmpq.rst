@@ -566,7 +566,13 @@ Rational enumeration
     Set `left` and `right` to the fractions directly below and above `mid` in the Farey sequence of order `Q`.
     This function will throw if `mid` is not canonical or `Q` is less than the denominator of `mid`.
 
+.. function:: void fmpq_simplest_between(fmpq_t mid, const fmpq_t l, const fmpq_t r)
 
+.. function:: void _fmpq_simplest_between(fmpz_t mid_num, fmpz_t mid_den, const fmpz_t l_num, const fmpz_t l_den, const fmpz_t r_num, const fmpz_t r_den)
+
+    Set ``mid`` to the simplest fraction between `l` and `r`. The underscore version makes the additional assumption that `l \le r`.
+    The endpoints `l` and `r` do not need to be reduced, but their denominators do need to be positive.
+    ``mid`` will be always be returned in canonical form. A canonical fraction `a_1/b_1` is defined to be simpler than `a_2/b_2` iff `b_1<b_2` or `b_1=b_2` and `a_1<a_2`.
 
 Continued fractions
 --------------------------------------------------------------------------------
