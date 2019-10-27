@@ -20,11 +20,11 @@ main(void)
     flint_printf("\n");
     fflush(stdout);
 
-    for (i = 0; i <= 23; i++)
+    for (i = 0; i <= 24; i++)
     {
         fmpq_t x, r, l, m;
         fmpz *c1, *c2;
-        slong n1, n2, bound;
+        slong n1, /*n2, */bound;
         slong gcd_time;
         timeit_t timer;
         slong expected_length;
@@ -101,6 +101,8 @@ flint_printf("\n--- fib(1+2^%wd)/fib(2^%wd) (numerator bits = %wu) ---\n", i, i,
         _fmpz_vec_clear(c2, bound);
         fmpq_clear(x);
         fmpq_clear(r);
+        fmpq_clear(l);
+        fmpq_clear(m);
     }
 
     flint_cleanup_master();
