@@ -54,8 +54,8 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
     fmpz_t bound, pprod, t, u, dmul;
     fmpz_mat_t x, d, AX, Bden;
     fmpq_mat_t x_q;
-    fmpz_t xknum, xkden;
-    slong i, j, k, jstart = 0, kstart = 0, n, cols;
+    fmpz_t xknum, xkden, Dbound;
+    slong i, j, k, nexti, num_stabilised, jstart = 0, kstart = 0, n, cols;
     int stabilised; /* has CRT stabilised */
 
     n = A->r;
@@ -68,6 +68,7 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
     fmpz_init(t);
     fmpz_init(u);
     fmpz_init(dmul);
+    fmpz_init(Dbound);
 
     fmpz_mat_init(Bden, B->r, B->c);
     fmpz_mat_init(AX, B->r, B->c);
@@ -91,39 +92,68 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
     fmpz_mat_set_nmod_mat(x, Xmod);
 
     i = 1; /* working with i primes */
-    
+    fmpz_sqrt(Dbound, pprod);
+    nexti = 1;
+
     while (fmpz_cmp(pprod, bound) <= 0)
     {
-	stabilised = 1;
-        fmpz_one(dmul);
+	stabilised = i == nexti;
+        if (stabilised)
+	   nexti = (slong)(i*1.4) + 1;
+	fmpz_one(dmul);
+        num_stabilised = 0;
 
-        /* check if stabilised */
-        for (j = jstart; j < x->r && stabilised; j++)
+        j = 0;
+        k = 0;
+
+/*
+ * do {
+if (stabilised)
+printf("stabilised i = %ld\n", i);	
+        for (j = jstart; j < x->r && stabilised && num_stabilised != x->r*x->c; j++)
 	{
-           for (k = kstart; k < x->c && stabilised; k++)
+           for (k = j == jstart ? kstart : 0; k < x->c && stabilised && num_stabilised != x->r*x->c; k++)
            {
 	      fmpz_mul(t, dmul, fmpz_mat_entry(x, j, k));
 	      fmpz_fdiv_qr(u, t, t, pprod);
 			      
-              /* set stabilised to success of reconstruction */
-              if ((stabilised = _fmpq_reconstruct_fmpz(xknum, xkden, t, pprod)))
+	      if ((stabilised = _fmpq_reconstruct_fmpz(xknum, xkden, t, pprod)))
               {
-                 /* save starting point for next time */
-		 jstart = j;
-		 kstart = k + 1;
-		 
-		 if (kstart == x->c)
-	            kstart = 0, jstart = j + 1;
-		 
-		 fmpz_mul(xkden, xkden, dmul);
-                 fmpz_set(dmul, xkden);
+		 fmpz_mul(dmul, dmul, xkden);
+
+                 if (fmpz_cmpabs(xkden, Dbound) > 0)
+		     stabilised = 0;
+		 else
+		 {
+                     fmpz_abs(t, xkden);
+		     fmpz_fdiv_qr(Dbound, t, Dbound, t);
+		     fmpz_add_ui(Dbound, Dbound, 1);
+
+		     num_stabilised++;
+
+                     jstart = j;
+                     kstart = k + 1;
+
+                     if (kstart == x->c)
+                        kstart = 0, jstart = j + 1;
+                  }
 	      }     
            }
         }
 
-        /* full matrix stabilisation check */
+if (stabilised && j == x->r && k == x->c && num_stabilised != x->r*x->c)
+{
+jstart = 0;
+kstart = 0;
+printf("around\n");
+}
+        } while (stabilised && j == x->r && k == x->c
+                          && num_stabilised != x->r*x->c);
+*/
+	/* full matrix stabilisation check */
 	if (stabilised)
         {
+printf("i = %ld\n", i);
            stabilised = fmpq_mat_set_fmpz_mat_mod_fmpz(x_q, x, pprod);
 	   if (stabilised)
            {
@@ -137,7 +167,7 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
 	   }
         }
 	i++;
-
+        
         while (1)
         {
            p = n_nextprime(p, 1);
@@ -154,6 +184,7 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
         fmpz_mat_CRT_ui(x, x, pprod, Xmod, 0); 
 
         fmpz_mul_ui(pprod, pprod, p);
+	fmpz_sqrt(Dbound, pprod);
     }
 
     /* TODO can be changed to one step */
@@ -162,6 +193,7 @@ _fmpz_mat_solve_multi_mod_den(fmpz_mat_t X, fmpz_t den,
 
 multi_mod_done:
 
+    fmpz_clear(Dbound);
     fmpz_clear(xknum);
     fmpz_clear(xkden);
     fmpz_clear(bound);

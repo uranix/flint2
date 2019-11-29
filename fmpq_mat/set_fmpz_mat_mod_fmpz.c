@@ -45,7 +45,7 @@ fmpq_mat_set_fmpz_mat_mod_fmpz(fmpq_mat_t X,
 	    fmpz_mul(den, den, d);
             fmpz_set(d, den);
 
-            fmpz_set(fmpq_mat_entry_num(X, i, j), num);
+	    fmpz_set(fmpq_mat_entry_num(X, i, j), num);
             fmpz_set(fmpq_mat_entry_den(X, i, j), den);
             fmpq_canonicalise(fmpq_mat_entry(X, i, j));
         }

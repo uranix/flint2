@@ -27,7 +27,8 @@ _fmpz_mat_solve_dixon_den(fmpz_mat_t X, fmpz_t den,
     mp_limb_t * crt_primes;
     nmod_mat_t * A_mod;
     nmod_mat_t Ay_mod, d_mod, y_mod;
-    slong i, j, k, jstart = 0, kstart = 0, n, cols, num_primes;
+    slong num_stabilised, i, j, k;
+    slong jstart = 0, kstart = 0, n, cols, num_primes;
     int stabilised; /* has lifting stabilised */
 
     n = A->r;
@@ -95,11 +96,17 @@ _fmpz_mat_solve_dixon_den(fmpz_mat_t X, fmpz_t den,
 
 	stabilised = 1;
         fmpz_one(dmul);
+        num_stabilised = 0;
 
-        /* check if stabilised */
-        for (j = jstart; j < x->r && stabilised; j++)
+        j = 0;
+	k = 0;
+	
+	do {
+	
+	/* check if stabilised */
+        for (j = jstart; j < x->r && stabilised && num_stabilised != x->r*x->c; j++)
 	{
-           for (k = kstart; k < x->c && stabilised; k++)
+           for (k = kstart; k < x->c && stabilised && num_stabilised != x->r*x->c; k++)
            {
 	      fmpz_mul(t, dmul, fmpz_mat_entry(x, j, k));
 	      fmpz_fdiv_qr(u, t, t, ppow);
@@ -107,7 +114,9 @@ _fmpz_mat_solve_dixon_den(fmpz_mat_t X, fmpz_t den,
               /* set stabilised to success of reconstruction */
               if ((stabilised = _fmpq_reconstruct_fmpz(xknum, xkden, t, ppow)))
               {
-                 /* save starting point for next time */
+                 num_stabilised++;
+		 
+		 /* save starting point for next time */
 		 jstart = j;
 		 kstart = k + 1;
 		 
@@ -120,6 +129,14 @@ _fmpz_mat_solve_dixon_den(fmpz_mat_t X, fmpz_t den,
            }
         }
 
+	jstart = 0;
+	kstart = 0;
+if (stabilised && j == x->r && k == x->c && num_stabilised != x->r*x->c)
+printf("around\n");
+        } while (stabilised && j == x->r && k == x->c
+			  && num_stabilised != x->r*x->c); 
+           
+           
         /* full matrix stabilisation check */
 	if (stabilised)
         {
