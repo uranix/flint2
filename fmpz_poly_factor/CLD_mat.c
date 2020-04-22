@@ -90,7 +90,7 @@ flint_printf("r = %wd\n", r);
       {
          zeroes = 0;
 flint_printf("start while\n");
-         while (lifted_fac->p[i].coeffs + zeroes)
+         while (fmpz_is_zero(lifted_fac->p[i].coeffs + zeroes))
             zeroes++;
 flint_printf("end while\n");
 
