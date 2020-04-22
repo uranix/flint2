@@ -40,19 +40,19 @@ slong _fmpz_poly_factor_CLD_mat(fmpz_mat_t res, const fmpz_poly_t f,
 
    for (i = 0; i < k; i++)
    {
-flint_printf("CLD_bound1\n");
+flint_printf("CLD_bound1 %wd of %wd\n", i, k);
       fmpz_poly_CLD_bound(res->rows[r] + i, f, i);
 flint_printf("CLD_bound2\n");
       fmpz_poly_CLD_bound(res->rows[r] + 2*k - i - 1, f, f->length - i - 2);
 flint_printf("CLD_bound done\n");
    }
-
+flint_printf("CLD_bound for done\n");
    /* we exclude columns in the middle for which CLD bounds are too large */
 
    fmpz_init(t);
-
+flint_printf("init done\n");
    bound = fmpz_bits(P) - bit_r - bit_r/2; /* log_2(p^a / 2^{1.5r}) */
-
+flint_printf("bits done %wd\n", k);
    for (lo_n = 0; lo_n < k; lo_n++)
    {
       fmpz_mul_ui(t, res->rows[r] + lo_n, (slong) sqrt(f->length));
