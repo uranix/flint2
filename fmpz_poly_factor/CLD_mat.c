@@ -60,6 +60,7 @@ flint_printf("CLD_bound done\n");
       if (fmpz_bits(t) > bound)
          break;
    }
+flint_printf("done first for\n");
 
    fmpz_zero(t);
 
@@ -70,6 +71,8 @@ flint_printf("CLD_bound done\n");
       if (fmpz_bits(t) > bound)
          break;
    }
+
+flint_printf("done second for\n");
 
    fmpz_clear(t);
 
@@ -94,6 +97,7 @@ flint_printf("CLD_bound done\n");
          fmpz_poly_divlow_smodp(res->rows[i], gcld, trunc_fac, P, lo_n);
       }      
    }
+flint_printf("done third for\n");
 
    if (hi_n > 0)
    {
@@ -123,6 +127,8 @@ flint_printf("CLD_bound done\n");
       fmpz_poly_clear(temp);      
    }
 
+flint_printf("done fourth for\n");
+
    if (hi_n > 0)
    {
       /* move bounds into correct columns */
@@ -134,6 +140,7 @@ flint_printf("CLD_bound done\n");
    /* do not clear trunc_f */
    fmpz_poly_clear(gd);
    fmpz_poly_clear(gcld);
+flint_printf("done cleanup\n");
 
    return lo_n + hi_n;
 }
