@@ -85,16 +85,23 @@ flint_printf("done second for\n");
 
    if (lo_n > 0)
    {
+flint_printf("r = %wd\n", r);
       for (i = 0; i < r; i++)
       {
          zeroes = 0;
+flint_printf("start while\n");
          while (lifted_fac->p[i].coeffs + zeroes)
             zeroes++;
+flint_printf("end while\n");
 
          fmpz_poly_attach_truncate(trunc_fac, lifted_fac->p + i, lo_n + zeroes + 1);
+flint_printf("done attach truncate\n");
          fmpz_poly_derivative(gd, trunc_fac);
+flint_printf("done deriv\n");
          fmpz_poly_mullow(gcld, f, gd, lo_n + zeroes);
+flint_printf("done mullow\n");
          fmpz_poly_divlow_smodp(res->rows[i], gcld, trunc_fac, P, lo_n);
+flint_printf("done divlow\n");
       }      
    }
 flint_printf("done third for\n");
