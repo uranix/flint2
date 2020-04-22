@@ -18,7 +18,7 @@
 #include "fmpz.h"
 #include "fmpz_poly.h"
 
-#define CLD_EPS 0.00000001
+#define CLD_EPS 0.0000001
 
 static double _log2(double n)  
 {  
