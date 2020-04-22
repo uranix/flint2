@@ -58,5 +58,5 @@ build_script:
 test_script:
   - ctest -j3 --verbose --timeout 60 -R "^fmpz_poly_factor-test-t-factor$"
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    #on_finish:
+    #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
