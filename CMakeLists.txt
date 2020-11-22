@@ -116,6 +116,7 @@ configure_file(${CMAKE_BINARY_DIR}/CPimport.h.in ${CMAKE_BINARY_DIR}/CPimport.h 
 check_c_compiler_flag("-mpopcnt" HAS_FLAG_MPOPCNT)
 check_c_compiler_flag("-funroll-loops" HAS_FLAG_UNROLL_LOOPS)
 
+check_library_exists(${PThreads_LIBRARIES} pthread_mutex_init "" FLINT_USES_PTHREAD)
 check_library_exists(${PThreads_LIBRARIES} pthread_getaffinity_np "" FLINT_USES_CPUSET)
 
 set(FLINT_USES_TLS ON CACHE BOOL "Use thread local storage.")
